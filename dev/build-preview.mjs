@@ -11,10 +11,14 @@ let html = await readFile(new URL("../public/index.html", import.meta.url), "utf
 // The preview host supplies its own document skeleton.
 for (const tag of [/<!doctype html>\n/i, /<html[^>]*>\n/, /<head>\n/, /<meta charset[^>]*>\n/, /<meta name="viewport"[^>]*>\n/, /<\/head>\n/, /<body>\n/, /<\/body>\n/, /<\/html>\n?/])
   html = html.replace(tag, "");
+// Artifacts can't load the site's own vendor files: inline Leaflet's CSS and load its script from cdnjs.
+const leafletCss = await readFile(new URL("../public/vendor/leaflet/leaflet.css", import.meta.url), "utf8");
+html = html.replace('<link rel="stylesheet" href="vendor/leaflet/leaflet.css">', () => `<style>\n${leafletCss}\n</style>`);
+html = html.replace('<script src="vendor/leaflet/leaflet.js"></script>', '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>');
 html = html.replace(/<title>[^<]*<\/title>/, `<title>Skittles League Preview</title>\n<meta name="claude:viewport-fit-sides" content="cover">`);
 
 const banner = `<div style="background:var(--warn-bg);color:var(--ink);font-size:.9rem">
-  <div class="wrap" style="padding-block:8px"><strong>Preview.</strong> Changes here are saved in your browser only and don't touch the live site. Admin password: <code>preview</code></div>
+  <div class="wrap" style="padding-block:8px"><strong>Preview.</strong> Changes here are saved in your browser only and don't touch the live site. Admin password: <code>preview</code>. Postcode lookups and maps only work on the live site.</div>
 </div>
 `;
 html = html.replace('<header class="band">', banner + '<header class="band">');

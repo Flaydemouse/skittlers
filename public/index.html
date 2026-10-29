@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rokkitt:wght@600;800&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <style>
 /* Layout: a bottle-green pub-sign band holds the league name and tabs; below it, a paper page with tables and fixture cards. Admin views split into list + form. */
 :root {
@@ -146,9 +147,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .btn.sm { padding: 5px 10px; font-size: .85rem; }
 .btn:disabled { opacity: .55; cursor: default; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.players { display: grid; gap: 6px; }
-.player-row { display: flex; gap: 6px; }
-.player-row input { flex: 1; }
+.players { display: grid; gap: 8px; }
+.player { display: grid; gap: 3px; }
+.player-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; }
+.dup-note { color: var(--brass-ink); font-size: .82rem; font-weight: 700; }
+.postcode { max-width: 11em; text-transform: uppercase; }
+.lookup-note { font-size: .84rem; color: var(--muted); margin: 0; }
+.lookup-note:empty { display: none; }
+.map { position: relative; z-index: 0; height: 190px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunk); }
+.map-note { display: grid; place-items: center; height: 100%; padding: 12px; text-align: center; color: var(--muted); font-size: .85rem; }
+.map-off .map-note { position: absolute; inset: 0; z-index: 1000; background: var(--sunk); }
+.map a { color: var(--brass-ink); }
+.pin { background: var(--brass); border: 3px solid #fff; border-radius: 50%; box-shadow: 0 1px 4px rgb(0 0 0 / .45); }
 .cards { display: grid; gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; }
 .card.editing { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
@@ -218,6 +228,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 <main class="wrap" id="main" aria-live="polite"></main>
 <div class="toast" id="toast" role="status" hidden></div>
 
+<script src="vendor/leaflet/leaflet.js"></script>
 <script>
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -552,8 +563,71 @@ function venueOptions(selected, blank = "No home venue") {
 function alleyOptions(n, selected) {
   return Array.from({ length: n }, (_, i) => `<option value="${i + 1}"${i + 1 === +selected ? " selected" : ""}>Alley ${i + 1}</option>`).join("");
 }
-function playerRow(v = "") {
-  return `<div class="player-row"><input type="text" class="p-name" value="${esc(v)}" placeholder="Player name" aria-label="Player name"><button type="button" class="btn ghost sm" data-act="rm-player">Remove</button></div>`;
+/* ---------- names & addresses ---------- */
+function splitName(s) {
+  const t = String(s || "").trim().replace(/\s+/g, " "), i = t.indexOf(" ");
+  return i < 0 ? { first: t, last: "" } : { first: t.slice(0, i), last: t.slice(i + 1) };
+}
+const fullName = p => [p.first, p.last].filter(Boolean).join(" ");
+// Only a full first + last name counts when looking for duplicates.
+const nameKey = p => p.first && p.last ? `${p.first} ${p.last}`.toLowerCase().replace(/\s+/g, " ").trim() : null;
+// Older records stored single strings; read them in the new shape.
+const captainOf = t => ("captainFirst" in t || "captainLast" in t) ? { first: t.captainFirst || "", last: t.captainLast || "" } : splitName(t.captain);
+const playersOf = t => (t.players || []).map(p => typeof p === "string" ? splitName(p) : { first: p.first || "", last: p.last || "" });
+function venueAddr(v) {
+  if ("address1" in v || "postcode" in v) return { address1: v.address1 || "", address2: v.address2 || "", address3: v.address3 || "", postcode: v.postcode || "" };
+  const lines = String(v.address || "").split("\n").map(s => s.trim()).filter(Boolean);
+  return { address1: lines[0] || "", address2: lines[1] || "", address3: lines.slice(2).join(", "), postcode: "" };
+}
+const addrText = a => [a.address1, a.address2, a.address3, a.postcode].filter(Boolean).join("\n");
+
+/* ---------- postcodes & maps ---------- */
+const POSTCODE_RE = /^([A-Z]{1,2}\d[A-Z\d]?)\s*(\d[A-Z]{2})$/i;
+function normPostcode(s) { const m = POSTCODE_RE.exec(String(s || "").trim()); return m ? `${m[1]} ${m[2]}`.toUpperCase() : null; }
+const geoCache = {};
+// Resolves {lat, lng}, null when the postcode doesn't exist, or undefined when the lookup service can't be reached.
+async function lookupPostcode(pc) {
+  if (pc in geoCache) return geoCache[pc];
+  try {
+    const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(pc)}`);
+    if (res.status === 404) return geoCache[pc] = null;
+    if (!res.ok) return undefined;
+    const { result } = await res.json();
+    return geoCache[pc] = result ? { lat: result.latitude, lng: result.longitude } : null;
+  } catch { return undefined; }
+}
+const osmLink = (lat, lng) => `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+const maps = new Map();
+function dropMaps(root) {
+  for (const [el, m] of maps) if (!el.isConnected || root?.contains(el)) { m.remove(); maps.delete(el); }
+}
+function drawMap(el, lat, lng, label) {
+  dropMaps();
+  maps.get(el)?.remove();
+  el.classList.remove("map-off");
+  if (!window.L || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    el.innerHTML = `<div class="map-note">Map unavailable. <a href="${osmLink(lat, lng)}" target="_blank" rel="noopener">Open in OpenStreetMap</a></div>`;
+    return;
+  }
+  const m = L.map(el, { scrollWheelZoom: false }).setView([lat, lng], 15);
+  const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  }).addTo(m);
+  tiles.once("tileerror", () => {
+    el.classList.add("map-off");
+    el.insertAdjacentHTML("beforeend", `<div class="map-note">The map can't load here. <a href="${osmLink(lat, lng)}" target="_blank" rel="noopener">Open in OpenStreetMap</a></div>`);
+  });
+  L.marker([lat, lng], { icon: L.divIcon({ className: "pin", iconSize: [18, 18] }), title: label || "" }).addTo(m);
+  maps.set(el, m);
+}
+
+/* ---------- admin: teams ---------- */
+function playerRow(p = { first: "", last: "" }) {
+  return `<div class="player"><div class="player-row">
+    <input type="text" class="p-first" value="${esc(p.first)}" placeholder="First name" aria-label="Player first name">
+    <input type="text" class="p-last" value="${esc(p.last)}" placeholder="Last name" aria-label="Player last name">
+    <button type="button" class="btn ghost sm" data-act="rm-player">Remove</button></div>
+    <div class="dup-note" hidden></div></div>`;
 }
 VIEWS.teams = {
   mount(el) {
@@ -569,12 +643,15 @@ VIEWS.teams = {
             <div class="field"><label for="t-venue">Home venue</label><select id="t-venue"></select></div>
             <div class="field" id="t-alley-wrap" hidden><label for="t-alley">Home alley</label><select id="t-alley"></select></div>
           </div>
-          <div class="field"><label for="t-captain">Captain's name</label><input type="text" id="t-captain"></div>
+          <div class="row2">
+            <div class="field"><label for="t-cap-first">Captain's first name</label><input type="text" id="t-cap-first"></div>
+            <div class="field"><label for="t-cap-last">Captain's last name</label><input type="text" id="t-cap-last"></div>
+          </div>
           <div class="field"><label for="t-address">Captain's home address</label><textarea id="t-address" rows="3"></textarea></div>
           <div class="field"><label for="t-mobile">Captain's mobile number</label><input type="tel" id="t-mobile" placeholder="07…"></div>
           <div class="field"><span class="lbl">Players</span><div class="players" id="t-players"></div>
             <div class="actions"><button type="button" class="btn ghost sm" data-act="add-player">Add player</button></div>
-            <span class="hint">Press Enter in a name to start the next one.</span></div>
+            <span class="hint">Press Enter to move to the next box. Names already on another team are flagged so you can check them.</span></div>
           <div class="actions"><button class="btn" type="submit" id="tf-save">Save team</button><button class="btn ghost" type="button" data-act="cancel-team">Clear form</button></div>
         </form></div>
       </div>`;
@@ -582,12 +659,17 @@ VIEWS.teams = {
     const f = $("#team-form");
     f.addEventListener("submit", e => { e.preventDefault(); this.save(); });
     $("#t-venue").addEventListener("change", () => this.syncAlley());
+    $("#t-players").addEventListener("input", () => this.checkDuplicates());
     f.addEventListener("keydown", e => {
-      if (e.key === "Enter" && e.target.classList.contains("p-name")) {
+      if (e.key !== "Enter") return;
+      if (e.target.classList.contains("p-first")) {
         e.preventDefault();
-        const row = e.target.closest(".player-row");
+        e.target.closest(".player").querySelector(".p-last").focus();
+      } else if (e.target.classList.contains("p-last")) {
+        e.preventDefault();
+        const row = e.target.closest(".player");
         row.insertAdjacentHTML("afterend", playerRow());
-        row.nextElementSibling.querySelector("input").focus();
+        row.nextElementSibling.querySelector(".p-first").focus();
       }
     });
   },
@@ -606,6 +688,25 @@ VIEWS.teams = {
     const cur = selected ?? $("#t-alley").value ?? 1;
     $("#t-alley").innerHTML = alleyOptions(n, Math.min(+cur || 1, n));
   },
+  // Flags a player whose first and last name match a player on another team, or another row on this form.
+  checkDuplicates() {
+    const editing = $("#team-form").dataset.id;
+    const known = {};
+    for (const t of Object.values(S.teams)) {
+      if (t.id === editing) continue;
+      for (const p of playersOf(t)) { const k = nameKey(p); if (k) (known[k] ||= new Set()).add(t.name); }
+    }
+    const rows = $$("#t-players .player");
+    const keys = rows.map(r => nameKey({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim() }));
+    rows.forEach((r, i) => {
+      const k = keys[i];
+      const where = k ? [...(known[k] || [])] : [];
+      if (k && keys.some((x, j) => j !== i && x === k)) where.push("this team");
+      const note = $(".dup-note", r);
+      note.hidden = !where.length;
+      note.textContent = where.length ? `Already on system (${where.join(", ")})` : "";
+    });
+  },
   edit(id) {
     const t = S.teams[id], c = S.contacts[id] || {};
     if (!t) return;
@@ -615,10 +716,13 @@ VIEWS.teams = {
     $("#t-division").value = t.division || "";
     $("#t-venue").innerHTML = venueOptions(t.venue || "");
     this.syncAlley(t.alley || 1);
-    $("#t-captain").value = t.captain || "";
+    const cap = captainOf(t);
+    $("#t-cap-first").value = cap.first; $("#t-cap-last").value = cap.last;
     $("#t-address").value = c.address || "";
     $("#t-mobile").value = c.mobile || "";
-    $("#t-players").innerHTML = (t.players?.length ? t.players : [""]).map(playerRow).join("");
+    const players = playersOf(t);
+    $("#t-players").innerHTML = (players.length ? players : [undefined]).map(p => playerRow(p)).join("");
+    this.checkDuplicates();
     $$("#team-list .card").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
     f.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#t-name").focus({ preventScroll: true });
@@ -634,8 +738,8 @@ VIEWS.teams = {
     const team = {
       name, division: $("#t-division").value.trim() || "Division 1", venue,
       alley: venue ? Math.min(+$("#t-alley").value || 1, nAlleys) : null,
-      captain: $("#t-captain").value.trim(),
-      players: $$(".p-name", f).map(i => i.value.trim()).filter(Boolean),
+      captainFirst: $("#t-cap-first").value.trim(), captainLast: $("#t-cap-last").value.trim(),
+      players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim() })).filter(p => p.first || p.last),
     };
     const contact = { address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
     const id = f.dataset.id || newId(), editing = !!f.dataset.id;
@@ -648,6 +752,7 @@ VIEWS.teams = {
     $("#div-list").innerHTML = divisions().map(d => `<option value="${esc(d)}">`).join("");
     const vSel = $("#t-venue"), keep = vSel.value;
     vSel.innerHTML = venueOptions(keep); this.syncAlley();
+    this.checkDuplicates();
     const list = $("#team-list");
     const st = statusBlock(); if (st) return list.innerHTML = st;
     const teams = sortedTeams();
@@ -655,13 +760,13 @@ VIEWS.teams = {
       <div class="actions"><button class="btn ghost" data-act="load-example">Load example season</button></div></div>`;
     const editing = $("#team-form").dataset.id;
     list.innerHTML = `<div class="cards">${teams.map(t => {
-      const c = S.contacts[t.id] || {}, v = S.venues[t.venue];
+      const c = S.contacts[t.id] || {}, v = S.venues[t.venue], players = playersOf(t);
       return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}">
         <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${esc(t.division || "Division 1")} · ${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
-        <dl class="kv"><dt>Captain</dt><dd>${esc(t.captain || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
-        <div><div class="field"><span class="lbl">Players (${t.players?.length || 0})</span></div>
-          <div class="tags">${(t.players || []).map(p => `<span class="tag">${esc(p)}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
+        <dl class="kv"><dt>Captain</dt><dd>${esc(fullName(captainOf(t)) || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
+        <div><div class="field"><span class="lbl">Players (${players.length})</span></div>
+          <div class="tags">${players.map(p => `<span class="tag">${esc(fullName(p))}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
       </article>`;
     }).join("")}</div>`;
   }
@@ -677,7 +782,12 @@ VIEWS.venues = {
         <div class="form-col"><form class="panel form" id="venue-form" autocomplete="off">
           <h3 id="vf-title">Add a venue</h3>
           <div class="field"><label for="v-name">Venue name</label><input type="text" id="v-name" required></div>
-          <div class="field"><label for="v-address">Venue address</label><textarea id="v-address" rows="3"></textarea></div>
+          <div class="field"><label for="v-addr1">Address line 1</label><input type="text" id="v-addr1"></div>
+          <div class="field"><label for="v-addr2">Address line 2</label><input type="text" id="v-addr2"></div>
+          <div class="field"><label for="v-addr3">Address line 3</label><input type="text" id="v-addr3"></div>
+          <div class="field"><label for="v-postcode">Postcode</label><input type="text" id="v-postcode" class="postcode" autocapitalize="characters" spellcheck="false">
+            <span class="lookup-note" id="v-pc-note" aria-live="polite"></span></div>
+          <div class="map" id="v-map" hidden></div>
           <div class="row2">
             <div class="field"><label for="v-phone">Telephone number</label><input type="tel" id="v-phone"></div>
             <div class="field"><label for="v-alleys">Number of alleys</label><input type="number" id="v-alleys" min="1" max="20" value="1"></div>
@@ -690,12 +800,39 @@ VIEWS.venues = {
     this.reset();
     $("#venue-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
     $("#v-alleys").addEventListener("input", () => this.renderAssign());
+    $("#v-postcode").addEventListener("change", () => this.locate());
   },
   reset() {
     const f = $("#venue-form"); f.reset(); delete f.dataset.id;
+    delete f.dataset.lat; delete f.dataset.lng;
     $("#vf-title").textContent = "Add a venue";
+    $("#v-pc-note").textContent = "";
+    $("#v-map").hidden = true;
     this.renderAssign();
     $$("#venue-list .card").forEach(c => c.classList.remove("editing"));
+  },
+  showFormMap(lat, lng) {
+    const f = $("#venue-form"), el = $("#v-map");
+    f.dataset.lat = lat; f.dataset.lng = lng;
+    el.hidden = false;
+    drawMap(el, lat, lng, $("#v-name").value);
+  },
+  // Looks up the postcode and shows it on the map in the form.
+  async locate() {
+    const f = $("#venue-form"), input = $("#v-postcode"), note = $("#v-pc-note");
+    delete f.dataset.lat; delete f.dataset.lng;
+    $("#v-map").hidden = true;
+    if (!input.value.trim()) return note.textContent = "";
+    const pc = normPostcode(input.value);
+    if (!pc) return note.textContent = "That doesn't look like a UK postcode.";
+    input.value = pc;
+    note.textContent = "Finding it on the map…";
+    const geo = await lookupPostcode(pc);
+    if (input.value !== pc) return;
+    if (geo) { note.textContent = ""; this.showFormMap(geo.lat, geo.lng); }
+    else note.textContent = geo === null
+      ? "We couldn't find that postcode. Check it, or save the venue without a map."
+      : "The map lookup isn't available right now. You can still save the venue.";
   },
   renderAssign() {
     const id = $("#venue-form").dataset.id;
@@ -710,9 +847,14 @@ VIEWS.venues = {
   },
   edit(id) {
     const v = S.venues[id]; if (!v) return;
+    this.reset();
     const f = $("#venue-form"); f.dataset.id = id;
+    const a = venueAddr(v);
     $("#vf-title").textContent = `Edit ${v.name}`;
-    $("#v-name").value = v.name || ""; $("#v-address").value = v.address || ""; $("#v-phone").value = v.phone || ""; $("#v-alleys").value = v.alleys || 1;
+    $("#v-name").value = v.name || "";
+    $("#v-addr1").value = a.address1; $("#v-addr2").value = a.address2; $("#v-addr3").value = a.address3; $("#v-postcode").value = a.postcode;
+    $("#v-phone").value = v.phone || ""; $("#v-alleys").value = v.alleys || 1;
+    if (Number.isFinite(v.lat) && Number.isFinite(v.lng)) this.showFormMap(v.lat, v.lng);
     this.renderAssign();
     $$("#venue-list .card").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
     f.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -721,24 +863,41 @@ VIEWS.venues = {
     const f = $("#venue-form");
     const name = $("#v-name").value.trim();
     if (!name) return toast("Give the venue a name.");
+    const pcRaw = $("#v-postcode").value.trim();
+    const postcode = pcRaw ? normPostcode(pcRaw) : "";
+    if (pcRaw && !postcode) return toast("Check the postcode. It doesn't look like a UK postcode.");
+    $("#v-postcode").value = postcode;
+    $("#vf-save").disabled = true;
+    let lat = parseFloat(f.dataset.lat), lng = parseFloat(f.dataset.lng);
+    if (postcode && !Number.isFinite(lat)) {
+      const geo = await lookupPostcode(postcode);
+      if (geo) ({ lat, lng } = geo);
+    }
     const alleys = Math.max(1, Math.min(20, +$("#v-alleys").value || 1));
-    const venue = { name, address: $("#v-address").value.trim(), phone: $("#v-phone").value.trim(), alleys };
+    const venue = {
+      name, address1: $("#v-addr1").value.trim(), address2: $("#v-addr2").value.trim(), address3: $("#v-addr3").value.trim(), postcode,
+      lat: postcode && Number.isFinite(lat) ? lat : null, lng: postcode && Number.isFinite(lng) ? lng : null,
+      phone: $("#v-phone").value.trim(), alleys,
+    };
     const id = f.dataset.id || newId(), editing = !!f.dataset.id;
     const alleyFor = {};
     for (const t of sortedTeams().filter(t => t.venue === id)) {
       const sel = $(`#v-assign select[data-team="${CSS.escape(t.id)}"]`);
       alleyFor[t.id] = alleys > 1 ? +(sel?.value || Math.min(t.alley || 1, alleys)) : 1;
     }
-    $("#vf-save").disabled = true;
     const ok = await commit(d => {
       d.venues[id] = { id, ...venue };
       for (const [tid, alley] of Object.entries(alleyFor)) if (d.teams[tid]) d.teams[tid].alley = alley;
     });
     $("#vf-save").disabled = false;
-    if (ok) { toast(editing ? `Saved ${name}` : `Added ${name}`); this.reset(); }
+    if (ok) {
+      toast(editing ? `Saved ${name}` : `Added ${name}` + (postcode && venue.lat == null ? ". It has no map because the postcode couldn't be found." : ""));
+      this.reset();
+    }
   },
   refresh() {
     const list = $("#venue-list");
+    dropMaps(list);
     const st = statusBlock(); if (st) return list.innerHTML = st;
     const venues = sortedVenues();
     if (!venues.length) return list.innerHTML = `<div class="empty"><strong>No venues yet</strong>Add the pubs and clubs where matches are played.</div>`;
@@ -746,15 +905,19 @@ VIEWS.venues = {
     list.innerHTML = `<div class="cards">${venues.map(v => {
       const teams = sortedTeams().filter(t => t.venue === v.id);
       const alleys = Array.from({ length: v.alleys || 1 }, (_, i) => i + 1);
+      const a = venueAddr(v), mapped = Number.isFinite(v.lat) && Number.isFinite(v.lng);
       return `<article class="card${v.id === editing ? " editing" : ""}" data-id="${esc(v.id)}">
         <div class="card-head"><div><h3>${esc(v.name)}</h3><div class="sub">${v.alleys > 1 ? `${v.alleys} alleys` : "1 alley"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-venue" data-id="${esc(v.id)}">Edit</button><button class="btn danger sm" data-act="del-venue" data-id="${esc(v.id)}">Delete</button></div></div>
-        <dl class="kv"><dt>Address</dt><dd>${esc(v.address || "—")}</dd><dt>Telephone</dt><dd>${esc(v.phone || "—")}</dd></dl>
+        <dl class="kv"><dt>Address</dt><dd>${esc(addrText(a) || "—")}</dd><dt>Telephone</dt><dd>${esc(v.phone || "—")}</dd></dl>
+        ${mapped ? `<div class="map" data-lat="${v.lat}" data-lng="${v.lng}" data-name="${esc(v.name)}" role="img" aria-label="Map showing ${esc(v.name)}"></div>`
+          : a.postcode ? `<p class="lookup-note">No map yet: the postcode couldn't be found. Edit the venue to try again.</p>` : ""}
         <div class="alley-grid">${v.alleys > 1
           ? alleys.map(n => { const ts = teams.filter(t => (t.alley || 1) === n); return `<div class="alley-row"><span class="n">Alley ${n}</span><span>${ts.map(t => esc(t.name)).join(", ") || `<span class="muted">Free</span>`}</span></div>`; }).join("")
           : `<div class="alley-row"><span class="n">Home to</span><span>${teams.map(t => esc(t.name)).join(", ") || `<span class="muted">No teams yet</span>`}</span></div>`}</div>
       </article>`;
     }).join("")}</div>`;
+    $$(".map[data-lat]", list).forEach(el => drawMap(el, +el.dataset.lat, +el.dataset.lng, el.dataset.name));
   }
 };
 
@@ -1018,9 +1181,14 @@ async function loadExample() {
   S.busy = true; toast("Loading example season…");
   const ok = await commit(d => {
     const vid = {};
-    for (const [key, name, n, alleys] of [["plough", "The Plough", 1, 2], ["lion", "Red Lion", 2, 1], ["crown", "Crown & Anchor", 3, 3]]) {
+    const V = [
+      ["plough", "The Plough", 1, 2, "Taunton", "TA1 1AA", 51.0152, -3.1009],
+      ["lion", "Red Lion", 2, 1, "Bridgwater", "TA6 3AA", 51.1283, -3.0035],
+      ["crown", "Crown & Anchor", 3, 3, "Wellington", "TA21 8AA", 50.9786, -3.2265],
+    ];
+    for (const [key, name, n, alleys, town, postcode, lat, lng] of V) {
       const id = newId() + key;
-      d.venues[id] = { id, name: `${name} (example)`, address: `${n} Example Street\nSomerset`, phone: `01632 96000${n}`, alleys };
+      d.venues[id] = { id, name: `${name} (example)`, address1: `${n} Example Street`, address2: town, address3: "Somerset", postcode, lat, lng, phone: `01632 96000${n}`, alleys };
       vid[key] = id;
     }
     const T = [
@@ -1029,8 +1197,9 @@ async function loadExample() {
     ];
     const tid = T.map(([name, v, alley], i) => {
       const id = newId() + i;
-      d.teams[id] = { id, name: `${name} (example)`, division: "Division 1", venue: vid[v], alley, captain: "Example captain",
-        players: Array.from({ length: 8 }, (_, k) => `Example player ${k + 1}`) };
+      const surname = ["Ashby", "Brook", "Carter", "Dunn", "Ellis", "Fry"][i];
+      d.teams[id] = { id, name: `${name} (example)`, division: "Division 1", venue: vid[v], alley, captainFirst: "Example", captainLast: surname,
+        players: ["Dave", "Sue", "Tom", "Jan", "Pete", "Liz", "Mark", "Kate"].map(first => ({ first, last: surname })) };
       d.contacts[id] = { address: `${i + 10} Example Close\nSomerset`, mobile: `07700 9000${i + 10}` };
       return id;
     });
@@ -1066,8 +1235,13 @@ document.addEventListener("click", async e => {
   const b = e.target.closest("[data-act]"); if (!b) return;
   const id = b.dataset.id, act = b.dataset.act;
   if (act === "logout") { logout(); toast("Logged out"); }
-  if (act === "add-player") { $("#t-players").insertAdjacentHTML("beforeend", playerRow()); $("#t-players .player-row:last-child input").focus(); }
-  if (act === "rm-player") { const rows = $$("#t-players .player-row"); rows.length > 1 ? b.closest(".player-row").remove() : (rows[0].querySelector("input").value = ""); }
+  if (act === "add-player") { $("#t-players").insertAdjacentHTML("beforeend", playerRow()); $("#t-players .player:last-child .p-first").focus(); }
+  if (act === "rm-player") {
+    const rows = $$("#t-players .player");
+    if (rows.length > 1) b.closest(".player").remove();
+    else $$("input", rows[0]).forEach(i => i.value = "");
+    VIEWS.teams.checkDuplicates();
+  }
   if (act === "edit-team") VIEWS.teams.edit(id);
   if (act === "cancel-team") VIEWS.teams.reset();
   if (act === "del-team") {
