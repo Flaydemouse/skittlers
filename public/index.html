@@ -138,7 +138,7 @@ input[type=text], input[type=tel], input[type=number], input[type=date], input[t
 }
 textarea { resize: vertical; min-height: 64px; }
 input:focus, select:focus, textarea:focus { border-color: var(--brass); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 30%, transparent); }
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; border-radius: 6px; padding: 9px 16px; font-weight: 600; cursor: pointer; background: var(--baize); color: var(--on-baize); }
+.btn { text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; border-radius: 6px; padding: 9px 16px; font-weight: 600; cursor: pointer; background: var(--baize); color: var(--on-baize); }
 .btn:hover { background: var(--baize-2); }
 .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
 .btn.ghost:hover { background: var(--sunk); }
@@ -155,6 +155,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .postcode { max-width: 11em; text-transform: uppercase; }
 .lookup-note { font-size: .84rem; color: var(--muted); margin: 0; }
 .lookup-note:empty { display: none; }
+.imp-summary { display: grid; gap: 6px; }
+.imp-summary:empty { display: none; }
+.imp-problem { margin: 0; font-size: .84rem; font-weight: 700; color: var(--loss); }
+.imp-problems { margin: 0; padding-left: 18px; font-size: .84rem; color: var(--ink); display: grid; gap: 2px; }
 .map { position: relative; z-index: 0; height: 190px; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: var(--sunk); }
 .map-note { display: grid; place-items: center; height: 100%; padding: 12px; text-align: center; color: var(--muted); font-size: .85rem; }
 .map-off .map-note { position: absolute; inset: 0; z-index: 1000; background: var(--sunk); }
@@ -599,6 +603,84 @@ async function lookupPostcode(pc) {
     return geoCache[pc] = result ? { lat: result.latitude, lng: result.longitude } : null;
   } catch { return undefined; }
 }
+// Looks up many postcodes in one go (postcodes.io takes up to 100 per request).
+async function lookupPostcodes(list) {
+  const todo = [...new Set(list)].filter(pc => !(pc in geoCache));
+  for (let i = 0; i < todo.length; i += 100) {
+    try {
+      const res = await fetch("https://api.postcodes.io/postcodes", {
+        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ postcodes: todo.slice(i, i + 100) }),
+      });
+      if (!res.ok) continue;
+      for (const { query, result } of (await res.json()).result || [])
+        geoCache[normPostcode(query) || query] = result ? { lat: result.latitude, lng: result.longitude } : null;
+    } catch {}
+  }
+  return Object.fromEntries(list.map(pc => [pc, geoCache[pc]]));
+}
+
+// Reads CSV text into rows of trimmed cells, handling quoted cells with commas or line breaks.
+function parseCsv(text) {
+  const rows = []; let row = [], cell = "", quoted = false;
+  text = String(text).replace(/^\uFEFF/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (quoted) {
+      if (c !== '"') cell += c;
+      else if (text[i + 1] === '"') { cell += '"'; i++; }
+      else quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") { row.push(cell); cell = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows.map(r => r.map(c => c.trim()));
+}
+
+const VENUE_COLUMNS = {
+  name: ["venue name", "venue", "name"],
+  address1: ["address line 1", "address 1", "address1", "address"],
+  address2: ["address line 2", "address 2", "address2"],
+  address3: ["address line 3", "address 3", "address3", "town"],
+  postcode: ["postcode", "post code"],
+  phone: ["telephone", "telephone number", "phone", "phone number", "tel"],
+  alleys: ["number of alleys", "alleys", "no of alleys", "number of alley"],
+};
+// Works out which CSV rows add a venue, update one, or have a problem.
+function venueImportPlan(text) {
+  const rows = parseCsv(text);
+  const plan = { add: [], update: [], same: [], problems: [] };
+  const key = h => h.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const head = (rows[0] || []).map(key);
+  const col = {};
+  for (const [field, names] of Object.entries(VENUE_COLUMNS)) { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[field] = i; }
+  if (!("name" in col)) return { ...plan, error: "This file needs a Venue Name column. Download the template and use its headings." };
+  const byName = Object.fromEntries(Object.values(S.venues).map(v => [v.name.toLowerCase(), v]));
+  const seen = new Set();
+  rows.slice(1).forEach((r, i) => {
+    if (!r.some(Boolean)) return;
+    const line = i + 2, get = f => (f in col ? r[col[f]] || "" : "").replace(/\s+/g, " ").trim();
+    const name = get("name");
+    if (!name) return plan.problems.push(`Row ${line}: no venue name.`);
+    if (seen.has(name.toLowerCase())) return plan.problems.push(`Row ${line} (${name}): this venue is listed more than once.`);
+    seen.add(name.toLowerCase());
+    const rec = { name, address1: get("address1"), address2: get("address2"), address3: get("address3"), postcode: "", phone: get("phone"), alleys: null };
+    const pc = get("postcode");
+    if (pc) { rec.postcode = normPostcode(pc); if (!rec.postcode) return plan.problems.push(`Row ${line} (${name}): "${pc}" isn't a UK postcode.`); }
+    const al = get("alleys");
+    if (al) { rec.alleys = /^\d+$/.test(al) ? +al : NaN; if (!(rec.alleys >= 1 && rec.alleys <= 20)) return plan.problems.push(`Row ${line} (${name}): number of alleys should be a whole number from 1 to 20, not "${al}".`); }
+    const v = byName[name.toLowerCase()];
+    if (!v) return plan.add.push(rec);
+    const cur = { ...venueAddr(v), phone: v.phone || "", alleys: v.alleys || 1 }, changes = {};
+    for (const f of ["address1", "address2", "address3", "postcode", "phone", "alleys"]) if (rec[f] && rec[f] !== cur[f]) changes[f] = rec[f];
+    Object.keys(changes).length ? plan.update.push({ id: v.id, name: v.name, changes }) : plan.same.push(v.name);
+  });
+  return plan;
+}
+
 const osmLink = (lat, lng) => `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
 const maps = new Map();
 function dropMaps(root) {
@@ -864,12 +946,71 @@ VIEWS.venues = {
           <div class="field" id="v-assign-wrap" hidden><span class="lbl">Alley assignments</span><div class="alley-grid" id="v-assign"></div>
             <span class="hint" id="v-assign-hint"></span></div>
           <div class="actions"><button class="btn" type="submit" id="vf-save">Save venue</button><button class="btn ghost" type="button" data-act="cancel-venue">Clear form</button></div>
-        </form></div>
+        </form>
+        <div class="panel form" id="vimp-panel">
+          <h3>Import venues from a CSV file</h3>
+          <p class="muted" style="margin:0">Fill in the template in Excel or Google Sheets, save it as CSV, then choose it below. Each row adds a venue. A row with the same venue name as one already here updates it, and blank cells leave existing details unchanged.</p>
+          <p style="margin:0"><a class="btn ghost sm" href="templates/venues-template.csv" download="venues-template.csv" id="vimp-template">Download the CSV template</a></p>
+          <div class="field"><label for="vimp-file">CSV file</label><input type="file" id="vimp-file" accept=".csv,text/csv"></div>
+          <div id="vimp-summary" class="imp-summary" aria-live="polite"></div>
+          <div class="actions"><button class="btn" type="button" id="vimp-go" disabled>Import venues</button></div>
+        </div></div>
       </div>`;
     this.reset();
     $("#venue-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
     $("#v-alleys").addEventListener("input", () => this.renderAssign());
     $("#v-postcode").addEventListener("change", () => this.locate());
+    $("#vimp-file").addEventListener("change", async e => {
+      const file = e.target.files[0];
+      this.importText = file ? await file.text() : "";
+      this.importSummary();
+    });
+    $("#vimp-go").addEventListener("click", () => this.importVenues());
+  },
+  importText: "",
+  importSummary() {
+    const out = $("#vimp-summary"), btn = $("#vimp-go");
+    if (!this.importText) { out.innerHTML = ""; btn.disabled = true; btn.textContent = "Import venues"; return; }
+    const plan = venueImportPlan(this.importText);
+    const n = plan.add.length + plan.update.length;
+    btn.disabled = !n;
+    btn.textContent = n ? `Import ${n} venue${n > 1 ? "s" : ""}` : "Import venues";
+    if (plan.error) return out.innerHTML = `<p class="imp-problem">${esc(plan.error)}</p>`;
+    const lines = [];
+    if (plan.add.length) lines.push(`${plan.add.length} new venue${plan.add.length > 1 ? "s" : ""} to add.`);
+    if (plan.update.length) lines.push(`${plan.update.length} to update: ${plan.update.map(u => u.name).join(", ")}.`);
+    if (plan.same.length) lines.push(`${plan.same.length} already up to date.`);
+    if (!n && !plan.problems.length) lines.push("Nothing to import.");
+    out.innerHTML = `<p class="lookup-note">${esc(lines.join(" "))}</p>` +
+      (plan.problems.length ? `<p class="imp-problem">${plan.problems.length} row${plan.problems.length > 1 ? "s" : ""} will be skipped. Fix ${plan.problems.length > 1 ? "them" : "it"} in the file and import it again:</p>
+        <ul class="imp-problems">${plan.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : "");
+  },
+  async importVenues() {
+    const plan = venueImportPlan(this.importText);
+    if (plan.error || !(plan.add.length + plan.update.length)) return;
+    const btn = $("#vimp-go"); btn.disabled = true; btn.textContent = "Importing…";
+    const lookups = [...plan.add.map(r => r.postcode), ...plan.update.map(u => u.changes.postcode)].filter(Boolean);
+    const geo = await lookupPostcodes(lookups);
+    let unmapped = 0;
+    const where = pc => { const g = pc ? geo[pc] : null; if (pc && !g) unmapped++; return g ? { lat: g.lat, lng: g.lng } : { lat: null, lng: null }; };
+    const ok = await commit(d => {
+      for (const r of plan.add) {
+        const id = newId() + Math.random().toString(36).slice(2, 5);
+        d.venues[id] = { id, ...r, alleys: r.alleys || 1, ...where(r.postcode) };
+      }
+      for (const u of plan.update) {
+        const v = d.venues[u.id]; if (!v) continue;
+        if (!("address1" in v || "postcode" in v)) { Object.assign(v, venueAddr(v)); delete v.address; }
+        Object.assign(v, u.changes, "postcode" in u.changes ? where(u.changes.postcode) : {});
+        for (const t of Object.values(d.teams)) if (t.venue === v.id && (t.alley || 1) > v.alleys) t.alley = 1;
+      }
+    });
+    if (ok) {
+      const parts = [plan.add.length && `added ${plan.add.length}`, plan.update.length && `updated ${plan.update.length}`].filter(Boolean).join(" and ");
+      toast(`Venues ${parts}.` + (unmapped ? ` ${unmapped} postcode${unmapped > 1 ? "s" : ""} couldn't be found on the map.` : ""));
+      this.importText = ""; $("#vimp-file").value = "";
+    }
+    this.importSummary();
   },
   reset() {
     const f = $("#venue-form"); f.reset(); delete f.dataset.id;
@@ -965,6 +1106,7 @@ VIEWS.venues = {
     }
   },
   refresh() {
+    this.importSummary();
     const list = $("#venue-list");
     dropMaps(list);
     const st = statusBlock(); if (st) return list.innerHTML = st;
