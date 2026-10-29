@@ -148,8 +148,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .btn:disabled { opacity: .55; cursor: default; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .players { display: grid; gap: 8px; }
-.player { display: grid; gap: 3px; }
-.player-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; gap: 6px; }
+.player { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.player-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
+.player-row .btn { justify-self: end; align-self: center; }
 .dup-note { color: var(--brass-ink); font-size: .82rem; font-weight: 700; }
 .postcode { max-width: 11em; text-transform: uppercase; }
 .lookup-note { font-size: .84rem; color: var(--muted); margin: 0; }
@@ -573,7 +574,9 @@ const fullName = p => [p.first, p.last].filter(Boolean).join(" ");
 const nameKey = p => p.first && p.last ? `${p.first} ${p.last}`.toLowerCase().replace(/\s+/g, " ").trim() : null;
 // Older records stored single strings; read them in the new shape.
 const captainOf = t => ("captainFirst" in t || "captainLast" in t) ? { first: t.captainFirst || "", last: t.captainLast || "" } : splitName(t.captain);
-const playersOf = t => (t.players || []).map(p => typeof p === "string" ? splitName(p) : { first: p.first || "", last: p.last || "" });
+const playersOf = t => (t.players || []).map(p => typeof p === "string" ? { ...splitName(p), nick: "" } : { first: p.first || "", last: p.last || "", nick: p.nick || "" });
+// e.g. John “Smithy” Smith
+const playerLabel = p => [p.first, p.nick && `“${p.nick}”`, p.last].filter(Boolean).join(" ");
 function venueAddr(v) {
   if ("address1" in v || "postcode" in v) return { address1: v.address1 || "", address2: v.address2 || "", address3: v.address3 || "", postcode: v.postcode || "" };
   const lines = String(v.address || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -622,10 +625,11 @@ function drawMap(el, lat, lng, label) {
 }
 
 /* ---------- admin: teams ---------- */
-function playerRow(p = { first: "", last: "" }) {
+function playerRow(p = { first: "", last: "", nick: "" }) {
   return `<div class="player"><div class="player-row">
     <input type="text" class="p-first" value="${esc(p.first)}" placeholder="First name" aria-label="Player first name">
     <input type="text" class="p-last" value="${esc(p.last)}" placeholder="Last name" aria-label="Player last name">
+    <input type="text" class="p-nick" value="${esc(p.nick || "")}" placeholder="Nickname (optional)" aria-label="Player nickname">
     <button type="button" class="btn ghost sm" data-act="rm-player">Remove</button></div>
     <div class="dup-note" hidden></div></div>`;
 }
@@ -665,6 +669,9 @@ VIEWS.teams = {
         e.preventDefault();
         e.target.closest(".player").querySelector(".p-last").focus();
       } else if (e.target.classList.contains("p-last")) {
+        e.preventDefault();
+        e.target.closest(".player").querySelector(".p-nick").focus();
+      } else if (e.target.classList.contains("p-nick")) {
         e.preventDefault();
         const row = e.target.closest(".player");
         row.insertAdjacentHTML("afterend", playerRow());
@@ -737,7 +744,7 @@ VIEWS.teams = {
       name, venue,
       alley: venue ? Math.min(+$("#t-alley").value || 1, nAlleys) : null,
       captainFirst: $("#t-cap-first").value.trim(), captainLast: $("#t-cap-last").value.trim(),
-      players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim() })).filter(p => p.first || p.last),
+      players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim(), nick: $(".p-nick", r).value.trim() })).filter(p => p.first || p.last || p.nick),
     };
     const contact = { address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
     const id = f.dataset.id || newId(), editing = !!f.dataset.id;
@@ -768,7 +775,7 @@ VIEWS.teams = {
           <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
         <dl class="kv"><dt>Captain</dt><dd>${esc(fullName(captainOf(t)) || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
         <div><div class="field"><span class="lbl">Players (${players.length})</span></div>
-          <div class="tags">${players.map(p => `<span class="tag">${esc(fullName(p))}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
+          <div class="tags">${players.map(p => `<span class="tag">${esc(playerLabel(p))}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
       </article>`;
     }).join("")}</div>`;
   }
@@ -1201,7 +1208,7 @@ async function loadExample() {
       const id = newId() + i;
       const surname = ["Ashby", "Brook", "Carter", "Dunn", "Ellis", "Fry"][i];
       d.teams[id] = { id, name: `${name} (example)`, division: "Division 1", venue: vid[v], alley, captainFirst: "Example", captainLast: surname,
-        players: ["Dave", "Sue", "Tom", "Jan", "Pete", "Liz", "Mark", "Kate"].map(first => ({ first, last: surname })) };
+        players: ["Dave", "Sue", "Tom", "Jan", "Pete", "Liz", "Mark", "Kate"].map(first => ({ first, last: surname, nick: { Dave: "Tank", Liz: "Lucky" }[first] || "" })) };
       d.contacts[id] = { address: `${i + 10} Example Close\nSomerset`, mobile: `07700 9000${i + 10}` };
       return id;
     });
