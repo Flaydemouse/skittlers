@@ -18,8 +18,12 @@ html = html.replace('<script src="vendor/leaflet/leaflet.js"></script>', '<scrip
 html = html.replace(/<title>[^<]*<\/title>/, `<title>Skittles League Preview</title>\n<meta name="claude:viewport-fit-sides" content="cover">`);
 
 // The preview can't offer file downloads, so point to the live site for the template.
-html = html.replace(/<p style="margin:0"><a class="btn ghost sm" href="templates\/venues-template.csv"[^]*?<\/p>/,
-  '<p class="lookup-note">The template download works on the live site. Its headings are: Venue Name, Address Line 1, Address Line 2, Address Line 3, Postcode, Telephone, Number of Alleys.</p>');
+const TEMPLATE_HEADINGS = {
+  "venues-template.csv": "Venue Name, Address Line 1, Address Line 2, Address Line 3, Postcode, Telephone, Number of Alleys",
+  "players-template.csv": "Teams, First Name, Last Name",
+};
+html = html.replace(/<p style="margin:0"><a class="btn ghost sm" href="templates\/([^"]+)"[^]*?<\/p>/g, (_, file) =>
+  `<p class="lookup-note">The template download works on the live site. Its headings are: ${TEMPLATE_HEADINGS[file] || "see the live site"}.</p>`);
 const banner = `<div style="background:var(--warn-bg);color:var(--ink);font-size:.9rem">
   <div class="wrap" style="padding-block:8px"><strong>Preview.</strong> Changes here are saved in your browser only and don't touch the live site. Admin password: <code>preview</code>. Postcode lookups and maps only work on the live site.</div>
 </div>

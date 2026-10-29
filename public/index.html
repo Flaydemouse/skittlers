@@ -640,6 +640,57 @@ function parseCsv(text) {
   return rows.map(r => r.map(c => c.trim()));
 }
 
+// Maps each field to its column number, matching headings loosely ("Post code" = "Postcode").
+function csvColumns(headRow, spec) {
+  const key = h => h.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const head = (headRow || []).map(key), col = {};
+  for (const [field, names] of Object.entries(spec)) { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[field] = i; }
+  return col;
+}
+
+const PLAYER_COLUMNS = {
+  team: ["teams", "team", "team name"],
+  first: ["first name", "firstname", "first", "forename"],
+  last: ["last name", "lastname", "last", "surname"],
+  nick: ["nickname", "nick name", "nick"],
+};
+// Works out which players to add to which team, and which rows are flagged or skipped.
+function playerImportPlan(text) {
+  const rows = parseCsv(text);
+  const plan = { add: [], already: 0, flagged: [], problems: [] };
+  const col = csvColumns(rows[0], PLAYER_COLUMNS);
+  if (!("team" in col) || !("first" in col)) return { ...plan, error: "This file needs Teams and First Name columns. Download the template and use its headings." };
+  const teamByName = Object.fromEntries(Object.values(S.teams).map(t => [t.name.toLowerCase(), t]));
+  const onTeam = {}, teamsWith = {};
+  for (const t of Object.values(S.teams)) {
+    onTeam[t.id] = new Set(playersOf(t).map(p => fullName(p).toLowerCase()));
+    for (const p of playersOf(t)) { const k = nameKey(p); if (k) (teamsWith[k] ||= new Set()).add(t.name); }
+  }
+  rows.slice(1).forEach((r, i) => {
+    if (!r.some(Boolean)) return;
+    const line = i + 2, get = f => (f in col ? r[col[f]] || "" : "").replace(/\s+/g, " ").trim();
+    const teamName = get("team"), player = { first: get("first"), last: get("last"), nick: get("nick") };
+    const who = fullName(player) || "a player";
+    if (!teamName) return plan.problems.push(`Row ${line} (${who}): no team given.`);
+    const t = teamByName[teamName.toLowerCase()];
+    if (!t) return plan.problems.push(`Row ${line} (${who}): there's no team called "${teamName}". Add the team first, then import again.`);
+    if (!player.first) return plan.problems.push(`Row ${line} (${t.name}): no first name.`);
+    const dk = fullName(player).toLowerCase();
+    if (onTeam[t.id].has(dk)) return plan.already++;
+    onTeam[t.id].add(dk);
+    plan.add.push({ teamId: t.id, teamName: t.name, line, player });
+  });
+  // Flag names that are also on a different team, already saved or elsewhere in this file.
+  const fileTeams = {};
+  for (const a of plan.add) { const k = nameKey(a.player); if (k) (fileTeams[k] ||= new Set()).add(a.teamName); }
+  for (const a of plan.add) {
+    const k = nameKey(a.player); if (!k) continue;
+    const others = [...new Set([...(teamsWith[k] || []), ...(fileTeams[k] || [])])].filter(n => n !== a.teamName);
+    if (others.length) plan.flagged.push(`Row ${a.line}: ${fullName(a.player)} (${a.teamName}) is also on ${others.join(", ")}.`);
+  }
+  return plan;
+}
+
 const VENUE_COLUMNS = {
   name: ["venue name", "venue", "name"],
   address1: ["address line 1", "address 1", "address1", "address"],
@@ -653,10 +704,7 @@ const VENUE_COLUMNS = {
 function venueImportPlan(text) {
   const rows = parseCsv(text);
   const plan = { add: [], update: [], same: [], problems: [] };
-  const key = h => h.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-  const head = (rows[0] || []).map(key);
-  const col = {};
-  for (const [field, names] of Object.entries(VENUE_COLUMNS)) { const i = head.findIndex(h => names.includes(h)); if (i >= 0) col[field] = i; }
+  const col = csvColumns(rows[0], VENUE_COLUMNS);
   if (!("name" in col)) return { ...plan, error: "This file needs a Venue Name column. Download the template and use its headings." };
   const byName = Object.fromEntries(Object.values(S.venues).map(v => [v.name.toLowerCase(), v]));
   const seen = new Set();
@@ -759,6 +807,14 @@ VIEWS.teams = {
           <div class="field"><label for="imp-text">Team names</label><textarea id="imp-text" rows="6" placeholder="One team per line"></textarea></div>
           <p class="lookup-note" id="imp-summary"></p>
           <div class="actions"><button class="btn" type="button" id="imp-go" disabled>Add teams</button></div>
+        </div>
+        <div class="panel form" id="pimp-panel">
+          <h3>Import players from a CSV file</h3>
+          <p class="muted" style="margin:0">One player per row with three columns: Teams, First Name and Last Name. Each player is added to the team named in the Teams column, so add or import the teams first. You can add a Nickname column too.</p>
+          <p style="margin:0"><a class="btn ghost sm" href="templates/players-template.csv" download="players-template.csv" id="pimp-template">Download the CSV template</a></p>
+          <div class="field"><label for="pimp-file">CSV file</label><input type="file" id="pimp-file" accept=".csv,text/csv"></div>
+          <div id="pimp-summary" class="imp-summary" aria-live="polite"></div>
+          <div class="actions"><button class="btn" type="button" id="pimp-go" disabled>Import players</button></div>
         </div></div>
       </div>`;
     this.reset();
@@ -773,6 +829,12 @@ VIEWS.teams = {
       this.importSummary();
     });
     $("#imp-go").addEventListener("click", () => this.importTeams());
+    $("#pimp-file").addEventListener("change", async e => {
+      const file = e.target.files[0];
+      this.playerText = file ? await file.text() : "";
+      this.playerSummary();
+    });
+    $("#pimp-go").addEventListener("click", () => this.importPlayers());
     f.addEventListener("keydown", e => {
       if (e.key !== "Enter") return;
       if (e.target.classList.contains("p-first")) {
@@ -811,6 +873,39 @@ VIEWS.teams = {
     $("#imp-summary").textContent = !add.length && !skip.length ? ""
       : [add.length ? `${add.length} new team${add.length > 1 ? "s" : ""} ready to add.` : "No new teams to add.",
          skip.length ? `Already on the system, so skipped: ${skip.join(", ")}.` : ""].filter(Boolean).join(" ");
+  },
+  playerText: "",
+  playerSummary() {
+    const out = $("#pimp-summary"), btn = $("#pimp-go");
+    if (!this.playerText) { out.innerHTML = ""; btn.disabled = true; btn.textContent = "Import players"; return; }
+    const plan = playerImportPlan(this.playerText);
+    const n = plan.add.length, nTeams = new Set(plan.add.map(a => a.teamId)).size;
+    btn.disabled = !n;
+    btn.textContent = n ? `Import ${n} player${n > 1 ? "s" : ""}` : "Import players";
+    if (plan.error) return out.innerHTML = `<p class="imp-problem">${esc(plan.error)}</p>`;
+    const lines = [n ? `${n} player${n > 1 ? "s" : ""} to add to ${nTeams} team${nTeams > 1 ? "s" : ""}.` : "No new players to add."];
+    if (plan.already) lines.push(`${plan.already} already on their team, so skipped.`);
+    out.innerHTML = `<p class="lookup-note">${esc(lines.join(" "))}</p>` +
+      (plan.flagged.length ? `<p class="dup-note" style="margin:0">Already on system. These will still be added, so check them:</p>
+        <ul class="imp-problems">${plan.flagged.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : "") +
+      (plan.problems.length ? `<p class="imp-problem">${plan.problems.length} row${plan.problems.length > 1 ? "s" : ""} will be skipped. Fix ${plan.problems.length > 1 ? "them" : "it"} in the file and import it again:</p>
+        <ul class="imp-problems">${plan.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul>` : "");
+  },
+  async importPlayers() {
+    const plan = playerImportPlan(this.playerText);
+    if (plan.error || !plan.add.length) return;
+    $("#pimp-go").disabled = true;
+    const ok = await commit(d => {
+      for (const { teamId, player } of plan.add) {
+        const t = d.teams[teamId]; if (!t) continue;
+        t.players = [...playersOf(t), player];
+      }
+    });
+    if (ok) {
+      toast(`Added ${plan.add.length} player${plan.add.length > 1 ? "s" : ""}`);
+      this.playerText = ""; $("#pimp-file").value = "";
+    }
+    this.playerSummary();
   },
   async importTeams() {
     const { add } = this.importPlan();
@@ -904,6 +999,7 @@ VIEWS.teams = {
     vSel.innerHTML = venueOptions(keep); this.syncAlley();
     this.checkDuplicates();
     this.importSummary();
+    this.playerSummary();
     const list = $("#team-list");
     const st = statusBlock(); if (st) return list.innerHTML = st;
     const teams = sortedTeams();
