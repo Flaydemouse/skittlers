@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skittles League</title>
+<meta name="description" content="League tables, league fixtures and cup fixtures.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='8' fill='%231D4533'/%3E%3Cg fill='%23F3F1E6'%3E%3Ccircle cx='22' cy='8' r='3.4'/%3E%3Ccircle cx='15' cy='15' r='3.4'/%3E%3Ccircle cx='29' cy='15' r='3.4'/%3E%3Ccircle cx='8' cy='22' r='3.4'/%3E%3Ccircle cx='36' cy='22' r='3.4'/%3E%3Ccircle cx='15' cy='29' r='3.4'/%3E%3Ccircle cx='29' cy='29' r='3.4'/%3E%3Ccircle cx='22' cy='36' r='3.4'/%3E%3C/g%3E%3Ccircle cx='22' cy='22' r='4.2' fill='%23B7842A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rokkitt:wght@600;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a bottle-green pub-sign band holds the league name and tabs; below it, a paper page with tables and fixture cards. Admin views split into list + form. */
+:root {
+  --paper: #F2F5F1;
+  --surface: #FFFFFF;
+  --sunk: #E8EEE9;
+  --ink: #17241E;
+  --muted: #5A6B62;
+  --line: #D3DCD5;
+  --baize: #1D4533;
+  --baize-2: #275A43;
+  --on-baize: #F3F1E6;
+  --on-baize-muted: #B9C9BE;
+  --brass: #B7842A;
+  --brass-ink: #855A0F;
+  --win: #2C7448;
+  --loss: #A43E36;
+  --draw: #82661A;
+  --warn-bg: #FBF0D9;
+  --font-display: "Rokkitt", "Rockwell", "Georgia", serif;
+  --font-body: "Barlow", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --r: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E1512; --surface: #15201B; --sunk: #1B2822; --ink: #E5ECE7; --muted: #94A59B; --line: #2A3A31;
+    --baize: #12301F; --baize-2: #1B412C; --on-baize: #F1EEDF; --on-baize-muted: #9DB4A5;
+    --brass: #D6A447; --brass-ink: #E3B862; --win: #5DBB80; --loss: #E07A70; --draw: #D4B45A; --warn-bg: #3A2F14;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E1512; --surface: #15201B; --sunk: #1B2822; --ink: #E5ECE7; --muted: #94A59B; --line: #2A3A31;
+  --baize: #12301F; --baize-2: #1B412C; --on-baize: #F1EEDF; --on-baize-muted: #9DB4A5;
+  --brass: #D6A447; --brass-ink: #E3B862; --win: #5DBB80; --loss: #E07A70; --draw: #D4B45A; --warn-bg: #3A2F14;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--baize); }
+.wrap { max-width: 1140px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; text-wrap: balance; margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* Header band */
+.band { background: var(--baize); color: var(--on-baize); }
+.band .wrap { padding-block: 22px 0; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.brand svg { flex: none; }
+.brand h1 { font-size: clamp(1.7rem, 4vw, 2.5rem); font-weight: 800; letter-spacing: .01em; }
+.brand .season { color: var(--on-baize-muted); font-size: .95rem; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.tabs { display: flex; gap: 4px; margin-top: 18px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs a { flex: none; color: var(--on-baize-muted); text-decoration: none; font-weight: 600; padding: 10px 14px; border-radius: var(--r) var(--r) 0 0; white-space: nowrap; }
+.tabs a:hover { color: var(--on-baize); background: var(--baize-2); }
+.tabs a[aria-current="page"] { background: var(--paper); color: var(--ink); }
+.tabs .sep { flex: none; align-self: center; margin: 0 8px; color: var(--on-baize-muted); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+.tabs .end { margin-left: auto; }
+.tabs button.end { flex: none; background: none; border: 0; color: var(--on-baize-muted); font-weight: 600; padding: 10px 14px; cursor: pointer; }
+.tabs button.end:hover { color: var(--on-baize); }
+.login { max-width: 420px; }
+
+main { padding-block: 28px 64px; }
+.view-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; margin-bottom: 20px; }
+.view-head h2 { font-size: 1.9rem; font-weight: 800; }
+.view-head p { margin: 4px 0 0; color: var(--muted); max-width: 62ch; }
+.eyebrow { font-size: .74rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; color: var(--brass-ink); }
+
+/* League table */
+.division { margin-bottom: 32px; }
+.division h3 { font-size: 1.35rem; margin-bottom: 10px; }
+.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+table.league { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 760px; }
+.league th, .league td { padding: 10px 12px; text-align: right; white-space: nowrap; }
+.league th { font-size: .74rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; border-bottom: 2px solid var(--line); vertical-align: bottom; }
+.league th abbr { text-decoration: none; cursor: help; }
+.league td { border-bottom: 1px solid var(--line); }
+.league tr:last-child td { border-bottom: 0; }
+.league .pos { text-align: center; width: 48px; font-weight: 700; color: var(--muted); }
+.league tr:first-child .pos { color: var(--brass-ink); }
+.league .team { text-align: left; font-weight: 600; white-space: normal; min-width: 180px; }
+.league .pts { font-weight: 800; font-size: 1.05rem; background: var(--sunk); }
+.league th.pts { background: var(--sunk); color: var(--ink); }
+.neg { color: var(--loss); }
+.pos-val { color: var(--win); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; color: var(--muted); font-size: .85rem; }
+.legend b { color: var(--ink); font-weight: 600; }
+
+/* Fixtures */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 8px 14px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--baize); color: var(--on-baize); }
+.date-group { margin-bottom: 22px; }
+.date-group h3 { font-family: var(--font-body); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+.fx-list { display: grid; gap: 8px; }
+.fx { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 4px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 16px; }
+.fx .home { text-align: right; font-weight: 600; min-width: 0; }
+.fx .away { font-weight: 600; min-width: 0; }
+.fx .score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1.1rem; text-align: center; min-width: 120px; }
+.fx .score .v { color: var(--muted); font-weight: 500; font-size: .95rem; }
+.fx .won { color: var(--win); }
+.fx .meta { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: .85rem; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
+.chip.cup { background: var(--brass); color: var(--surface); }
+.chip.warn { background: var(--warn-bg); color: var(--brass-ink); }
+.round { margin-bottom: 26px; }
+.round > h3 { font-size: 1.3rem; margin-bottom: 10px; }
+
+/* Panels, forms, admin */
+.split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.split > * { min-width: 0; }
+@media (max-width: 880px) { .split { grid-template-columns: minmax(0, 1fr); } .split .form-col { order: -1; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; }
+.panel + .panel { margin-top: 16px; }
+.panel h3 { font-size: 1.25rem; margin-bottom: 14px; }
+.form { display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label, .field .lbl { font-size: .8rem; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.field .hint { font-size: .8rem; color: var(--muted); }
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+input[type=text], input[type=tel], input[type=number], input[type=date], input[type=time], select, textarea {
+  width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); min-width: 0;
+}
+textarea { resize: vertical; min-height: 64px; }
+input:focus, select:focus, textarea:focus { border-color: var(--brass); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 30%, transparent); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; border-radius: 6px; padding: 9px 16px; font-weight: 600; cursor: pointer; background: var(--baize); color: var(--on-baize); }
+.btn:hover { background: var(--baize-2); }
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.btn.ghost:hover { background: var(--sunk); }
+.btn.danger { background: transparent; color: var(--loss); border-color: var(--line); }
+.btn.danger[data-armed] { background: var(--loss); color: var(--surface); border-color: var(--loss); }
+.btn.sm { padding: 5px 10px; font-size: .85rem; }
+.btn:disabled { opacity: .55; cursor: default; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.players { display: grid; gap: 6px; }
+.player-row { display: flex; gap: 6px; }
+.player-row input { flex: 1; }
+.cards { display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; }
+.card.editing { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
+.card-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
+.card-head h3 { font-size: 1.25rem; }
+.card-head .sub { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: .92rem; margin: 0; }
+.kv dt { color: var(--muted); font-weight: 600; }
+.kv dd { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { background: var(--sunk); border-radius: 999px; padding: 2px 10px; font-size: .85rem; }
+.alley-grid { display: grid; gap: 6px; }
+.alley-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; font-size: .92rem; }
+.alley-row .n { font-weight: 700; color: var(--brass-ink); }
+.assign-row { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 10px; align-items: center; }
+
+.fx-admin { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; }
+.fx-admin.editing { border-color: var(--brass); box-shadow: 0 0 0 1px var(--brass); }
+.fx-admin .top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: .85rem; color: var(--muted); grid-column: 1 / -1; }
+.result-line { display: grid; grid-template-columns: minmax(0,1fr) 78px 12px 78px minmax(0,1fr); gap: 8px; align-items: center; }
+.result-line .h { text-align: right; font-weight: 600; overflow-wrap: anywhere; }
+.result-line .a { font-weight: 600; overflow-wrap: anywhere; }
+.result-line input { text-align: center; padding: 7px 4px; font-variant-numeric: tabular-nums; }
+.result-line .dash { text-align: center; color: var(--muted); }
+@media (max-width: 560px) {
+  .fx-admin { grid-template-columns: minmax(0, 1fr); }
+  .result-line { grid-template-columns: minmax(0,1fr) 64px; }
+  .result-line .h { text-align: left; }
+  .result-line .dash { display: none; }
+  .fx { grid-template-columns: minmax(0,1fr); text-align: center; }
+  .fx .home, .fx .away { text-align: center; }
+}
+
+.empty { background: var(--surface); border: 1px dashed var(--line); border-radius: var(--r); padding: 28px; text-align: center; color: var(--muted); }
+.empty strong { display: block; color: var(--ink); font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 6px; }
+.empty .actions { justify-content: center; margin-top: 14px; }
+.notice { background: var(--warn-bg); color: var(--ink); border-radius: var(--r); padding: 12px 16px; margin-bottom: 18px; font-size: .92rem; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: var(--r); font-weight: 600; z-index: 20; max-width: calc(100% - 32px); }
+.muted { color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .btn, .tabs a, .seg button { transition: background .15s, color .15s; } }
+</style>
+</head>
+<body>
+
+<header class="band">
+  <div class="wrap">
+    <div class="brand">
+      <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+        <g fill="var(--on-baize)">
+          <circle cx="22" cy="6" r="3.4"/>
+          <circle cx="15" cy="13" r="3.4"/><circle cx="29" cy="13" r="3.4"/>
+          <circle cx="8" cy="20" r="3.4"/><circle cx="36" cy="20" r="3.4"/>
+          <circle cx="15" cy="27" r="3.4"/><circle cx="29" cy="27" r="3.4"/>
+          <circle cx="22" cy="34" r="3.4"/>
+        </g>
+        <circle cx="22" cy="20" r="4.2" fill="var(--brass)"/>
+      </svg>
+      <div>
+        <h1 id="league-name">Skittles League</h1>
+        <div class="season" id="league-season">Season 2026–27</div>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="Sections"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="main" aria-live="polite"></main>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = v => (v === "" || v == null || !Number.isFinite(+v)) ? null : Math.round(+v);
+
+const DEFAULTS = { name: "Skittles League", season: "2026–27", win: 2, draw: 1, loss: 0 };
+const S = {
+  token: null, admin: false, status: "connecting", version: 0, loadedAt: 0,
+  teams: {}, venues: {}, fixtures: {}, contacts: {}, settings: {},
+  loaded: { teams: false, venues: false, fixtures: false },
+  ui: { fxTeam: "", fxShow: "upcoming", adminComp: "all", adminShow: "open" },
+  busy: false,
+};
+const cfg = () => ({ ...DEFAULTS, ...S.settings });
+const ready = () => S.loaded.teams && S.loaded.venues && S.loaded.fixtures;
+
+/* ---------- helpers ---------- */
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 3200);
+}
+function arm(btn, label = "Click again to confirm") {
+  if (btn.dataset.armed) return true;
+  btn.dataset.armed = "1"; btn.dataset.orig = btn.textContent; btn.textContent = label;
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = btn.dataset.orig; } }, 3500);
+  return false;
+}
+const teamName = id => S.teams[id]?.name || "Unknown team";
+const sortedTeams = () => Object.values(S.teams).sort((a, b) => a.name.localeCompare(b.name));
+const sortedVenues = () => Object.values(S.venues).sort((a, b) => a.name.localeCompare(b.name));
+const divisions = () => [...new Set(Object.values(S.teams).map(t => t.division || "Division 1"))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+const played = f => Number.isFinite(f.homePins) && Number.isFinite(f.awayPins);
+const fxSort = (a, b) => (a.date || "").localeCompare(b.date || "") || (a.time || "").localeCompare(b.time || "") || teamName(a.home).localeCompare(teamName(b.home));
+function fxVenue(f) {
+  const vid = f.venue || S.teams[f.home]?.venue;
+  const v = S.venues[vid];
+  const alley = f.alley || (vid && vid === S.teams[f.home]?.venue ? S.teams[f.home]?.alley : null);
+  return { v, alley: v && v.alleys > 1 ? alley : null, vid };
+}
+function fmtDate(d, long) {
+  if (!d) return "Date to be set";
+  const dt = new Date(d + "T12:00:00");
+  return dt.toLocaleDateString("en-GB", long ? { weekday: "long", day: "numeric", month: "long", year: "numeric" } : { weekday: "short", day: "numeric", month: "short" });
+}
+const today = () => new Date().toISOString().slice(0, 10);
+const signed = n => n > 0 ? `+${n}` : String(n);
+const cls = n => n > 0 ? "pos-val" : n < 0 ? "neg" : "";
+const newId = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+/* ---------- data: Netlify Function API ---------- */
+const TOKEN_KEY = "skittles-admin-token";
+const storage = {
+  get() { try { return localStorage.getItem(TOKEN_KEY); } catch { return null; } },
+  set(v) { try { v ? localStorage.setItem(TOKEN_KEY, v) : localStorage.removeItem(TOKEN_KEY); } catch {} },
+};
+async function api(path, opts = {}) {
+  const res = await fetch(path, {
+    ...opts,
+    headers: { "content-type": "application/json", ...(S.token ? { authorization: `Bearer ${S.token}` } : {}) },
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(body.error || "Something went wrong"), { status: res.status, body });
+  return body;
+}
+function apply(d) {
+  S.version = d.version || 0;
+  S.teams = d.teams || {}; S.venues = d.venues || {}; S.fixtures = d.fixtures || {}; S.settings = d.settings || {};
+  if (d.contacts) S.contacts = d.contacts;
+  S.loaded = { teams: true, venues: true, fixtures: true };
+  S.status = "live"; S.loadedAt = Date.now();
+  refresh();
+}
+async function load() {
+  try { apply(await api(S.admin ? "/api/admin" : "/api/league")); }
+  catch (e) {
+    if (e.status === 401 && S.admin) { logout(); toast("Your admin session has ended. Log in again."); return; }
+    S.status = "offline"; refresh();
+  }
+}
+// Every admin change sends the whole league back with the version it was based on.
+// If someone else saved in between, the server refuses (409) and we reload their version.
+async function commit(mutate) {
+  const draft = structuredClone({ teams: S.teams, venues: S.venues, fixtures: S.fixtures, settings: S.settings, contacts: S.contacts });
+  mutate(draft);
+  const { contacts, ...league } = draft;
+  try {
+    apply(await api("/api/admin", { method: "PUT", body: JSON.stringify({ version: S.version, league, contacts }) }));
+    return true;
+  } catch (e) {
+    if (e.status === 409) { apply(e.body); toast("Another admin saved changes just now. The page has been updated, so make your change again."); }
+    else if (e.status === 401) { logout(); toast("Your admin session has ended. Log in again."); }
+    else toast(e.status ? e.message : "Couldn't save. Check your connection and try again.");
+    return false;
+  }
+}
+async function login(password) {
+  const { token } = await api("/api/login", { method: "POST", body: JSON.stringify({ password }) });
+  S.token = token; S.admin = true; storage.set(token);
+  await load();
+}
+function logout() {
+  S.token = null; S.admin = false; S.contacts = {}; storage.set(null);
+  if (ADMIN_VIEWS.some(([id]) => id === location.hash.slice(1))) location.hash = "tables";
+  route(); load();
+}
+
+function clashes() {
+  const seen = {}, out = new Set();
+  for (const f of Object.values(S.fixtures)) {
+    if (!f.date) continue;
+    const { vid, alley } = fxVenue(f);
+    if (!vid) continue;
+    const k = `${f.date}|${vid}|${alley || 1}`;
+    (seen[k] ||= []).push(f.id);
+  }
+  Object.values(seen).forEach(ids => ids.length > 1 && ids.forEach(id => out.add(id)));
+  return out;
+}
+
+/* ---------- standings ---------- */
+function standings() {
+  const c = cfg(), rows = {};
+  for (const t of Object.values(S.teams)) rows[t.id] = { t, P: 0, W: 0, D: 0, L: 0, hp: 0, ap: 0, pf: 0, pa: 0, apd: 0 };
+  for (const f of Object.values(S.fixtures)) {
+    if (f.comp !== "league" || !played(f)) continue;
+    const h = rows[f.home], a = rows[f.away];
+    if (!h || !a) continue;
+    const hp = f.homePins, ap = f.awayPins;
+    h.P++; a.P++;
+    h.hp += hp; a.ap += ap;
+    h.pf += hp; h.pa += ap; a.pf += ap; a.pa += hp;
+    a.apd += ap - hp;
+    if (hp > ap) { h.W++; a.L++; } else if (hp < ap) { a.W++; h.L++; } else { h.D++; a.D++; }
+  }
+  const byDiv = {};
+  for (const r of Object.values(rows)) {
+    r.pd = r.pf - r.pa;
+    r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss;
+    (byDiv[r.t.division || "Division 1"] ||= []).push(r);
+  }
+  for (const list of Object.values(byDiv))
+    list.sort((a, b) => b.pts - a.pts || b.pd - a.pd || b.apd - a.apd || a.t.name.localeCompare(b.t.name));
+  return byDiv;
+}
+
+/* ---------- shell & routing ---------- */
+const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cup fixtures"]];
+const ADMIN_VIEWS = [["teams", "Teams"], ["venues", "Venues"], ["manage-fixtures", "Fixtures & results"], ["league-setup", "League setup"]];
+let current = null;
+
+function renderNav() {
+  const v = currentView();
+  const link = ([id, label]) => `<a href="#${id}"${id === v ? ' aria-current="page"' : ""}>${label}</a>`;
+  $("#tabs").innerHTML = PUBLIC_VIEWS.map(link).join("") +
+    (S.admin
+      ? `<span class="sep">Admin</span>` + ADMIN_VIEWS.map(link).join("") + `<button type="button" class="end" data-act="logout">Log out</button>`
+      : `<a class="end" href="#admin"${v === "admin" ? ' aria-current="page"' : ""}>Admin login</a>`);
+}
+function renderBrand() {
+  const c = cfg();
+  document.title = c.name;
+  $("#league-name").textContent = c.name;
+  $("#league-season").textContent = c.season ? `Season ${c.season}` : "";
+}
+function currentView() {
+  const h = location.hash.slice(1);
+  if (PUBLIC_VIEWS.some(([id]) => id === h)) return h;
+  if (S.admin && ADMIN_VIEWS.some(([id]) => id === h)) return h;
+  if (h === "admin" || ADMIN_VIEWS.some(([id]) => id === h)) return S.admin ? "teams" : "admin";
+  return "tables";
+}
+function route() {
+  const v = currentView();
+  renderNav();
+  current = VIEWS[v];
+  $("#main").innerHTML = "";
+  current.mount($("#main"));
+  refresh();
+}
+function refresh() {
+  renderBrand();
+  current?.refresh();
+}
+function statusBlock() {
+  if (S.status === "connecting") return `<div class="empty"><strong>Loading league data…</strong></div>`;
+  if (S.status !== "live") return `<div class="empty"><strong>Couldn't load the league data</strong>Check your connection and refresh the page.</div>`;
+  if (!ready()) return `<div class="empty"><strong>Loading league data…</strong></div>`;
+  return null;
+}
+function noTeamsBlock() {
+  return `<div class="empty"><strong>No teams yet</strong>${S.admin
+    ? `Add venues and teams in the admin area, or load an example season to see how it works.
+       <div class="actions"><a class="btn" href="#venues">Add a venue</a><a class="btn ghost" href="#teams">Add a team</a><button class="btn ghost" data-act="load-example">Load example season</button></div>`
+    : "The league secretary hasn't added this season's teams yet."}</div>`;
+}
+
+const VIEWS = {};
+
+/* ---------- admin login ---------- */
+VIEWS.admin = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Admin login</h2>
+      <p>League admins can manage teams, venues, fixtures and results.</p></div></div>
+      <form class="panel form login" id="login-form">
+        <div class="field"><label for="l-pass">Admin password</label><input type="password" id="l-pass" autocomplete="current-password" required></div>
+        <div class="actions"><button class="btn" type="submit" id="l-go">Log in</button></div>
+      </form>`;
+    $("#login-form").addEventListener("submit", async e => {
+      e.preventDefault();
+      $("#l-go").disabled = true;
+      try { await login($("#l-pass").value); location.hash = "teams"; route(); toast("Logged in"); }
+      catch (err) { toast(err.status ? err.message : "Couldn't reach the server. Try again."); $("#l-pass").select(); }
+      finally { if ($("#l-go")) $("#l-go").disabled = false; }
+    });
+    $("#l-pass").focus();
+  },
+  refresh() {}
+};
+
+/* ---------- public: tables ---------- */
+VIEWS.tables = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">League</div><h2>League tables</h2>
+      <p id="pts-rule"></p></div></div><div id="tables-body"></div>`;
+  },
+  refresh() {
+    const c = cfg();
+    $("#pts-rule").textContent = `${c.win} points for a win, ${c.draw} for a draw, ${c.loss} for a loss. Ties on points are split by pin difference, then away pin difference.`;
+    const body = $("#tables-body");
+    const st = statusBlock(); if (st) return body.innerHTML = st;
+    if (!Object.keys(S.teams).length) return body.innerHTML = noTeamsBlock();
+    const byDiv = standings();
+    const divs = Object.keys(byDiv).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    body.innerHTML = divs.map(d => `
+      <section class="division">${divs.length > 1 ? `<h3>${esc(d)}</h3>` : ""}
+      <div class="table-scroll"><table class="league">
+        <thead><tr>
+          <th class="pos"><abbr title="Position">Pos</abbr></th><th class="team">Team</th>
+          <th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th>
+          <th>Home pins</th><th>Away pins</th><th>Pin diff</th><th>Away pin diff</th><th class="pts"><abbr title="Points">Pts</abbr></th>
+        </tr></thead>
+        <tbody>${byDiv[d].map((r, i) => `<tr>
+          <td class="pos">${i + 1}</td><td class="team">${esc(r.t.name)}</td>
+          <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+          <td>${r.hp.toLocaleString("en-GB")}</td><td>${r.ap.toLocaleString("en-GB")}</td>
+          <td class="${cls(r.pd)}">${signed(r.pd)}</td><td class="${cls(r.apd)}">${signed(r.apd)}</td>
+          <td class="pts">${r.pts}</td></tr>`).join("")}</tbody>
+      </table></div></section>`).join("") +
+      `<div class="legend"><span><b>Home pins</b> total pins scored at home</span><span><b>Away pins</b> total pins scored away</span><span><b>Pin diff</b> all pins for minus against</span><span><b>Away pin diff</b> away pins for minus against</span></div>`;
+  }
+};
+
+/* ---------- public: fixtures ---------- */
+function fxCard(f, showComp) {
+  const { v, alley } = fxVenue(f);
+  const p = played(f);
+  const hw = p && f.homePins > f.awayPins, aw = p && f.awayPins > f.homePins;
+  const where = v ? `${esc(v.name)}${alley ? ` · Alley ${alley}` : ""}` : "Venue to be confirmed";
+  return `<div class="fx">
+    <div class="home ${hw ? "won" : ""}">${esc(teamName(f.home))}</div>
+    <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
+    <div class="away ${aw ? "won" : ""}">${esc(teamName(f.away))}</div>
+    <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${where}</div>
+  </div>`;
+}
+function groupByDate(list, desc) {
+  const g = {};
+  list.forEach(f => (g[f.date || ""] ||= []).push(f));
+  const keys = Object.keys(g).sort();
+  if (desc) keys.reverse();
+  return keys.map(d => `<div class="date-group"><h3>${fmtDate(d, true)}</h3><div class="fx-list">${g[d].map(f => fxCard(f)).join("")}</div></div>`).join("");
+}
+VIEWS.fixtures = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">League</div><h2>League fixtures</h2>
+      <p>Pins shown as home total – away total. Venue and alley come from the home team unless the fixture says otherwise.</p></div>
+      <div class="toolbar">
+        <select id="fx-team" aria-label="Filter by team"></select>
+        <div class="seg" role="group" aria-label="Show">
+          <button type="button" data-show="upcoming">Upcoming</button><button type="button" data-show="results">Results</button><button type="button" data-show="all">All</button>
+        </div>
+      </div></div><div id="fx-body"></div>`;
+    $("#fx-team").addEventListener("change", e => { S.ui.fxTeam = e.target.value; this.refresh(); });
+    $$(".seg button", el).forEach(b => b.addEventListener("click", () => { S.ui.fxShow = b.dataset.show; this.refresh(); }));
+  },
+  refresh() {
+    const sel = $("#fx-team");
+    sel.innerHTML = `<option value="">All teams</option>` + sortedTeams().map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");
+    sel.value = S.teams[S.ui.fxTeam] ? S.ui.fxTeam : "";
+    $$(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.show === S.ui.fxShow));
+    const body = $("#fx-body");
+    const st = statusBlock(); if (st) return body.innerHTML = st;
+    let list = Object.values(S.fixtures).filter(f => f.comp === "league");
+    if (S.ui.fxTeam) list = list.filter(f => f.home === S.ui.fxTeam || f.away === S.ui.fxTeam);
+    if (S.ui.fxShow === "upcoming") list = list.filter(f => !played(f));
+    if (S.ui.fxShow === "results") list = list.filter(played);
+    list.sort(fxSort);
+    if (!list.length) return body.innerHTML = Object.keys(S.teams).length
+      ? `<div class="empty"><strong>${S.ui.fxShow === "results" ? "No results yet" : S.ui.fxShow === "upcoming" ? "No upcoming fixtures" : "No fixtures yet"}</strong>${S.admin ? `Add fixtures under <a href="#manage-fixtures">Fixtures &amp; results</a>.` : "Check back once the fixture list is published."}</div>`
+      : noTeamsBlock();
+    body.innerHTML = groupByDate(list, S.ui.fxShow === "results");
+  }
+};
+
+/* ---------- public: cup ---------- */
+VIEWS.cup = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Knockout</div><h2>Cup fixtures</h2>
+      <p>Cup ties by round. Cup results don't count towards the league table.</p></div></div><div id="cup-body"></div>`;
+  },
+  refresh() {
+    const body = $("#cup-body");
+    const st = statusBlock(); if (st) return body.innerHTML = st;
+    const list = Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort);
+    if (!list.length) return body.innerHTML = `<div class="empty"><strong>No cup ties drawn yet</strong>${S.admin ? `Add cup fixtures under <a href="#manage-fixtures">Fixtures &amp; results</a>.` : "The draw will appear here once it's made."}</div>`;
+    const rounds = [];
+    for (const f of list) {
+      const name = f.round || "Cup";
+      let r = rounds.find(x => x.name === name);
+      if (!r) rounds.push(r = { name, items: [] });
+      r.items.push(f);
+    }
+    body.innerHTML = rounds.map(r => `<section class="round"><h3>${esc(r.name)}</h3>${groupByDate(r.items)}</section>`).join("");
+  }
+};
+
+/* ---------- admin: teams ---------- */
+function venueOptions(selected, blank = "No home venue") {
+  return `<option value="">${blank}</option>` + sortedVenues().map(v => `<option value="${esc(v.id)}"${v.id === selected ? " selected" : ""}>${esc(v.name)}</option>`).join("");
+}
+function alleyOptions(n, selected) {
+  return Array.from({ length: n }, (_, i) => `<option value="${i + 1}"${i + 1 === +selected ? " selected" : ""}>Alley ${i + 1}</option>`).join("");
+}
+function playerRow(v = "") {
+  return `<div class="player-row"><input type="text" class="p-name" value="${esc(v)}" placeholder="Player name" aria-label="Player name"><button type="button" class="btn ghost sm" data-act="rm-player">Remove</button></div>`;
+}
+VIEWS.teams = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Teams</h2>
+      <p>Captains' addresses and mobile numbers are only visible to league admins.</p></div></div>
+      <div class="split">
+        <div id="team-list"></div>
+        <div class="form-col"><form class="panel form" id="team-form" autocomplete="off">
+          <h3 id="tf-title">Add a team</h3>
+          <div class="field"><label for="t-name">Team name</label><input type="text" id="t-name" required></div>
+          <div class="field"><label for="t-division">Division</label><input type="text" id="t-division" list="div-list" placeholder="Division 1"><datalist id="div-list"></datalist></div>
+          <div class="row2">
+            <div class="field"><label for="t-venue">Home venue</label><select id="t-venue"></select></div>
+            <div class="field" id="t-alley-wrap" hidden><label for="t-alley">Home alley</label><select id="t-alley"></select></div>
+          </div>
+          <div class="field"><label for="t-captain">Captain's name</label><input type="text" id="t-captain"></div>
+          <div class="field"><label for="t-address">Captain's home address</label><textarea id="t-address" rows="3"></textarea></div>
+          <div class="field"><label for="t-mobile">Captain's mobile number</label><input type="tel" id="t-mobile" placeholder="07…"></div>
+          <div class="field"><span class="lbl">Players</span><div class="players" id="t-players"></div>
+            <div class="actions"><button type="button" class="btn ghost sm" data-act="add-player">Add player</button></div>
+            <span class="hint">Press Enter in a name to start the next one.</span></div>
+          <div class="actions"><button class="btn" type="submit" id="tf-save">Save team</button><button class="btn ghost" type="button" data-act="cancel-team">Clear form</button></div>
+        </form></div>
+      </div>`;
+    this.reset();
+    const f = $("#team-form");
+    f.addEventListener("submit", e => { e.preventDefault(); this.save(); });
+    $("#t-venue").addEventListener("change", () => this.syncAlley());
+    f.addEventListener("keydown", e => {
+      if (e.key === "Enter" && e.target.classList.contains("p-name")) {
+        e.preventDefault();
+        const row = e.target.closest(".player-row");
+        row.insertAdjacentHTML("afterend", playerRow());
+        row.nextElementSibling.querySelector("input").focus();
+      }
+    });
+  },
+  reset() {
+    const f = $("#team-form"); f.reset(); delete f.dataset.id;
+    $("#tf-title").textContent = "Add a team";
+    $("#t-players").innerHTML = playerRow();
+    $("#t-venue").innerHTML = venueOptions("");
+    this.syncAlley();
+    $$("#team-list .card").forEach(c => c.classList.remove("editing"));
+  },
+  syncAlley(selected) {
+    const v = S.venues[$("#t-venue").value];
+    const n = v?.alleys || 1;
+    $("#t-alley-wrap").hidden = n <= 1;
+    const cur = selected ?? $("#t-alley").value ?? 1;
+    $("#t-alley").innerHTML = alleyOptions(n, Math.min(+cur || 1, n));
+  },
+  edit(id) {
+    const t = S.teams[id], c = S.contacts[id] || {};
+    if (!t) return;
+    const f = $("#team-form"); f.dataset.id = id;
+    $("#tf-title").textContent = `Edit ${t.name}`;
+    $("#t-name").value = t.name || "";
+    $("#t-division").value = t.division || "";
+    $("#t-venue").innerHTML = venueOptions(t.venue || "");
+    this.syncAlley(t.alley || 1);
+    $("#t-captain").value = t.captain || "";
+    $("#t-address").value = c.address || "";
+    $("#t-mobile").value = c.mobile || "";
+    $("#t-players").innerHTML = (t.players?.length ? t.players : [""]).map(playerRow).join("");
+    $$("#team-list .card").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#t-name").focus({ preventScroll: true });
+  },
+  async save() {
+    const f = $("#team-form");
+    const name = $("#t-name").value.trim();
+    if (!name) return toast("Give the team a name.");
+    const dup = Object.values(S.teams).find(t => t.name.toLowerCase() === name.toLowerCase() && t.id !== f.dataset.id);
+    if (dup) return toast(`There's already a team called ${dup.name}.`);
+    const venue = $("#t-venue").value || null;
+    const nAlleys = S.venues[venue]?.alleys || 1;
+    const team = {
+      name, division: $("#t-division").value.trim() || "Division 1", venue,
+      alley: venue ? Math.min(+$("#t-alley").value || 1, nAlleys) : null,
+      captain: $("#t-captain").value.trim(),
+      players: $$(".p-name", f).map(i => i.value.trim()).filter(Boolean),
+    };
+    const contact = { address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
+    const id = f.dataset.id || newId(), editing = !!f.dataset.id;
+    $("#tf-save").disabled = true;
+    const ok = await commit(d => { d.teams[id] = { id, ...team }; d.contacts[id] = contact; });
+    $("#tf-save").disabled = false;
+    if (ok) { toast(editing ? `Saved ${name}` : `Added ${name}`); this.reset(); }
+  },
+  refresh() {
+    $("#div-list").innerHTML = divisions().map(d => `<option value="${esc(d)}">`).join("");
+    const vSel = $("#t-venue"), keep = vSel.value;
+    vSel.innerHTML = venueOptions(keep); this.syncAlley();
+    const list = $("#team-list");
+    const st = statusBlock(); if (st) return list.innerHTML = st;
+    const teams = sortedTeams();
+    if (!teams.length) return list.innerHTML = `<div class="empty"><strong>No teams yet</strong>Use the form to add the first team${Object.keys(S.venues).length ? "" : `. Adding <a href="#venues">venues</a> first lets you pick each team's home alley`}.
+      <div class="actions"><button class="btn ghost" data-act="load-example">Load example season</button></div></div>`;
+    const editing = $("#team-form").dataset.id;
+    list.innerHTML = `<div class="cards">${teams.map(t => {
+      const c = S.contacts[t.id] || {}, v = S.venues[t.venue];
+      return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}">
+        <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${esc(t.division || "Division 1")} · ${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
+          <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
+        <dl class="kv"><dt>Captain</dt><dd>${esc(t.captain || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
+        <div><div class="field"><span class="lbl">Players (${t.players?.length || 0})</span></div>
+          <div class="tags">${(t.players || []).map(p => `<span class="tag">${esc(p)}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
+      </article>`;
+    }).join("")}</div>`;
+  }
+};
+
+/* ---------- admin: venues ---------- */
+VIEWS.venues = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Venues</h2>
+      <p>Where a venue has more than one alley, give each home team its own alley so fixtures on the same night don't clash.</p></div></div>
+      <div class="split">
+        <div id="venue-list"></div>
+        <div class="form-col"><form class="panel form" id="venue-form" autocomplete="off">
+          <h3 id="vf-title">Add a venue</h3>
+          <div class="field"><label for="v-name">Venue name</label><input type="text" id="v-name" required></div>
+          <div class="field"><label for="v-address">Venue address</label><textarea id="v-address" rows="3"></textarea></div>
+          <div class="row2">
+            <div class="field"><label for="v-phone">Telephone number</label><input type="tel" id="v-phone"></div>
+            <div class="field"><label for="v-alleys">Number of alleys</label><input type="number" id="v-alleys" min="1" max="20" value="1"></div>
+          </div>
+          <div class="field" id="v-assign-wrap" hidden><span class="lbl">Alley assignments</span><div class="alley-grid" id="v-assign"></div>
+            <span class="hint" id="v-assign-hint"></span></div>
+          <div class="actions"><button class="btn" type="submit" id="vf-save">Save venue</button><button class="btn ghost" type="button" data-act="cancel-venue">Clear form</button></div>
+        </form></div>
+      </div>`;
+    this.reset();
+    $("#venue-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
+    $("#v-alleys").addEventListener("input", () => this.renderAssign());
+  },
+  reset() {
+    const f = $("#venue-form"); f.reset(); delete f.dataset.id;
+    $("#vf-title").textContent = "Add a venue";
+    this.renderAssign();
+    $$("#venue-list .card").forEach(c => c.classList.remove("editing"));
+  },
+  renderAssign() {
+    const id = $("#venue-form").dataset.id;
+    const n = Math.max(1, Math.min(20, +$("#v-alleys").value || 1));
+    const teams = id ? sortedTeams().filter(t => t.venue === id) : [];
+    const wrap = $("#v-assign-wrap");
+    wrap.hidden = n <= 1;
+    if (n <= 1) return;
+    $("#v-assign").innerHTML = teams.map(t => `<div class="assign-row"><span>${esc(t.name)}</span>
+      <select data-team="${esc(t.id)}" aria-label="Alley for ${esc(t.name)}">${alleyOptions(n, Math.min(t.alley || 1, n))}</select></div>`).join("");
+    $("#v-assign-hint").textContent = teams.length ? "Changes apply when you save the venue." : id ? "No teams use this venue yet. Pick it as a team's home venue on the Teams page." : "Save the venue, then pick it as a team's home venue to assign alleys.";
+  },
+  edit(id) {
+    const v = S.venues[id]; if (!v) return;
+    const f = $("#venue-form"); f.dataset.id = id;
+    $("#vf-title").textContent = `Edit ${v.name}`;
+    $("#v-name").value = v.name || ""; $("#v-address").value = v.address || ""; $("#v-phone").value = v.phone || ""; $("#v-alleys").value = v.alleys || 1;
+    this.renderAssign();
+    $$("#venue-list .card").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+  },
+  async save() {
+    const f = $("#venue-form");
+    const name = $("#v-name").value.trim();
+    if (!name) return toast("Give the venue a name.");
+    const alleys = Math.max(1, Math.min(20, +$("#v-alleys").value || 1));
+    const venue = { name, address: $("#v-address").value.trim(), phone: $("#v-phone").value.trim(), alleys };
+    const id = f.dataset.id || newId(), editing = !!f.dataset.id;
+    const alleyFor = {};
+    for (const t of sortedTeams().filter(t => t.venue === id)) {
+      const sel = $(`#v-assign select[data-team="${CSS.escape(t.id)}"]`);
+      alleyFor[t.id] = alleys > 1 ? +(sel?.value || Math.min(t.alley || 1, alleys)) : 1;
+    }
+    $("#vf-save").disabled = true;
+    const ok = await commit(d => {
+      d.venues[id] = { id, ...venue };
+      for (const [tid, alley] of Object.entries(alleyFor)) if (d.teams[tid]) d.teams[tid].alley = alley;
+    });
+    $("#vf-save").disabled = false;
+    if (ok) { toast(editing ? `Saved ${name}` : `Added ${name}`); this.reset(); }
+  },
+  refresh() {
+    const list = $("#venue-list");
+    const st = statusBlock(); if (st) return list.innerHTML = st;
+    const venues = sortedVenues();
+    if (!venues.length) return list.innerHTML = `<div class="empty"><strong>No venues yet</strong>Add the pubs and clubs where matches are played.</div>`;
+    const editing = $("#venue-form").dataset.id;
+    list.innerHTML = `<div class="cards">${venues.map(v => {
+      const teams = sortedTeams().filter(t => t.venue === v.id);
+      const alleys = Array.from({ length: v.alleys || 1 }, (_, i) => i + 1);
+      return `<article class="card${v.id === editing ? " editing" : ""}" data-id="${esc(v.id)}">
+        <div class="card-head"><div><h3>${esc(v.name)}</h3><div class="sub">${v.alleys > 1 ? `${v.alleys} alleys` : "1 alley"}</div></div>
+          <div class="actions"><button class="btn ghost sm" data-act="edit-venue" data-id="${esc(v.id)}">Edit</button><button class="btn danger sm" data-act="del-venue" data-id="${esc(v.id)}">Delete</button></div></div>
+        <dl class="kv"><dt>Address</dt><dd>${esc(v.address || "—")}</dd><dt>Telephone</dt><dd>${esc(v.phone || "—")}</dd></dl>
+        <div class="alley-grid">${v.alleys > 1
+          ? alleys.map(n => { const ts = teams.filter(t => (t.alley || 1) === n); return `<div class="alley-row"><span class="n">Alley ${n}</span><span>${ts.map(t => esc(t.name)).join(", ") || `<span class="muted">Free</span>`}</span></div>`; }).join("")
+          : `<div class="alley-row"><span class="n">Home to</span><span>${teams.map(t => esc(t.name)).join(", ") || `<span class="muted">No teams yet</span>`}</span></div>`}</div>
+      </article>`;
+    }).join("")}</div>`;
+  }
+};
+
+/* ---------- admin: fixtures & results ---------- */
+function teamOptions(selected, blank) {
+  return `<option value="">${blank}</option>` + sortedTeams().map(t => `<option value="${esc(t.id)}"${t.id === selected ? " selected" : ""}>${esc(t.name)}</option>`).join("");
+}
+VIEWS["manage-fixtures"] = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Fixtures &amp; results</h2>
+      <p>Type each side's total pins and press Save to record a result. Clear both boxes to mark a fixture as not yet played.</p></div></div>
+      <div class="split">
+        <div>
+          <div class="toolbar" style="margin-bottom:14px">
+            <div class="seg" role="group" aria-label="Competition"><button type="button" data-comp="all">All</button><button type="button" data-comp="league">League</button><button type="button" data-comp="cup">Cup</button></div>
+            <div class="seg" role="group" aria-label="Status"><button type="button" data-st="open">Awaiting result</button><button type="button" data-st="done">Played</button><button type="button" data-st="every">All</button></div>
+          </div>
+          <div id="mf-list"></div>
+        </div>
+        <div class="form-col">
+          <form class="panel form" id="fx-form" autocomplete="off">
+            <h3 id="ff-title">Add a fixture</h3>
+            <div class="row2">
+              <div class="field"><label for="f-comp">Competition</label><select id="f-comp"><option value="league">League</option><option value="cup">Cup</option></select></div>
+              <div class="field" id="f-round-wrap" hidden><label for="f-round">Cup round</label><input type="text" id="f-round" list="round-list" placeholder="Round 1"><datalist id="round-list"><option value="Round 1"><option value="Round 2"><option value="Quarter-final"><option value="Semi-final"><option value="Final"></datalist></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="f-date">Date</label><input type="date" id="f-date"></div>
+              <div class="field"><label for="f-time">Start time</label><input type="time" id="f-time" value="19:45"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="f-home">Home team</label><select id="f-home"></select></div>
+              <div class="field"><label for="f-away">Away team</label><select id="f-away"></select></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="f-venue">Venue</label><select id="f-venue"></select></div>
+              <div class="field" id="f-alley-wrap" hidden><label for="f-alley">Alley</label><select id="f-alley"></select></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="f-hp">Home pins</label><input type="number" id="f-hp" min="0" inputmode="numeric"></div>
+              <div class="field"><label for="f-ap">Away pins</label><input type="number" id="f-ap" min="0" inputmode="numeric"></div>
+            </div>
+            <div class="actions"><button class="btn" type="submit" id="ff-save">Save fixture</button><button class="btn ghost" type="button" data-act="cancel-fx">Clear form</button></div>
+          </form>
+          <form class="panel form" id="gen-form" autocomplete="off">
+            <h3>Generate a league fixture list</h3>
+            <p class="muted" style="margin:0">Every team in the division plays every other team, home and away. Venue and alley come from each home team.</p>
+            <div class="row2">
+              <div class="field"><label for="g-div">Division</label><select id="g-div"></select></div>
+              <div class="field"><label for="g-start">First match night</label><input type="date" id="g-start"></div>
+            </div>
+            <div class="row2">
+              <div class="field"><label for="g-time">Start time</label><input type="time" id="g-time" value="19:45"></div>
+              <div class="field"><label for="g-gap">Weeks between rounds</label><input type="number" id="g-gap" min="1" max="8" value="1"></div>
+            </div>
+            <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="g-double" checked> Home and away (double round robin)</label>
+            <div class="actions"><button class="btn ghost" type="submit" id="g-go">Generate fixtures</button></div>
+          </form>
+        </div>
+      </div>`;
+    this.reset();
+    $("#fx-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
+    $("#gen-form").addEventListener("submit", e => { e.preventDefault(); this.generate(); });
+    $("#f-comp").addEventListener("change", () => $("#f-round-wrap").hidden = $("#f-comp").value !== "cup");
+    $("#f-home").addEventListener("change", () => {
+      const t = S.teams[$("#f-home").value];
+      if (t?.venue) { $("#f-venue").value = t.venue; this.syncAlley(t.alley); }
+    });
+    $("#f-venue").addEventListener("change", () => this.syncAlley());
+    $$(".seg button[data-comp]", el).forEach(b => b.addEventListener("click", () => { S.ui.adminComp = b.dataset.comp; this.refresh(); }));
+    $$(".seg button[data-st]", el).forEach(b => b.addEventListener("click", () => { S.ui.adminShow = b.dataset.st; this.refresh(); }));
+    $("#mf-list").addEventListener("input", e => { if (e.target.matches("input[data-pins]")) e.target.dataset.dirty = "1"; });
+    $("#g-start").value = nextWeekday(4);
+  },
+  reset() {
+    const f = $("#fx-form"); f.reset(); delete f.dataset.id;
+    $("#ff-title").textContent = "Add a fixture";
+    $("#f-round-wrap").hidden = true;
+    this.fillSelects();
+    $$("#mf-list .fx-admin").forEach(c => c.classList.remove("editing"));
+  },
+  fillSelects() {
+    const h = $("#f-home").value, a = $("#f-away").value, v = $("#f-venue").value;
+    $("#f-home").innerHTML = teamOptions(h, "Choose team");
+    $("#f-away").innerHTML = teamOptions(a, "Choose team");
+    $("#f-venue").innerHTML = venueOptions(v, "Home team's venue");
+    this.syncAlley();
+    const d = $("#g-div"), dv = d.value;
+    d.innerHTML = divisions().map(x => `<option${x === dv ? " selected" : ""}>${esc(x)}</option>`).join("") || `<option value="">No teams yet</option>`;
+  },
+  syncAlley(selected) {
+    const vid = $("#f-venue").value || S.teams[$("#f-home").value]?.venue;
+    const n = S.venues[vid]?.alleys || 1;
+    $("#f-alley-wrap").hidden = n <= 1 || !$("#f-venue").value;
+    const cur = selected ?? $("#f-alley").value ?? 1;
+    $("#f-alley").innerHTML = alleyOptions(n, Math.min(+cur || 1, n));
+  },
+  edit(id) {
+    const fx = S.fixtures[id]; if (!fx) return;
+    const f = $("#fx-form"); f.dataset.id = id;
+    $("#ff-title").textContent = "Edit fixture";
+    $("#f-comp").value = fx.comp; $("#f-round-wrap").hidden = fx.comp !== "cup"; $("#f-round").value = fx.round || "";
+    $("#f-date").value = fx.date || ""; $("#f-time").value = fx.time || "";
+    $("#f-home").innerHTML = teamOptions(fx.home, "Choose team"); $("#f-away").innerHTML = teamOptions(fx.away, "Choose team");
+    $("#f-venue").innerHTML = venueOptions(fx.venue || "", "Home team's venue");
+    this.syncAlley(fx.alley || 1);
+    $("#f-hp").value = fx.homePins ?? ""; $("#f-ap").value = fx.awayPins ?? "";
+    $$("#mf-list .fx-admin").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+  },
+  async save() {
+    const f = $("#fx-form");
+    const home = $("#f-home").value, away = $("#f-away").value;
+    if (!home || !away) return toast("Choose both teams.");
+    if (home === away) return toast("A team can't play itself.");
+    const hp = num($("#f-hp").value), ap = num($("#f-ap").value);
+    if ((hp == null) !== (ap == null)) return toast("Enter both teams' pins, or leave both empty.");
+    const venue = $("#f-venue").value || null;
+    const nAlleys = S.venues[venue]?.alleys || 1;
+    const comp = $("#f-comp").value;
+    const fx = {
+      comp, round: comp === "cup" ? ($("#f-round").value.trim() || "Round 1") : null,
+      date: $("#f-date").value || null, time: $("#f-time").value || null,
+      home, away, venue, alley: venue && nAlleys > 1 ? +$("#f-alley").value : null,
+      homePins: hp, awayPins: ap,
+    };
+    const id = f.dataset.id || newId(), editing = !!f.dataset.id;
+    $("#ff-save").disabled = true;
+    const ok = await commit(d => { d.fixtures[id] = { id, ...fx }; });
+    $("#ff-save").disabled = false;
+    if (ok) { toast(editing ? "Fixture saved" : "Fixture added"); this.reset(); }
+  },
+  async saveResult(id, row) {
+    const hp = num($(`input[data-pins="h"]`, row).value), ap = num($(`input[data-pins="a"]`, row).value);
+    if ((hp == null) !== (ap == null)) return toast("Enter both teams' pins, or clear both.");
+    if ((hp != null && hp < 0) || (ap != null && ap < 0)) return toast("Pins can't be negative.");
+    $$("input[data-pins]", row).forEach(i => delete i.dataset.dirty);
+    const ok = await commit(d => { if (d.fixtures[id]) Object.assign(d.fixtures[id], { homePins: hp, awayPins: ap }); });
+    if (ok) toast(hp == null ? "Result cleared" : `Result saved: ${teamName(S.fixtures[id].home)} ${hp} – ${ap} ${teamName(S.fixtures[id].away)}`);
+  },
+  async generate() {
+    const div = $("#g-div").value, start = $("#g-start").value;
+    const ids = sortedTeams().filter(t => (t.division || "Division 1") === div).map(t => t.id);
+    if (ids.length < 2) return toast("A division needs at least two teams.");
+    if (!start) return toast("Choose the first match night.");
+    const gap = Math.max(1, +$("#g-gap").value || 1), time = $("#g-time").value || null;
+    const rounds = roundRobin(ids, $("#g-double").checked);
+    const btn = $("#g-go"); btn.disabled = true;
+    let made = 0;
+    const ok = await commit(d => {
+      rounds.forEach((pairs, r) => {
+        const date = addDays(start, r * gap * 7);
+        for (const [home, away] of pairs) {
+          const id = newId() + made++;
+          d.fixtures[id] = { id, comp: "league", round: null, date, time, home, away, venue: null, alley: null, homePins: null, awayPins: null };
+        }
+      });
+    });
+    btn.disabled = false;
+    if (ok) toast(`Added ${made} fixtures for ${div}`);
+  },
+  refresh() {
+    this.fillSelects();
+    $$(".seg button[data-comp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.comp === S.ui.adminComp));
+    $$(".seg button[data-st]").forEach(b => b.setAttribute("aria-pressed", b.dataset.st === S.ui.adminShow));
+    const list = $("#mf-list");
+    const st = statusBlock(); if (st) return list.innerHTML = st;
+    let fx = Object.values(S.fixtures);
+    if (S.ui.adminComp !== "all") fx = fx.filter(f => f.comp === S.ui.adminComp);
+    if (S.ui.adminShow === "open") fx = fx.filter(f => !played(f));
+    if (S.ui.adminShow === "done") fx = fx.filter(played);
+    fx.sort(fxSort);
+    if (S.ui.adminShow === "done") fx.reverse();
+    if (!fx.length) return list.innerHTML = `<div class="empty"><strong>Nothing to show</strong>${Object.keys(S.fixtures).length ? "No fixtures match these filters." : "Add a fixture with the form, or generate a whole league fixture list."}</div>`;
+    // keep any pins typed but not yet saved
+    const kept = {};
+    $$("input[data-pins][data-dirty]", list).forEach(i => kept[i.id] = i.value);
+    const focusId = document.activeElement?.id;
+    const clash = clashes(), editing = $("#fx-form").dataset.id;
+    list.innerHTML = `<div class="fx-list">${fx.map(f => {
+      const { v, alley } = fxVenue(f);
+      return `<div class="fx-admin${f.id === editing ? " editing" : ""}" data-id="${esc(f.id)}">
+        <div class="top">${f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span>` : `<span class="chip">League</span>`}
+          <span>${fmtDate(f.date)}${f.time ? ` · ${esc(f.time)}` : ""}</span><span>${v ? esc(v.name) + (alley ? ` · Alley ${alley}` : "") : "No venue"}</span>
+          ${clash.has(f.id) ? `<span class="chip warn" title="Another fixture uses this venue and alley on the same date">Alley clash</span>` : ""}</div>
+        <div class="result-line">
+          <span class="h">${esc(teamName(f.home))}</span>
+          <input type="number" min="0" inputmode="numeric" id="hp-${esc(f.id)}" data-pins="h" value="${f.homePins ?? ""}" aria-label="${esc(teamName(f.home))} pins">
+          <span class="dash">–</span>
+          <input type="number" min="0" inputmode="numeric" id="ap-${esc(f.id)}" data-pins="a" value="${f.awayPins ?? ""}" aria-label="${esc(teamName(f.away))} pins">
+          <span class="a">${esc(teamName(f.away))}</span>
+        </div>
+        <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}">Save</button><button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
+      </div>`;
+    }).join("")}</div>`;
+    for (const [id, val] of Object.entries(kept)) { const i = document.getElementById(id); if (i) { i.value = val; i.dataset.dirty = "1"; } }
+    if (focusId && document.getElementById(focusId)) document.getElementById(focusId).focus({ preventScroll: true });
+  }
+};
+function roundRobin(ids, double) {
+  const t = [...ids]; if (t.length % 2) t.push(null);
+  const n = t.length, rounds = [];
+  for (let r = 0; r < n - 1; r++) {
+    const pairs = [];
+    for (let i = 0; i < n / 2; i++) {
+      const a = t[i], b = t[n - 1 - i];
+      if (a && b) pairs.push((r + i) % 2 ? [b, a] : [a, b]);
+    }
+    rounds.push(pairs);
+    t.splice(1, 0, t.pop());
+  }
+  return double ? rounds.concat(rounds.map(p => p.map(([a, b]) => [b, a]))) : rounds;
+}
+function addDays(d, n) { const dt = new Date(d + "T12:00:00"); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0, 10); }
+function nextWeekday(wd) { const dt = new Date(); dt.setHours(12); dt.setDate(dt.getDate() + ((wd - dt.getDay() + 7) % 7 || 7)); return dt.toISOString().slice(0, 10); }
+
+/* ---------- admin: league setup ---------- */
+VIEWS["league-setup"] = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>League setup</h2>
+      <p>The league's name, season and how many points each result is worth.</p></div></div>
+      <div class="split">
+        <form class="panel form" id="set-form" autocomplete="off">
+          <h3>League details</h3>
+          <div class="field"><label for="s-name">League name</label><input type="text" id="s-name"></div>
+          <div class="field"><label for="s-season">Season</label><input type="text" id="s-season" placeholder="2026–27"></div>
+          <div class="row2">
+            <div class="field"><label for="s-win">Points for a win</label><input type="number" id="s-win" min="0"></div>
+            <div class="field"><label for="s-draw">Points for a draw</label><input type="number" id="s-draw" min="0"></div>
+            <div class="field"><label for="s-loss">Points for a loss</label><input type="number" id="s-loss" min="0"></div>
+          </div>
+          <div class="actions"><button class="btn" type="submit">Save league details</button></div>
+        </form>
+        <div class="form-col">
+          <div class="panel">
+            <h3>Example data</h3>
+            <p class="muted">Load a short example season (three venues, six teams, fixtures and some results) to try the site, then clear it before entering your real league.</p>
+            <div class="actions"><button class="btn ghost" data-act="load-example">Load example season</button><button class="btn danger" data-act="clear-all">Delete all teams, venues and fixtures</button></div>
+          </div>
+        </div>
+      </div>`;
+    const f = $("#set-form");
+    f.addEventListener("input", () => f.dataset.dirty = "1");
+    f.addEventListener("submit", async e => {
+      e.preventDefault();
+      const data = { name: $("#s-name").value.trim() || DEFAULTS.name, season: $("#s-season").value.trim(),
+        win: num($("#s-win").value) ?? DEFAULTS.win, draw: num($("#s-draw").value) ?? DEFAULTS.draw, loss: num($("#s-loss").value) ?? DEFAULTS.loss };
+      if (await commit(d => { d.settings = data; })) { delete f.dataset.dirty; toast("League details saved"); }
+    });
+  },
+  refresh() {
+    const f = $("#set-form"); if (f.dataset.dirty) return;
+    const c = cfg();
+    $("#s-name").value = c.name; $("#s-season").value = c.season; $("#s-win").value = c.win; $("#s-draw").value = c.draw; $("#s-loss").value = c.loss;
+  }
+};
+
+/* ---------- example season & clearing ---------- */
+async function loadExample() {
+  if (S.busy) return;
+  S.busy = true; toast("Loading example season…");
+  const ok = await commit(d => {
+    const vid = {};
+    for (const [key, name, n, alleys] of [["plough", "The Plough", 1, 2], ["lion", "Red Lion", 2, 1], ["crown", "Crown & Anchor", 3, 3]]) {
+      const id = newId() + key;
+      d.venues[id] = { id, name: `${name} (example)`, address: `${n} Example Street\nSomerset`, phone: `01632 96000${n}`, alleys };
+      vid[key] = id;
+    }
+    const T = [
+      ["Plough Pinheads", "plough", 1], ["Ploughshares", "plough", 2], ["Lion Hearts", "lion", 1],
+      ["Anchor Men", "crown", 1], ["Crown Jewels", "crown", 2], ["Sunday Spares", "crown", 3],
+    ];
+    const tid = T.map(([name, v, alley], i) => {
+      const id = newId() + i;
+      d.teams[id] = { id, name: `${name} (example)`, division: "Division 1", venue: vid[v], alley, captain: "Example captain",
+        players: Array.from({ length: 8 }, (_, k) => `Example player ${k + 1}`) };
+      d.contacts[id] = { address: `${i + 10} Example Close\nSomerset`, mobile: `07700 9000${i + 10}` };
+      return id;
+    });
+    let seed = 7, k = 0;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const now = today();
+    roundRobin(tid, true).forEach((pairs, r) => {
+      const date = addDays("2026-09-10", r * 7);
+      for (const [home, away] of pairs) {
+        const id = newId() + "x" + k++, p = date < now;
+        d.fixtures[id] = { id, comp: "league", round: null, date, time: "19:45", home, away, venue: null, alley: null,
+          homePins: p ? 250 + Math.round(rnd() * 80) : null, awayPins: p ? 240 + Math.round(rnd() * 80) : null };
+      }
+    });
+    for (const [date, h, a, hp, ap] of [["2026-10-22", 0, 3, 301, 288], ["2026-10-22", 2, 5, 276, 276], ["2026-11-26", 1, 4, null, null]]) {
+      const id = newId() + "c" + k++;
+      d.fixtures[id] = { id, comp: "cup", round: "Round 1", date, time: "19:45", home: tid[h], away: tid[a], venue: null, alley: null, homePins: hp, awayPins: ap };
+    }
+  });
+  S.busy = false;
+  if (ok) toast("Example season loaded");
+}
+async function clearAll() {
+  if (S.busy) return;
+  S.busy = true;
+  const ok = await commit(d => { d.teams = {}; d.venues = {}; d.fixtures = {}; d.contacts = {}; });
+  S.busy = false;
+  if (ok) toast("All teams, venues and fixtures deleted");
+}
+
+/* ---------- actions ---------- */
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  if (act === "logout") { logout(); toast("Logged out"); }
+  if (act === "add-player") { $("#t-players").insertAdjacentHTML("beforeend", playerRow()); $("#t-players .player-row:last-child input").focus(); }
+  if (act === "rm-player") { const rows = $$("#t-players .player-row"); rows.length > 1 ? b.closest(".player-row").remove() : (rows[0].querySelector("input").value = ""); }
+  if (act === "edit-team") VIEWS.teams.edit(id);
+  if (act === "cancel-team") VIEWS.teams.reset();
+  if (act === "del-team") {
+    const n = Object.values(S.fixtures).filter(f => f.home === id || f.away === id).length;
+    if (n) return toast(`${teamName(id)} has ${n} fixture${n > 1 ? "s" : ""}. Delete those first.`);
+    if (!arm(b)) return;
+    if (await commit(d => { delete d.teams[id]; delete d.contacts[id]; })) {
+      toast("Team deleted");
+      if ($("#team-form")?.dataset.id === id) VIEWS.teams.reset();
+    }
+  }
+  if (act === "edit-venue") VIEWS.venues.edit(id);
+  if (act === "cancel-venue") VIEWS.venues.reset();
+  if (act === "del-venue") {
+    const n = Object.values(S.teams).filter(t => t.venue === id).length;
+    if (n) return toast(`${n} team${n > 1 ? "s use" : " uses"} this venue. Move ${n > 1 ? "them" : "it"} to another venue first.`);
+    if (!arm(b)) return;
+    if (await commit(d => { delete d.venues[id]; })) {
+      toast("Venue deleted");
+      if ($("#venue-form")?.dataset.id === id) VIEWS.venues.reset();
+    }
+  }
+  if (act === "save-result") VIEWS["manage-fixtures"].saveResult(id, b.closest(".fx-admin"));
+  if (act === "edit-fx") VIEWS["manage-fixtures"].edit(id);
+  if (act === "cancel-fx") VIEWS["manage-fixtures"].reset();
+  if (act === "del-fx") {
+    if (!arm(b, "Confirm")) return;
+    if (await commit(d => { delete d.fixtures[id]; })) toast("Fixture deleted");
+  }
+  if (act === "load-example") loadExample();
+  if (act === "clear-all") { if (!arm(b, "Click again to delete everything")) return; clearAll(); }
+});
+window.addEventListener("hashchange", route);
+// Pick up other people's changes when someone comes back to the tab.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && Date.now() - S.loadedAt > 60000) load();
+});
+
+/* ---------- boot ---------- */
+function boot() {
+  S.token = storage.get();
+  S.admin = !!S.token;
+  route();
+  load();
+}
+boot();
+</script>
+</body>
+</html>
