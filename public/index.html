@@ -155,6 +155,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .postcode { max-width: 11em; text-transform: uppercase; }
 .lookup-note { font-size: .84rem; color: var(--muted); margin: 0; }
 .lookup-note:empty { display: none; }
+.list-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.list-tools input[type=search] { flex: 1 1 240px; width: auto; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
+.list-tools input[type=search]:focus { border-color: var(--brass); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 30%, transparent); }
+.list-count { font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .imp-summary { display: grid; gap: 6px; }
 .imp-summary:empty { display: none; }
 .imp-problem { margin: 0; font-size: .84rem; font-weight: 700; color: var(--loss); }
@@ -568,6 +572,26 @@ function venueOptions(selected, blank = "No home venue") {
 function alleyOptions(n, selected) {
   return Array.from({ length: n }, (_, i) => `<option value="${i + 1}"${i + 1 === +selected ? " selected" : ""}>Alley ${i + 1}</option>`).join("");
 }
+/* ---------- list search ---------- */
+const searchText = s => String(s || "").toLowerCase().replace(/[“”"'’.,]/g, "").replace(/\s+/g, " ");
+function wireSearch(input, key, run) {
+  input.value = S.ui[key] || "";
+  input.addEventListener("input", () => { S.ui[key] = input.value; run(); });
+  input.addEventListener("keydown", e => { if (e.key === "Escape" && input.value) { e.preventDefault(); input.value = ""; S.ui[key] = ""; run(); } });
+}
+// Hides cards that don't contain every word typed, and reports how many are showing.
+function applySearch(list, query, countEl, noun) {
+  const words = searchText(query).split(" ").filter(Boolean);
+  const cards = $$(".card", list);
+  let shown = 0;
+  for (const c of cards) { c.hidden = !words.every(w => c.dataset.search.includes(w)); if (!c.hidden) shown++; }
+  const plural = n => `${n} ${noun}${n === 1 ? "" : "s"}`;
+  countEl.textContent = !cards.length ? "" : words.length ? `Showing ${shown} of ${plural(cards.length)}` : plural(cards.length);
+  $(".no-match", list)?.remove();
+  if (words.length && cards.length && !shown)
+    list.insertAdjacentHTML("beforeend", `<div class="empty no-match"><strong>No matches</strong>Nothing matches “${esc(query.trim())}”. Check the spelling or press Esc to clear the search.</div>`);
+}
+
 /* ---------- names & addresses ---------- */
 function splitName(s) {
   const t = String(s || "").trim().replace(/\s+/g, " "), i = t.indexOf(" ");
@@ -781,7 +805,13 @@ VIEWS.teams = {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Teams</h2>
       <p>Captains' addresses and mobile numbers are only visible to league admins.</p></div></div>
       <div class="split">
-        <div id="team-list"></div>
+        <div>
+          <div class="list-tools" role="search">
+            <input type="search" id="team-search" placeholder="Search teams, venues, captains or players" aria-label="Search teams">
+            <span class="list-count" id="team-count" aria-live="polite"></span>
+          </div>
+          <div id="team-list"></div>
+        </div>
         <div class="form-col"><form class="panel form" id="team-form" autocomplete="off">
           <h3 id="tf-title">Add a team</h3>
           <div class="field"><label for="t-name">Team name</label><input type="text" id="t-name" required></div>
@@ -823,6 +853,7 @@ VIEWS.teams = {
     $("#t-venue").addEventListener("change", () => this.syncAlley());
     $("#t-players").addEventListener("input", () => this.checkDuplicates());
     $("#imp-text").addEventListener("input", () => this.importSummary());
+    wireSearch($("#team-search"), "teamSearch", () => this.filter());
     $("#imp-file").addEventListener("change", async e => {
       const file = e.target.files[0]; if (!file) return;
       $("#imp-text").value = (await file.text()).replace(/^\uFEFF/, "");
@@ -1001,6 +1032,7 @@ VIEWS.teams = {
     this.importSummary();
     this.playerSummary();
     const list = $("#team-list");
+    $("#team-count").textContent = "";
     const st = statusBlock(); if (st) return list.innerHTML = st;
     const teams = sortedTeams();
     if (!teams.length) return list.innerHTML = `<div class="empty"><strong>No teams yet</strong>Use the form to add the first team${Object.keys(S.venues).length ? "" : `. Adding <a href="#venues">venues</a> first lets you pick each team's home alley`}.
@@ -1008,7 +1040,8 @@ VIEWS.teams = {
     const editing = $("#team-form").dataset.id;
     list.innerHTML = `<div class="cards">${teams.map(t => {
       const c = S.contacts[t.id] || {}, v = S.venues[t.venue], players = playersOf(t);
-      return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}">
+      const search = [t.name, v?.name, fullName(captainOf(t)), ...players.map(playerLabel)].join(" ");
+      return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}" data-search="${esc(searchText(search))}">
         <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
         <dl class="kv"><dt>Captain</dt><dd>${esc(fullName(captainOf(t)) || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
@@ -1016,7 +1049,9 @@ VIEWS.teams = {
           <div class="tags">${players.map(p => `<span class="tag">${esc(playerLabel(p))}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
       </article>`;
     }).join("")}</div>`;
-  }
+    this.filter();
+  },
+  filter() { applySearch($("#team-list"), S.ui.teamSearch, $("#team-count"), "team"); }
 };
 
 /* ---------- admin: venues ---------- */
@@ -1025,7 +1060,13 @@ VIEWS.venues = {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Venues</h2>
       <p>Where a venue has more than one alley, give each home team its own alley so fixtures on the same night don't clash.</p></div></div>
       <div class="split">
-        <div id="venue-list"></div>
+        <div>
+          <div class="list-tools" role="search">
+            <input type="search" id="venue-search" placeholder="Search venues, towns, postcodes or teams" aria-label="Search venues">
+            <span class="list-count" id="venue-count" aria-live="polite"></span>
+          </div>
+          <div id="venue-list"></div>
+        </div>
         <div class="form-col"><form class="panel form" id="venue-form" autocomplete="off">
           <h3 id="vf-title">Add a venue</h3>
           <div class="field"><label for="v-name">Venue name</label><input type="text" id="v-name" required></div>
@@ -1056,6 +1097,7 @@ VIEWS.venues = {
     $("#venue-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
     $("#v-alleys").addEventListener("input", () => this.renderAssign());
     $("#v-postcode").addEventListener("change", () => this.locate());
+    wireSearch($("#venue-search"), "venueSearch", () => this.filter());
     $("#vimp-file").addEventListener("change", async e => {
       const file = e.target.files[0];
       this.importText = file ? await file.text() : "";
@@ -1204,6 +1246,7 @@ VIEWS.venues = {
   refresh() {
     this.importSummary();
     const list = $("#venue-list");
+    $("#venue-count").textContent = "";
     dropMaps(list);
     const st = statusBlock(); if (st) return list.innerHTML = st;
     const venues = sortedVenues();
@@ -1213,7 +1256,8 @@ VIEWS.venues = {
       const teams = sortedTeams().filter(t => t.venue === v.id);
       const alleys = Array.from({ length: v.alleys || 1 }, (_, i) => i + 1);
       const a = venueAddr(v), mapped = Number.isFinite(v.lat) && Number.isFinite(v.lng);
-      return `<article class="card${v.id === editing ? " editing" : ""}" data-id="${esc(v.id)}">
+      const search = [v.name, addrText(a), v.phone, ...teams.map(t => t.name)].join(" ");
+      return `<article class="card${v.id === editing ? " editing" : ""}" data-id="${esc(v.id)}" data-search="${esc(searchText(search))}">
         <div class="card-head"><div><h3>${esc(v.name)}</h3><div class="sub">${v.alleys > 1 ? `${v.alleys} alleys` : "1 alley"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-venue" data-id="${esc(v.id)}">Edit</button><button class="btn danger sm" data-act="del-venue" data-id="${esc(v.id)}">Delete</button></div></div>
         <dl class="kv"><dt>Address</dt><dd>${esc(addrText(a) || "—")}</dd><dt>Telephone</dt><dd>${esc(v.phone || "—")}</dd></dl>
@@ -1225,6 +1269,13 @@ VIEWS.venues = {
       </article>`;
     }).join("")}</div>`;
     $$(".map[data-lat]", list).forEach(el => drawMap(el, +el.dataset.lat, +el.dataset.lng, el.dataset.name));
+    this.filter();
+  },
+  filter() {
+    const list = $("#venue-list");
+    applySearch(list, S.ui.venueSearch, $("#venue-count"), "venue");
+    // Maps drawn while their card was hidden need resizing once shown.
+    $$(".card:not([hidden]) .map", list).forEach(el => maps.get(el)?.invalidateSize());
   }
 };
 
