@@ -1,58 +1,39 @@
-# Skittles League website
+# Skittlers
 
-League tables, league fixtures and cup fixtures, plus a password-protected admin area for teams, venues, fixtures and results.
+Websites for skittles leagues. A league secretary signs up, creates one or more leagues, and for each season adds venues, teams and players, sets up divisions, and publishes tables, fixtures and results.
 
-## How it fits together
+## How it works
+
+1. **Account.** A secretary signs up with their name, email and password. New accounts get a 30-day free trial, then a yearly subscription. Payments aren't connected yet; the overall admin sets each account's paid-until date.
+2. **League.** Each league gets its own web address, such as `skittlers.co.uk/yeovil` (and later `yeovil.skittlers.co.uk`).
+3. **Season.** Each season has a start and finish date. A new season can bring across venues, teams (with captains' details), players and divisions from an earlier one.
+4. **Venues, teams and players.** Add them one at a time or import them from CSV files (templates are on the Venues and Teams pages).
+5. **Divisions.** Choose how many, then put each team in the division it plays in. More can be added later.
+6. **Fixtures and results.** Generate a league fixture list per division, add cup ties, and enter results. The tables update automatically.
+
+The **overall admin** (the account whose email matches `SUPERADMIN_EMAIL`) can see and manage every league, set subscriptions, reset passwords, and copy in the data from the original single-league version of the site.
+
+## Code
 
 | Part | What it does |
 | --- | --- |
-| `public/index.html` | The whole website (one page). |
-| `netlify/functions/api.mjs` | A small API that runs on Netlify. Anyone can read the league data; saving needs the admin password. |
-| Netlify Blobs | Netlify's built-in storage. Holds the league data and, separately, the captains' addresses and mobile numbers. |
+| `public/index.html` | The whole website. `/` is the account area; `/<league-address>` is a league's site. |
+| `lib/core.mjs` | The API: accounts, leagues, seasons and season data. It doesn't depend on Netlify, so the same code runs in the preview. |
+| `netlify/functions/api.mjs` | Runs the API on Netlify, storing data in Netlify Blobs (store `skittlers`). |
+| `dev/` | Local preview server and the build for the clickable preview. |
 
-Captains' addresses and mobile numbers are never sent to public visitors. Only someone logged in as admin can see them.
+Captains' addresses and mobile numbers are stored separately and only returned to the league's secretary and the overall admin.
 
-## Deploying to Netlify
+## Netlify settings
 
-Netlify's drag-and-drop deploy doesn't include Functions, so use one of these two methods.
+Under **Site configuration → Environment variables**:
 
-### Option A: from GitHub (recommended)
+- `SESSION_SECRET`: any long random string. Keeps logins secure; changing it logs everyone out.
+- `SUPERADMIN_EMAIL`: the email address of the overall admin. Sign up with this email to get the overall admin pages.
 
-1. Put this folder in a GitHub repository.
-2. In Netlify, choose **Add new site → Import an existing project** and pick the repository. The build settings come from `netlify.toml`, so leave them as they are.
-3. Go to **Site configuration → Environment variables** and add:
-   - `ADMIN_PASSWORD`: the password league admins will use to log in.
-   - `SESSION_SECRET`: any long random string. It keeps admin logins secure, and changing it logs everyone out.
-4. Go to **Deploys → Trigger deploy** so the new variables take effect.
+`ADMIN_PASSWORD` was used by the original single-league version and is no longer needed.
 
-After that, every push to GitHub redeploys the site. Your league data is kept between deploys.
-
-### Option B: from your computer with the Netlify CLI
-
-```bash
-npm install
-```
-
-```bash
-npx netlify-cli login
-```
-
-```bash
-npx netlify-cli init
-```
-
-Set `ADMIN_PASSWORD` and `SESSION_SECRET` as in step 3 above, then deploy:
-
-```bash
-npx netlify-cli deploy --prod
-```
-
-## Using it
-
-- Open the site and click **Admin login**, then enter the admin password.
-- To try it out, open **League setup → Load example season**. When you're done, use **Delete all teams, venues and fixtures** to clear it.
-- Admin logins last 12 hours on each device.
-- Every admin shares the one password. If two admins save at the same moment, the second is asked to redo the change instead of overwriting the first.
+After changing a variable, go to **Deploys → Trigger deploy** so it takes effect. Every push to `main` deploys automatically.
 
 ## Running it locally
 
@@ -60,8 +41,8 @@ npx netlify-cli deploy --prod
 npm install
 ```
 
-Create a `.env` file containing `ADMIN_PASSWORD=...` and `SESSION_SECRET=...`, then run:
-
 ```bash
-npx netlify-cli dev
+npm run preview
 ```
+
+Then open http://localhost:8899. Data is kept in memory until the server stops. Sign up as `owner@skittlers.test` to be the overall admin.

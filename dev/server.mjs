@@ -1,13 +1,15 @@
 // Local preview: serves public/ and runs the Netlify Function with an in-memory store.
+// The overall admin is whoever signs up as owner@skittlers.test (or SUPERADMIN_EMAIL).
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { extname, normalize } from "node:path";
 
 const root = new URL("..", import.meta.url).pathname;
 const pub = root + "public";
+process.env.SESSION_SECRET ||= "local-secret";
+process.env.SUPERADMIN_EMAIL ||= "owner@skittlers.test";
 const fn = await import(root + "netlify/functions/api.mjs");
-process.env.ADMIN_PASSWORD ||= "test-pass-123"; process.env.SESSION_SECRET ||= "local-secret";
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".csv": "text/csv" };
 
 http.createServer(async (req, res) => {
   const path = new URL(req.url, "http://localhost").pathname;
@@ -22,5 +24,8 @@ http.createServer(async (req, res) => {
   try {
     const body = await readFile(file);
     res.writeHead(200, { "content-type": TYPES[extname(file)] || "application/octet-stream" }); res.end(body);
-  } catch { res.writeHead(404); res.end("Not found"); }
-}).listen(8899, () => console.log("Preview at http://localhost:8899 (admin password: " + process.env.ADMIN_PASSWORD + ")"));
+  } catch {
+    // Like Netlify's redirect rule: any other address (a league's page) gets the app.
+    res.writeHead(200, { "content-type": "text/html" }); res.end(await readFile(pub + "/index.html"));
+  }
+}).listen(8899, () => console.log(`Preview at http://localhost:8899 (overall admin: sign up as ${process.env.SUPERADMIN_EMAIL})`));

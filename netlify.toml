@@ -8,3 +8,9 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Every league lives at its own address (e.g. /my-league); they all load the app.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
