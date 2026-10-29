@@ -638,7 +638,6 @@ VIEWS.teams = {
         <div class="form-col"><form class="panel form" id="team-form" autocomplete="off">
           <h3 id="tf-title">Add a team</h3>
           <div class="field"><label for="t-name">Team name</label><input type="text" id="t-name" required></div>
-          <div class="field"><label for="t-division">Division</label><input type="text" id="t-division" list="div-list" placeholder="Division 1"><datalist id="div-list"></datalist></div>
           <div class="row2">
             <div class="field"><label for="t-venue">Home venue</label><select id="t-venue"></select></div>
             <div class="field" id="t-alley-wrap" hidden><label for="t-alley">Home alley</label><select id="t-alley"></select></div>
@@ -713,7 +712,6 @@ VIEWS.teams = {
     const f = $("#team-form"); f.dataset.id = id;
     $("#tf-title").textContent = `Edit ${t.name}`;
     $("#t-name").value = t.name || "";
-    $("#t-division").value = t.division || "";
     $("#t-venue").innerHTML = venueOptions(t.venue || "");
     this.syncAlley(t.alley || 1);
     const cap = captainOf(t);
@@ -736,7 +734,7 @@ VIEWS.teams = {
     const venue = $("#t-venue").value || null;
     const nAlleys = S.venues[venue]?.alleys || 1;
     const team = {
-      name, division: $("#t-division").value.trim() || "Division 1", venue,
+      name, venue,
       alley: venue ? Math.min(+$("#t-alley").value || 1, nAlleys) : null,
       captainFirst: $("#t-cap-first").value.trim(), captainLast: $("#t-cap-last").value.trim(),
       players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim() })).filter(p => p.first || p.last),
@@ -744,12 +742,16 @@ VIEWS.teams = {
     const contact = { address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
     const id = f.dataset.id || newId(), editing = !!f.dataset.id;
     $("#tf-save").disabled = true;
-    const ok = await commit(d => { d.teams[id] = { id, ...team }; d.contacts[id] = contact; });
+    // Divisions are set elsewhere, so keep whatever division the team already has.
+    const ok = await commit(d => {
+      const division = d.teams[id]?.division;
+      d.teams[id] = { id, ...team, ...(division ? { division } : {}) };
+      d.contacts[id] = contact;
+    });
     $("#tf-save").disabled = false;
     if (ok) { toast(editing ? `Saved ${name}` : `Added ${name}`); this.reset(); }
   },
   refresh() {
-    $("#div-list").innerHTML = divisions().map(d => `<option value="${esc(d)}">`).join("");
     const vSel = $("#t-venue"), keep = vSel.value;
     vSel.innerHTML = venueOptions(keep); this.syncAlley();
     this.checkDuplicates();
@@ -762,7 +764,7 @@ VIEWS.teams = {
     list.innerHTML = `<div class="cards">${teams.map(t => {
       const c = S.contacts[t.id] || {}, v = S.venues[t.venue], players = playersOf(t);
       return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}">
-        <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${esc(t.division || "Division 1")} · ${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
+        <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
         <dl class="kv"><dt>Captain</dt><dd>${esc(fullName(captainOf(t)) || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
         <div><div class="field"><span class="lbl">Players (${players.length})</span></div>
