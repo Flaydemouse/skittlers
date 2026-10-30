@@ -101,6 +101,13 @@ table.league { width: 100%; border-collapse: collapse; font-variant-numeric: tab
 .league .team { text-align: left; font-weight: 600; white-space: normal; min-width: 180px; }
 .league .pts { font-weight: 800; font-size: 1.05rem; background: var(--sunk); }
 .league th.pts { background: var(--sunk); color: var(--ink); }
+@media (max-width: 560px) {
+  .league th, .league td { padding: 9px 6px; }
+  .league .pos { width: 34px; }
+  table.league { min-width: 100%; width: max-content; }
+  .league .team { min-width: 0; }
+  .league .team span { display: block; max-width: 128px; }
+}
 .neg { color: var(--loss); }
 .pos-val { color: var(--win); }
 .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; color: var(--muted); font-size: .85rem; }
@@ -811,15 +818,14 @@ VIEWS.tables = {
       <div class="table-scroll"><table class="league">
         <thead><tr>
           <th class="pos"><abbr title="Position">Pos</abbr></th><th class="team">Team</th>
-          <th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th>
-          <th>Home pins</th><th>Away pins</th><th>Pin diff</th><th>Away pin diff</th><th class="pts"><abbr title="Points">Pts</abbr></th>
+          <th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th><th class="pts"><abbr title="Points">Pts</abbr></th>
+          <th>Home pins</th><th>Away pins</th><th>Pin diff</th><th>Away pin diff</th>
         </tr></thead>
         <tbody>${g.rows.map((r, i) => `<tr>
-          <td class="pos">${i + 1}</td><td class="team">${esc(r.t.name)}</td>
-          <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
+          <td class="pos">${i + 1}</td><td class="team"><span>${esc(r.t.name)}</span></td>
+          <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="pts">${r.pts}</td>
           <td>${r.hp.toLocaleString("en-GB")}</td><td>${r.ap.toLocaleString("en-GB")}</td>
-          <td class="${cls(r.pd)}">${signed(r.pd)}</td><td class="${cls(r.apd)}">${signed(r.apd)}</td>
-          <td class="pts">${r.pts}</td></tr>`).join("")}</tbody>
+          <td class="${cls(r.pd)}">${signed(r.pd)}</td><td class="${cls(r.apd)}">${signed(r.apd)}</td></tr>`).join("")}</tbody>
       </table></div></section>`).join("") +
       `<div class="legend"><span><b>Home pins</b> total pins scored at home</span><span><b>Away pins</b> total pins scored away</span><span><b>Pin diff</b> all pins for minus against</span><span><b>Away pin diff</b> away pins for minus against</span></div>`;
   }
