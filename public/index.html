@@ -222,8 +222,10 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cup-step > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--baize); color: var(--on-baize); font-family: var(--font-body); font-size: .85rem; }
 .cup-step small { font-family: var(--font-body); font-size: .85rem; color: var(--muted); font-weight: 500; }
 .pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; max-height: 360px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 6px; }
-.pick { display: flex; gap: 8px; align-items: center; padding: 4px 2px; }
-.pick:has(input:disabled) { color: var(--muted); }
+.pick { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 4px 2px; }
+.pick > label:first-child { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.pick:has(input[data-entrant]:disabled) { color: var(--muted); }
+.bye-toggle { flex: none; display: flex; gap: 4px; align-items: center; font-size: .78rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--brass-ink); padding: 2px 8px; border-radius: 999px; background: var(--sunk); }
 .cup-round { display: grid; gap: 8px; }
 .cup-round-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .cup-round-head h5 { margin: 0; font-size: 1rem; flex: 1 1 140px; }
@@ -949,7 +951,7 @@ const cupRoundCount = n => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
 function roundName(r, total) { const left = total - r; return left === 0 ? "Final" : left === 1 ? "Semi-finals" : left === 2 ? "Quarter-finals" : `Round ${r}`; }
 function cupPlanText(structure, n) {
   if (!(n >= 2)) return "A cup needs at least 2 entries.";
-  if (structure === "final") return `${entriesText(n)} play one final game. The highest pins wins.`;
+  if (structure === "final") return `All ${entriesText(n)} play each other in one final game, so any number from 2 works, odd or even. The highest pins wins.`;
   const R = cupRoundCount(n), byes = 2 ** R - n;
   const names = Array.from({ length: R }, (_, i) => roundName(i + 1, R));
   return `${entriesText(n)}: ${plural(R, "round")} (${names.join(", ")}).` +
@@ -1018,15 +1020,16 @@ function cupBracket(cup) {
   }
   return { rounds, champion: rounds.at(-1).matches[0].winner };
 }
-// Random draw in which no two first-round home sides (the first-named) share a venue and alley,
+// Random draw (entries chosen for a bye are guaranteed one) in which no two first-round home sides (the first-named) share a venue and alley,
 // because the first round is played on one night. Tries fresh shuffles, swapping home and away
 // within a match where that helps; if it can't be done, returns the draw with the fewest clashes.
-function drawAvoidingClashes(cup, ids) {
+function drawAvoidingClashes(cup, ids, byeIds = []) {
   const size = 2 ** cupRoundCount(cup.entries), order = seedOrder(size), n = ids.length;
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   let best = null, bestClashes = Infinity;
   for (let attempt = 0; attempt < 3000 && bestClashes > 0; attempt++) {
-    const d = shuffle([...ids]), used = new Set();
+    // Entries given a bye take the top seeds, which are the places drawn against a bye.
+    const chosen = new Set(byeIds), d = [...shuffle(ids.filter(id => chosen.has(id))), ...shuffle(ids.filter(id => !chosen.has(id)))], used = new Set();
     let clashes = 0;
     for (let k = 0; k < size / 2; k++) {
       const pa = order[2 * k] - 1, pb = order[2 * k + 1] - 1;
@@ -1139,7 +1142,16 @@ VIEWS.cups = {
     f.addEventListener("submit", e => { e.preventDefault(); this.create(); });
     const detail = $("#cup-detail");
     detail.addEventListener("change", e => {
-      if (e.target.matches("input[data-entrant]")) { e.target.checked ? this.picked.add(e.target.value) : this.picked.delete(e.target.value); this.updatePickCount(); }
+      if (e.target.matches("input[data-entrant]")) {
+        if (e.target.checked) this.picked.add(e.target.value);
+        else { this.picked.delete(e.target.value); this.byes.delete(e.target.value); }
+        this.updatePickCount();
+      }
+      if (e.target.matches("input[data-bye]")) {
+        if (e.target.checked && this.byes.size >= this.spareByes()) { e.target.checked = false; return toast("There are no spare places left to give as byes. Choose fewer entries or raise the number of places."); }
+        e.target.checked ? this.byes.add(e.target.value) : this.byes.delete(e.target.value);
+        this.updatePickCount();
+      }
       if (e.target.matches("[data-round-date], [data-round-time]")) this.saveRoundDate(+e.target.closest("[data-round]").dataset.round);
       if (e.target.matches("select[data-venue]")) {
         const row = e.target.closest("[data-match]"), v = S.venues[e.target.value], wrap = $("[data-alley-wrap]", row);
@@ -1186,7 +1198,10 @@ VIEWS.cups = {
     const search = $("#ce-search")?.value || "";
     const drawn = cup.structure === "full" && cup.draw?.length > 0;
     const n = (cup.entrants || []).length;
-    if (!this.picked || this.picked.cupId !== cup.id) { this.picked = new Set((cup.entrants || []).map(e => e.id)); this.picked.cupId = cup.id; }
+    if (!this.picked || this.picked.cupId !== cup.id) {
+      this.picked = new Set((cup.entrants || []).map(e => e.id)); this.picked.cupId = cup.id;
+      this.byes = new Set((cup.byeIds || []).filter(id => this.picked.has(id)));
+    }
     const step = (num, title) => `<h4 class="cup-step"><span>${num}</span>${title}</h4>`;
     let html = `<section class="panel cup-detail">
       <div class="card-head"><div><div class="eyebrow">Managing</div><h3>${esc(cup.name)}</h3><div class="sub">${esc(cupSummary(cup))}</div></div>
@@ -1200,12 +1215,15 @@ VIEWS.cups = {
 
     // Step 1: entries
     html += step(1, `Entries <small>${n} of ${cup.entries} chosen</small>`);
-    if (drawn) html += `<p class="muted">${esc(cup.entrants.map(e => entrantLabel(cup, e.id)).join(", "))}${cup.draw.length < cup.entries ? `. The other ${cup.entries - cup.draw.length} ${cup.entries - cup.draw.length === 1 ? "place is a bye" : "places are byes"}.` : ""}</p>`;
+    if (drawn) html += `<p class="muted">${esc(cup.entrants.map(e => entrantLabel(cup, e.id)).join(", "))}${cup.draw.length < cup.entries ? `. The other ${cup.entries - cup.draw.length} ${cup.entries - cup.draw.length === 1 ? "place is a bye" : "places are byes"}.` : ""}${cup.byeIds?.length ? ` Byes chosen for: ${esc(cup.byeIds.map(id => entrantLabel(cup, id)).join(", "))}.` : ""}</p>`;
     else {
       const cands = cupCandidates(cup);
       html += cands.length ? `<div class="list-tools"><input type="search" id="ce-search" placeholder="Search ${cup.format === "team" ? "teams" : "players or teams"}" aria-label="Search entries" value="${esc(search)}"><span class="list-count" id="ce-count"></span></div>
         <div class="actions"><button class="btn ghost sm" data-act="ce-all">Select all</button><button class="btn ghost sm" data-act="ce-none">Clear all</button></div>
-        <div class="pick-grid" id="ce-list">${cands.map(c => `<label class="pick" data-search="${esc(searchText(c.search))}"><input type="checkbox" data-entrant value="${esc(c.id)}" data-label="${esc(c.label)}"${this.picked.has(c.id) ? " checked" : ""}> ${esc(c.label)}</label>`).join("")}</div>
+        <div class="pick-grid" id="ce-list">${cands.map(c => `<div class="pick" data-search="${esc(searchText(c.search))}">
+          <label><input type="checkbox" data-entrant value="${esc(c.id)}" data-label="${esc(c.label)}"${this.picked.has(c.id) ? " checked" : ""}> ${esc(c.label)}</label>
+          ${cup.structure === "full" ? `<label class="bye-toggle" title="Goes straight through to the next round"><input type="checkbox" data-bye value="${esc(c.id)}"${this.byes.has(c.id) ? " checked" : ""}> Bye</label>` : ""}</div>`).join("")}</div>
+        ${cup.structure === "full" ? `<p class="lookup-note" id="ce-byes"></p>` : `<p class="lookup-note">Everyone entered plays in the one final game.</p>`}
         <div class="actions"><button class="btn" data-act="cup-save-entries">Save entries</button></div>`
         : `<p class="muted">${cup.format === "team" ? `Add teams on the <a href="#teams">Teams</a> page first.` : `Add players to teams on the <a href="#teams">Teams</a> page first.`}</p>`;
     }
@@ -1270,10 +1288,24 @@ VIEWS.cups = {
     $(".tie-pick", row).hidden = !(a !== "" && a === b);
   },
   filterPick() { const l = $("#ce-list"); if (l) applySearch(l, $("#ce-search").value, $("#ce-count"), S.cups[S.ui.cupId]?.format === "team" ? "team" : "player", ".pick"); },
+  // Byes go to entries when there are fewer entries than places in the bracket.
+  spareByes() { const cup = this.cup(); return cup ? Math.max(0, 2 ** cupRoundCount(cup.entries) - this.picked.size) : 0; },
   updatePickCount() {
     const cup = this.cup(), l = $("#ce-list"); if (!cup || !l) return;
     const full = this.picked.size >= cup.entries;
     $$("input[data-entrant]", l).forEach(i => { i.disabled = full && !i.checked; });
+    const spare = this.spareByes();
+    for (const id of [...this.byes]) if (!this.picked.has(id) || this.byes.size > spare) this.byes.delete(id);
+    $$(".bye-toggle", l).forEach(t => {
+      const box = $("input", t), on = this.picked.has(box.value);
+      t.hidden = !on || !spare; box.checked = on && this.byes.has(box.value);
+    });
+    const note = $("#ce-byes");
+    const left = spare - this.byes.size, byeWord = n => `${n} ${n === 1 ? "bye" : "byes"}`;
+    if (note) note.textContent = !spare ? "Every place is filled, so there are no byes. To give an entry a bye, choose fewer entries than places."
+      : !this.byes.size ? `${byeWord(spare)} to give out. Tick Bye next to an entry to choose who gets one; any you don't choose go to entries at random in the draw.`
+      : left ? `${byeWord(spare)} to give out. You've chosen who gets ${this.byes.size}; the other ${left} ${left === 1 ? "goes" : "go"} to entries at random in the draw.`
+      : `${byeWord(spare)} to give out, and you've chosen who gets ${spare === 1 ? "it" : "all of them"}.`;
     const small = $(".cup-step small"); if (small) small.textContent = `${this.picked.size} of ${cup.entries} chosen`;
     this.renderDrawBox();
   },
@@ -1312,7 +1344,8 @@ VIEWS.cups = {
   async saveEntries() {
     const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
     if (picked.length > cup.entries) return toast(`This cup has ${cup.entries} entries. Untick ${picked.length - cup.entries}.`);
-    if (await commit(d => { d.cups[cup.id].entrants = picked; if (cup.structure === "final") { const keep = new Set(picked.map(p => p.id)); const sc = d.cups[cup.id].final.scores || {}; for (const k of Object.keys(sc)) if (!keep.has(k)) delete sc[k]; } }))
+    const byeIds = [...this.byes];
+    if (await commit(d => { d.cups[cup.id].entrants = picked; d.cups[cup.id].byeIds = byeIds; if (cup.structure === "final") { const keep = new Set(picked.map(p => p.id)); const sc = d.cups[cup.id].final.scores || {}; for (const k of Object.keys(sc)) if (!keep.has(k)) delete sc[k]; } }))
       toast(picked.length === cup.entries ? (cup.structure === "full" ? "Entries saved. Now make the draw." : "Entries saved. Now add the final's details.")
         : `Entries saved: ${picked.length} of ${cup.entries}.${picked.length >= 2 && cup.structure === "full" ? " You can make the draw now and the empty places will be byes." : ""}`);
   },
@@ -1320,9 +1353,10 @@ VIEWS.cups = {
     // Uses the entries ticked on screen, saved or not.
     const cup = this.cup(), ticked = $("#ce-list") ? $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label })) : cup.entrants;
     if (ticked.length < 2) return toast("Choose at least 2 entries first.");
-    const { draw: ids, clashes } = drawAvoidingClashes(cup, ticked.map(e => e.id));
+    const byeIds = [...this.byes].filter(id => ticked.some(e => e.id === id));
+    const { draw: ids, clashes } = drawAvoidingClashes(cup, ticked.map(e => e.id), byeIds);
     const byes = 2 ** cupRoundCount(cup.entries) - ids.length;
-    if (await commit(d => { Object.assign(d.cups[cup.id], { entrants: ticked, draw: ids, results: {}, schedule: {} }); }))
+    if (await commit(d => { Object.assign(d.cups[cup.id], { entrants: ticked, byeIds, draw: ids, results: {}, schedule: {} }); }))
       toast(`The draw has been made${byes ? ` with ${byes} ${byes === 1 ? "bye" : "byes"}` : ""}.` +
         (clashes ? ` ${clashes === 1 ? "One round-1 match shares" : `${clashes} round-1 matches share`} a home alley with another and couldn't be avoided. They're marked below, so change their venue.` : " No two round-1 home teams share an alley."));
   },
