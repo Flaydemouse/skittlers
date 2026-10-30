@@ -208,6 +208,56 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .temp-pass { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--warn-bg); font-size: .9rem; overflow-wrap: anywhere; }
 .division.loose h3 { color: var(--muted); }
 body:has(.save-bar:not([hidden])) .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.radios { display: grid; gap: 6px; }
+fieldset.field { border: 0; margin: 0; padding: 0; }
+fieldset.field legend { padding: 0; margin-bottom: 4px; }
+.plan { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--sunk); font-size: .9rem; }
+#cup-detail { margin-top: 24px; }
+.cup-detail { display: grid; gap: 14px; }
+.cup-detail h3 { font-size: 1.5rem; }
+.cup-settings { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.cup-settings .field { flex: 1 1 200px; }
+.cup-settings .field:nth-child(2) { flex: 0 1 160px; }
+.cup-step { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; font-size: 1.15rem; font-family: var(--font-display); border-top: 1px solid var(--line); padding-top: 14px; }
+.cup-step > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--baize); color: var(--on-baize); font-family: var(--font-body); font-size: .85rem; }
+.cup-step small { font-family: var(--font-body); font-size: .85rem; color: var(--muted); font-weight: 500; }
+.pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 4px 16px; max-height: 360px; overflow: auto; padding: 4px; border: 1px solid var(--line); border-radius: 6px; }
+.pick { display: flex; gap: 8px; align-items: center; padding: 4px 2px; }
+.pick:has(input:disabled) { color: var(--muted); }
+.cup-round { display: grid; gap: 8px; }
+.cup-round-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.cup-round-head h5 { margin: 0; font-size: 1rem; flex: 1 1 140px; }
+.cup-round-head label { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); font-weight: 600; }
+.cup-round-head input { width: auto; padding: 6px 8px; }
+.cm-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: .85rem; }
+.cm-meta label { display: flex; gap: 6px; align-items: center; color: var(--muted); font-weight: 600; }
+.cm-meta select { width: auto; padding: 5px 8px; }
+.tie-pick { color: var(--brass-ink) !important; }
+.cup-match { grid-template-columns: minmax(0, 1fr); }
+.final-rows { display: grid; gap: 6px; }
+.final-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; align-items: center; font-weight: 600; }
+.final-row input { text-align: center; }
+.final-table { min-width: 0; }
+.final-table tr.winner td { font-weight: 800; }
+.cup-section { margin-bottom: 36px; }
+.cup-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cup-title h3 { font-size: 1.4rem; }
+.cup-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.cup-jump a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; font-weight: 600; font-size: .9rem; }
+.bracket-scroll { overflow-x: auto; padding-bottom: 6px; }
+.bracket { display: grid; grid-template-columns: repeat(var(--rounds), minmax(190px, 1fr)); gap: 18px; min-width: calc(var(--rounds) * 200px); }
+.b-round { display: flex; flex-direction: column; gap: 10px; }
+.b-round h4 { margin: 0; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); display: grid; gap: 2px; }
+.b-round h4 span { letter-spacing: 0; text-transform: none; font-weight: 500; }
+.b-matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
+.b-match { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.b-match.bye { opacity: .7; border-style: dashed; }
+.b-side { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
+.b-side + .b-side { border-top: 1px solid var(--line); }
+.b-side span { min-width: 0; overflow-wrap: anywhere; }
+.b-side.won { font-weight: 800; background: color-mix(in srgb, var(--win) 10%, transparent); }
+.b-side.tbd { color: var(--muted); font-style: italic; }
+.b-meta { padding: 4px 10px 6px; font-size: .78rem; color: var(--muted); border-top: 1px solid var(--line); }
 .list-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
 .list-tools input[type=search] { flex: 1 1 240px; width: auto; padding: 9px 11px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); min-width: 0; }
 .list-tools input[type=search]:focus { border-color: var(--brass); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 30%, transparent); }
@@ -303,7 +353,7 @@ const S = {
   token: null, user: null, myLeagues: [],
   mode: "account", slug: null, league: null, seasonId: null,
   admin: false, status: "connecting", version: 0, loadedAt: 0,
-  teams: {}, venues: {}, fixtures: {}, divisions: {}, contacts: {},
+  teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {},
   loaded: { teams: false, venues: false, fixtures: false },
   ui: { fxTeam: "", fxShow: "upcoming", adminComp: "all", adminShow: "open" },
   busy: false,
@@ -403,7 +453,7 @@ function signedOut(msg) {
 }
 function apply(d) {
   S.version = d.version || 0;
-  S.teams = d.teams || {}; S.venues = d.venues || {}; S.fixtures = d.fixtures || {}; S.divisions = d.divisions || {};
+  S.teams = d.teams || {}; S.venues = d.venues || {}; S.fixtures = d.fixtures || {}; S.divisions = d.divisions || {}; S.cups = d.cups || {};
   if (d.contacts) S.contacts = d.contacts;
   S.loaded = { teams: true, venues: true, fixtures: true };
   S.status = "live"; S.loadedAt = Date.now();
@@ -443,7 +493,7 @@ function saveError(e) {
 // If someone else saved in between, the server refuses (409) and we reload their version.
 async function commit(mutate) {
   if (!S.seasonId) { toast("Set up a season first, on the Seasons page."); return false; }
-  const draft = structuredClone({ teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, contacts: S.contacts });
+  const draft = structuredClone({ teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, cups: S.cups, contacts: S.contacts });
   mutate(draft);
   const { contacts, ...data } = draft;
   try {
@@ -502,8 +552,8 @@ function standings() {
 }
 
 /* ---------- shell & routing ---------- */
-const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cup fixtures"]];
-const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Venues"], ["teams", "Teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["league-setup", "League setup"]];
+const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"]];
+const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Venues"], ["teams", "Teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["league-setup", "League setup"]];
 const ACCOUNT_VIEWS = [["leagues", "My leagues"], ["account", "Account"]];
 let current = null;
 
@@ -885,26 +935,344 @@ VIEWS.fixtures = {
   }
 };
 
-/* ---------- public: cup ---------- */
+/* ---------- cups: logic ---------- */
+const CUP_TYPES = { knockout: "Knockout tournament" };
+const CUP_FORMATS = { team: "Team", individual: "Individual player" };
+const CUP_STRUCTURES = { full: "Full tournament", final: "Straight final" };
+const entriesText = n => `${n} ${n === 1 ? "entry" : "entries"}`;
+const sortedCups = () => Object.values(S.cups).sort((a, b) => (a.created || "").localeCompare(b.created || "") || a.name.localeCompare(b.name));
+// Bracket positions for seeds 1..size, e.g. 8 → [1,8,4,5,2,7,3,6], so byes (the highest seeds) are spread through the draw.
+function seedOrder(size) { let o = [1]; while (o.length < size) { const n = o.length * 2; o = o.flatMap(s => [s, n + 1 - s]); } return o; }
+const cupRoundCount = n => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
+function roundName(r, total) { const left = total - r; return left === 0 ? "Final" : left === 1 ? "Semi-finals" : left === 2 ? "Quarter-finals" : `Round ${r}`; }
+function cupPlanText(structure, n) {
+  if (!(n >= 2)) return "A cup needs at least 2 entries.";
+  if (structure === "final") return `${entriesText(n)} play one final game. The highest pins wins.`;
+  const R = cupRoundCount(n), byes = 2 ** R - n;
+  const names = Array.from({ length: R }, (_, i) => roundName(i + 1, R));
+  return `${entriesText(n)}: ${plural(R, "round")} (${names.join(", ")}).` +
+    (byes ? ` ${byes === 1 ? "1 entry gets" : `${byes} entries get`} a bye through ${names[0] === "Final" ? "the first round" : names[0]} so the numbers work out.` : "");
+}
+function entrantLabel(cup, id) {
+  if (!id) return "To be decided";
+  if (cup.format === "team") return S.teams[id]?.name || cup.entrants?.find(e => e.id === id)?.label || "Unknown team";
+  return cup.entrants?.find(e => e.id === id)?.label || "Unknown player";
+}
+// Who can be entered: the season's teams, or every player on a team.
+function cupCandidates(cup) {
+  if (cup.format === "team") return sortedTeams().map(t => ({ id: t.id, label: t.name, search: t.name }));
+  return sortedTeams().flatMap(t => playersOf(t).filter(p => p.first || p.last).map(p => ({
+    id: `p:${t.id}:${searchText(fullName(p))}`, label: `${playerLabel(p)} (${t.name})`, search: `${fullName(p)} ${p.nick || ""} ${t.name}`,
+  }))).sort((a, b) => a.label.localeCompare(b.label));
+}
+// Works out every round from the draw and the results saved so far. Winners move through automatically;
+// a result is ignored if an earlier result changed who's playing in that match.
+function cupBracket(cup) {
+  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [];
+  const rounds = []; let prev = null;
+  for (let r = 1; r <= R; r++) {
+    const matches = [], when = cup.roundDates?.[r] || {};
+    for (let k = 0; k < size / 2 ** r; k++) {
+      const id = `${r}-${k}`, m = { id, round: r, slot: k, a: null, b: null, aPins: null, bPins: null, winner: null, bye: false, tie: false };
+      if (r === 1) {
+        const sa = order[2 * k], sb = order[2 * k + 1];
+        m.a = draw[sa - 1] || null; m.b = draw[sb - 1] || null;
+        if (sa > cup.entries || sb > cup.entries) { m.bye = true; m.winner = m.a || m.b; }
+      } else { m.a = prev[2 * k].winner; m.b = prev[2 * k + 1].winner; }
+      const res = cup.results?.[id];
+      if (!m.bye && res && m.a && m.b && res.a === m.a && res.b === m.b) {
+        m.aPins = res.aPins; m.bPins = res.bPins;
+        m.tie = res.aPins === res.bPins;
+        m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
+      }
+      const sched = cup.schedule?.[id] || {};
+      m.date = when.date || ""; m.time = when.time || ""; m.venue = sched.venue || (cup.format === "team" && m.a ? S.teams[m.a]?.venue : null) || null;
+      matches.push(m);
+    }
+    rounds.push({ r, name: roundName(r, R), date: when.date || "", time: when.time || "", matches });
+    prev = matches;
+  }
+  return { rounds, champion: rounds.at(-1).matches[0].winner };
+}
+function cupFinal(cup) {
+  const scores = cup.final?.scores || {};
+  const rows = (cup.entrants || []).map(e => ({ id: e.id, pins: Number.isFinite(scores[e.id]) ? scores[e.id] : null }))
+    .sort((a, b) => (b.pins ?? -1) - (a.pins ?? -1) || entrantLabel(cup, a.id).localeCompare(entrantLabel(cup, b.id)));
+  const complete = rows.length === cup.entries && rows.every(r => r.pins !== null);
+  const top = complete ? rows.filter(r => r.pins === rows[0].pins).map(r => r.id) : [];
+  const winner = !complete ? null : top.length === 1 ? top[0] : top.includes(cup.final?.winner) ? cup.final.winner : null;
+  return { rows, complete, tiedTop: top.length > 1 ? top : [], winner };
+}
+function cupStatus(cup) {
+  const n = (cup.entrants || []).length;
+  if (n < cup.entries) return { text: `Choosing entries: ${n} of ${cup.entries}`, state: "todo" };
+  if (cup.structure === "final") {
+    const f = cupFinal(cup);
+    return f.winner ? { text: `Won by ${entrantLabel(cup, f.winner)}`, state: "done" } : { text: "Final to play", state: "live" };
+  }
+  if (!cup.draw?.length) return { text: "Entries chosen. The draw hasn't been made yet.", state: "todo" };
+  const b = cupBracket(cup);
+  if (b.champion) return { text: `Won by ${entrantLabel(cup, b.champion)}`, state: "done" };
+  return { text: `${b.rounds.find(r => r.matches.some(m => !m.winner)).name} to play`, state: "live" };
+}
+const cupSummary = cup => `${CUP_TYPES[cup.type] || "Cup"} · ${CUP_FORMATS[cup.format]} · ${CUP_STRUCTURES[cup.structure]} · ${entriesText(cup.entries)}`;
+const whenText = (date, time) => date ? `${fmtDate(date)}${time ? ` · ${time}` : ""}` : "Date to be set";
+
+/* ---------- cups: shared drawings ---------- */
+function bracketHtml(cup) {
+  const b = cupBracket(cup);
+  const side = (m, who, pins) => `<div class="b-side${m.winner && m.winner === who ? " won" : ""}${!who ? " tbd" : ""}">
+      <span>${esc(who ? entrantLabel(cup, who) : m.bye ? "Bye" : "To be decided")}</span><b>${pins ?? ""}</b></div>`;
+  return `<div class="bracket-scroll"><div class="bracket" style="--rounds:${b.rounds.length}">${b.rounds.map(r => `
+    <div class="b-round"><h4>${esc(r.name)}<span>${esc(whenText(r.date, r.time))}</span></h4>
+      <div class="b-matches">${r.matches.map(m => `<div class="b-match${m.bye ? " bye" : ""}">
+        ${side(m, m.a, m.aPins)}${side(m, m.b, m.bPins)}
+        ${!m.bye && m.venue && S.venues[m.venue] ? `<div class="b-meta">${esc(S.venues[m.venue].name)}</div>` : ""}
+        ${m.tie && m.winner ? `<div class="b-meta">Tied; ${esc(entrantLabel(cup, m.winner))} went through</div>` : ""}</div>`).join("")}</div>
+    </div>`).join("")}</div></div>`;
+}
+function finalTableHtml(cup) {
+  const f = cupFinal(cup), when = cup.final || {};
+  return `<p class="lookup-note">${esc(whenText(when.date, when.time))}${when.venue && S.venues[when.venue] ? ` · ${esc(S.venues[when.venue].name)}` : ""}</p>
+    <div class="table-scroll"><table class="league final-table"><thead><tr><th class="pos">Pos</th><th class="team">${cup.format === "team" ? "Team" : "Player"}</th><th>Pins</th></tr></thead>
+    <tbody>${f.rows.map((r, i) => `<tr${f.winner === r.id ? ' class="winner"' : ""}><td class="pos">${r.pins === null ? "" : i + 1}</td><td class="team"><span>${esc(entrantLabel(cup, r.id))}${f.winner === r.id ? " 🏆" : ""}</span></td><td>${r.pins ?? "–"}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
+/* ---------- public: cups ---------- */
 VIEWS.cup = {
   mount(el) {
-    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Knockout</div><h2>Cup fixtures</h2>
-      <p>Cup ties by round. Cup results don't count towards the league table.</p></div></div><div id="cup-body"></div>`;
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Knockout</div><h2>Cups</h2>
+      <p>Draws and results for this season's cup competitions. Cup results don't count towards the league table.</p></div></div><div id="cup-body"></div>`;
   },
   refresh() {
     const body = $("#cup-body");
     const st = statusBlock(); if (st) return body.innerHTML = st;
-    const list = Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort);
-    if (!list.length) return body.innerHTML = `<div class="empty"><strong>No cup ties drawn yet</strong>${S.admin ? `Add cup fixtures under <a href="#manage-fixtures">Fixtures &amp; results</a>.` : "The draw will appear here once it's made."}</div>`;
-    const rounds = [];
-    for (const f of list) {
-      const name = f.round || "Cup";
-      let r = rounds.find(x => x.name === name);
-      if (!r) rounds.push(r = { name, items: [] });
-      r.items.push(f);
-    }
-    body.innerHTML = rounds.map(r => `<section class="round"><h3>${esc(r.name)}</h3>${groupByDate(r.items)}</section>`).join("");
+    const cups = sortedCups(), old = Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort);
+    if (!cups.length && !old.length) return body.innerHTML = `<div class="empty"><strong>No cups yet</strong>${S.admin ? `Set up a cup on the <a href="#cups">Manage cups</a> page.` : "Cup draws appear here once they're made."}</div>`;
+    body.innerHTML = (cups.length > 1 ? `<nav class="cup-jump" aria-label="Cups">${cups.map(c => `<a href="#cup" data-cup-jump="${esc(c.id)}">${esc(c.name)}</a>`).join("")}</nav>` : "") +
+      cups.map(c => {
+        const st = cupStatus(c);
+        const inner = c.structure === "final"
+          ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
+          : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
+        return `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
+          <p class="lookup-note">${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
+      }).join("") +
+      (old.length ? `<section class="cup-section"><h3>Other cup fixtures</h3>${groupByDate(old)}</section>` : "");
   }
+};
+
+/* ---------- admin: cups ---------- */
+VIEWS.cups = {
+  picked: null,
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Manage cups</h2>
+      <p>Set up this season's cup competitions, choose the entries, make the draw and enter results.</p></div></div>
+      <div class="split">
+        <div id="cup-list"></div>
+        <div class="form-col"><form class="panel form" id="cup-form" autocomplete="off">
+          <h3>Create a cup</h3>
+          <div class="field"><label for="c-name">Cup name</label><input type="text" id="c-name" maxlength="60" placeholder="e.g. League Cup"></div>
+          <div class="field"><label for="c-type">Type of cup</label><select id="c-type">${Object.entries(CUP_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><span class="hint">More types will be added later.</span></div>
+          <fieldset class="field"><legend class="lbl">Who plays</legend><div class="radios">
+            ${Object.entries(CUP_FORMATS).map(([k, v], i) => `<label class="check"><input type="radio" name="c-format" value="${k}"${i ? "" : " checked"}> ${v}</label>`).join("")}</div></fieldset>
+          <fieldset class="field"><legend class="lbl">Rounds</legend><div class="radios">
+            <label class="check"><input type="radio" name="c-structure" value="full" checked> Full tournament: knockout rounds through to a final</label>
+            <label class="check"><input type="radio" name="c-structure" value="final"> Straight final: one final game, e.g. a pairs cup</label></div></fieldset>
+          <div class="field"><label for="c-entries">Number of entries</label><input type="number" id="c-entries" min="2" max="128" value="16"></div>
+          <p class="plan" id="c-plan" aria-live="polite"></p>
+          <div class="actions"><button class="btn" type="submit" id="c-go">Create cup</button></div>
+        </form></div>
+      </div>
+      <div id="cup-detail"></div>`;
+    const f = $("#cup-form");
+    const plan = () => $("#c-plan").textContent = cupPlanText(f.querySelector("[name=c-structure]:checked").value, +$("#c-entries").value);
+    f.addEventListener("input", plan); f.addEventListener("change", plan); plan();
+    f.addEventListener("submit", e => { e.preventDefault(); this.create(); });
+    const detail = $("#cup-detail");
+    detail.addEventListener("change", e => {
+      if (e.target.matches("input[data-entrant]")) { e.target.checked ? this.picked.add(e.target.value) : this.picked.delete(e.target.value); this.updatePickCount(); }
+      if (e.target.matches("[data-round-date], [data-round-time]")) this.saveRoundDate(+e.target.closest("[data-round]").dataset.round);
+    });
+    detail.addEventListener("input", e => {
+      if (e.target.id === "ce-search") this.filterPick();
+      if (e.target.matches("input[data-pins]")) { e.target.dataset.dirty = "1"; this.syncTie(e.target.closest("[data-match]")); }
+    });
+  },
+  cup() { return S.cups[S.ui.cupId] || null; },
+  async create() {
+    const name = $("#c-name").value.trim(), entries = Math.round(+$("#c-entries").value);
+    if (!name) return toast("Give the cup a name.");
+    if (Object.values(S.cups).some(c => c.name.toLowerCase() === name.toLowerCase())) return toast(`There's already a cup called ${name} this season.`);
+    if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
+    const f = $("#cup-form"), id = newId();
+    const cup = { id, name, type: $("#c-type").value, format: f.querySelector("[name=c-format]:checked").value, structure: f.querySelector("[name=c-structure]:checked").value,
+      entries, entrants: [], draw: [], results: {}, schedule: {}, roundDates: {}, final: { scores: {} }, created: new Date().toISOString() };
+    if (await commit(d => { (d.cups ||= {})[id] = cup; })) {
+      toast(`${name} created. Now choose its entries.`);
+      f.reset(); $("#c-plan").textContent = cupPlanText("full", 16);
+      this.open(id);
+    }
+  },
+  open(id) { S.ui.cupId = id; this.picked = null; this.refresh(); $("#cup-detail").scrollIntoView({ behavior: "smooth", block: "start" }); },
+  refresh() {
+    const list = $("#cup-list");
+    const st = statusBlock(); if (st) { list.innerHTML = st; $("#cup-detail").innerHTML = ""; return; }
+    const cups = sortedCups();
+    list.innerHTML = cups.length ? `<div class="cards">${cups.map(c => { const s = cupStatus(c); return `<article class="card${c.id === S.ui.cupId ? " editing" : ""}">
+      <div class="card-head"><div><h3>${esc(c.name)}</h3><div class="sub">${esc(cupSummary(c))}</div></div>
+        <div class="actions"><button class="btn sm" data-act="cup-open" data-id="${esc(c.id)}">${c.id === S.ui.cupId ? "Open below" : "Manage"}</button></div></div>
+      <div><span class="chip ${s.state === "done" ? "ok" : s.state === "todo" ? "warn" : ""}">${esc(s.text)}</span></div></article>`; }).join("")}</div>`
+      : `<div class="empty"><strong>No cups yet</strong>Create the first cup with the form.</div>`;
+    this.renderDetail();
+  },
+  renderDetail() {
+    const box = $("#cup-detail"), cup = this.cup();
+    if (!cup) { box.innerHTML = ""; return; }
+    const kept = {}; $$("input[data-pins][data-dirty]", box).forEach(i => kept[i.id] = i.value);
+    const search = $("#ce-search")?.value || "";
+    const drawn = cup.structure === "full" && cup.draw?.length > 0;
+    const n = (cup.entrants || []).length;
+    if (!this.picked || this.picked.cupId !== cup.id) { this.picked = new Set((cup.entrants || []).map(e => e.id)); this.picked.cupId = cup.id; }
+    const step = (num, title) => `<h4 class="cup-step"><span>${num}</span>${title}</h4>`;
+    let html = `<section class="panel cup-detail">
+      <div class="card-head"><div><div class="eyebrow">Managing</div><h3>${esc(cup.name)}</h3><div class="sub">${esc(cupSummary(cup))}</div></div>
+        <div class="actions"><button class="btn ghost sm" data-act="cup-close">Close</button><button class="btn danger sm" data-act="cup-del" data-id="${esc(cup.id)}">Delete cup</button></div></div>
+      <form class="cup-settings" id="cs-form" autocomplete="off">
+        <div class="field"><label for="cs-name">Cup name</label><input type="text" id="cs-name" maxlength="60" value="${esc(cup.name)}"></div>
+        <div class="field"><label for="cs-entries">Number of entries</label><input type="number" id="cs-entries" min="2" max="128" value="${cup.entries}"${drawn ? " disabled" : ""}></div>
+        <div class="actions"><button class="btn ghost" type="submit">Save</button></div>
+      </form>
+      <p class="plan">${esc(cupPlanText(cup.structure, cup.entries))}${drawn ? " The number of entries can't change once the draw is made." : ""}</p>`;
+
+    // Step 1: entries
+    html += step(1, `Entries <small>${n} of ${cup.entries} chosen</small>`);
+    if (drawn) html += `<p class="muted">${esc(cup.entrants.map(e => entrantLabel(cup, e.id)).join(", "))}</p>`;
+    else {
+      const cands = cupCandidates(cup);
+      html += cands.length ? `<div class="list-tools"><input type="search" id="ce-search" placeholder="Search ${cup.format === "team" ? "teams" : "players or teams"}" aria-label="Search entries" value="${esc(search)}"><span class="list-count" id="ce-count"></span></div>
+        <div class="pick-grid" id="ce-list">${cands.map(c => `<label class="pick" data-search="${esc(searchText(c.search))}"><input type="checkbox" data-entrant value="${esc(c.id)}" data-label="${esc(c.label)}"${this.picked.has(c.id) ? " checked" : ""}> ${esc(c.label)}</label>`).join("")}</div>
+        <div class="actions"><button class="btn" data-act="cup-save-entries">Save entries</button></div>`
+        : `<p class="muted">${cup.format === "team" ? `Add teams on the <a href="#teams">Teams</a> page first.` : `Add players to teams on the <a href="#teams">Teams</a> page first.`}</p>`;
+    }
+
+    if (cup.structure === "full") {
+      html += step(2, "Draw");
+      if (!drawn) html += n === cup.entries
+        ? `<p class="muted">The draw puts the entries into the bracket at random.${cup.entries !== 2 ** cupRoundCount(cup.entries) ? " Byes are spread through the draw." : ""}</p><div class="actions"><button class="btn" data-act="cup-draw">Make the draw</button></div>`
+        : `<p class="muted">Choose all ${cup.entries} entries first.</p>`;
+      else html += bracketHtml(cup) + `<div class="actions"><button class="btn danger sm" data-act="cup-redraw">Redo the draw</button></div>`;
+      if (drawn) {
+        html += step(3, "Dates and results");
+        const b = cupBracket(cup);
+        html += b.rounds.map(r => `<div class="cup-round" data-round="${r.r}">
+          <div class="cup-round-head"><h5>${esc(r.name)}</h5>
+            <label>Date <input type="date" data-round-date value="${esc(r.date)}"></label><label>Start <input type="time" data-round-time value="${esc(r.time)}"></label></div>
+          ${r.matches.filter(m => !m.bye).map(m => this.matchRow(cup, m)).join("") || `<p class="muted">Every match in this round is a bye.</p>`}
+          ${r.matches.some(m => m.bye) ? `<p class="lookup-note">Byes: ${esc(r.matches.filter(m => m.bye).map(m => entrantLabel(cup, m.winner)).join(", "))}</p>` : ""}</div>`).join("");
+      }
+    } else if (n) html += step(2, "Final") + this.finalForm(cup);
+    html += `</section>`;
+    box.innerHTML = html;
+    $("#cs-form").addEventListener("submit", e => { e.preventDefault(); this.saveSettings(); });
+    for (const [id, val] of Object.entries(kept)) { const i = document.getElementById(id); if (i) { i.value = val; i.dataset.dirty = "1"; this.syncTie(i.closest("[data-match]")); } }
+    this.filterPick(); this.updatePickCount();
+  },
+  matchRow(cup, m) {
+    const ready = m.a && m.b, venues = sortedVenues();
+    return `<div class="fx-admin cup-match" data-match="${esc(m.id)}">
+      <div class="result-line">
+        <span class="h">${esc(entrantLabel(cup, m.a))}</span>
+        <input type="number" min="0" inputmode="numeric" id="cp-a-${esc(m.id)}" data-pins="a" value="${m.aPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.a))} pins"${ready ? "" : " disabled"}>
+        <span class="dash">–</span>
+        <input type="number" min="0" inputmode="numeric" id="cp-b-${esc(m.id)}" data-pins="b" value="${m.bPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.b))} pins"${ready ? "" : " disabled"}>
+        <span class="a">${esc(entrantLabel(cup, m.b))}</span>
+      </div>
+      <div class="cm-meta">
+        ${venues.length ? `<label>Venue <select data-venue>${`<option value="">${cup.format === "team" ? "First-named team's venue" : "To be confirmed"}</option>`}${venues.map(v => `<option value="${esc(v.id)}"${cup.schedule?.[m.id]?.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>` : ""}
+        <label class="tie-pick"${m.tie ? "" : " hidden"}>Tied. Who goes through? <select data-tie><option value="">Choose</option>${[m.a, m.b].filter(Boolean).map(x => `<option value="${esc(x)}"${m.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>
+        <button class="btn sm" data-act="cup-save-match" data-id="${esc(m.id)}"${ready ? "" : " disabled"}>Save</button>
+        ${ready ? "" : `<span class="lookup-note">Waiting for the earlier round.</span>`}
+      </div></div>`;
+  },
+  finalForm(cup) {
+    const f = cupFinal(cup), fin = cup.final || {}, venues = sortedVenues();
+    return `<div class="panel form final-form" id="final-form">
+      <div class="row2">
+        <div class="field"><label for="fn-date">Date</label><input type="date" id="fn-date" value="${esc(fin.date || "")}"></div>
+        <div class="field"><label for="fn-time">Start time</label><input type="time" id="fn-time" value="${esc(fin.time || "")}"></div>
+        <div class="field"><label for="fn-venue">Venue</label><select id="fn-venue"><option value="">To be confirmed</option>${venues.map(v => `<option value="${esc(v.id)}"${fin.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></div>
+      </div>
+      <div class="final-rows">${(cup.entrants || []).map(e => `<label class="final-row"><span>${esc(entrantLabel(cup, e.id))}</span>
+        <input type="number" min="0" inputmode="numeric" data-final="${esc(e.id)}" value="${fin.scores?.[e.id] ?? ""}" aria-label="${esc(entrantLabel(cup, e.id))} pins"></label>`).join("")}</div>
+      ${f.tiedTop.length ? `<label class="tie-pick">Tied for first. Who wins? <select id="fn-tie"><option value="">Choose</option>${f.tiedTop.map(x => `<option value="${esc(x)}"${f.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>` : ""}
+      <div class="actions"><button class="btn" data-act="cup-save-final">Save final</button></div>
+      ${(cup.entrants || []).length ? finalTableHtml(cup) : ""}</div>`;
+  },
+  syncTie(row) {
+    if (!row) return;
+    const a = $("[data-pins=a]", row).value, b = $("[data-pins=b]", row).value;
+    $(".tie-pick", row).hidden = !(a !== "" && a === b);
+  },
+  filterPick() { const l = $("#ce-list"); if (l) applySearch(l, $("#ce-search").value, $("#ce-count"), S.cups[S.ui.cupId]?.format === "team" ? "team" : "player", ".pick"); },
+  updatePickCount() {
+    const cup = this.cup(), l = $("#ce-list"); if (!cup || !l) return;
+    const full = this.picked.size >= cup.entries;
+    $$("input[data-entrant]", l).forEach(i => { i.disabled = full && !i.checked; });
+    const small = $(".cup-step small"); if (small) small.textContent = `${this.picked.size} of ${cup.entries} chosen`;
+  },
+  async saveSettings() {
+    const cup = this.cup(), name = $("#cs-name").value.trim(), entries = Math.round(+$("#cs-entries").value);
+    if (!name) return toast("Give the cup a name.");
+    if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
+    if (entries < (cup.entrants || []).length) return toast(`You've already chosen ${entriesText(cup.entrants.length)}. Untick some first.`);
+    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries }); })) toast("Cup saved");
+  },
+  async saveEntries() {
+    const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
+    if (picked.length > cup.entries) return toast(`This cup has ${cup.entries} entries. Untick ${picked.length - cup.entries}.`);
+    if (await commit(d => { d.cups[cup.id].entrants = picked; if (cup.structure === "final") { const keep = new Set(picked.map(p => p.id)); const sc = d.cups[cup.id].final.scores || {}; for (const k of Object.keys(sc)) if (!keep.has(k)) delete sc[k]; } }))
+      toast(picked.length === cup.entries ? (cup.structure === "full" ? "Entries saved. Now make the draw." : "Entries saved. Now add the final's details.") : `Entries saved: ${picked.length} of ${cup.entries}`);
+  },
+  async makeDraw() {
+    const cup = this.cup(), ids = cup.entrants.map(e => e.id);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    if (await commit(d => { Object.assign(d.cups[cup.id], { draw: ids, results: {}, schedule: {} }); })) toast("The draw has been made");
+  },
+  async redraw() {
+    const cup = this.cup();
+    if (await commit(d => { Object.assign(d.cups[cup.id], { draw: [], results: {}, schedule: {} }); })) toast("Draw cleared, along with its results. You can change the entries and draw again.");
+  },
+  async saveRoundDate(r) {
+    const cup = this.cup(), row = $(`[data-round="${r}"]`);
+    const date = $("[data-round-date]", row).value, time = $("[data-round-time]", row).value;
+    if (await commit(d => { (d.cups[cup.id].roundDates ||= {})[r] = { date, time }; })) toast(`${roundName(r, cupRoundCount(cup.entries))} date saved`);
+  },
+  async saveMatch(id) {
+    const cup = this.cup(), row = $(`[data-match="${CSS.escape(id)}"]`), m = cupBracket(cup).rounds.flatMap(r => r.matches).find(x => x.id === id);
+    const aPins = num($("[data-pins=a]", row).value), bPins = num($("[data-pins=b]", row).value), venue = $("[data-venue]", row)?.value || null;
+    if ((aPins == null) !== (bPins == null)) return toast("Enter both sides' pins, or clear both.");
+    if ((aPins ?? 0) < 0 || (bPins ?? 0) < 0) return toast("Pins can't be negative.");
+    const tieWinner = $("[data-tie]", row).value;
+    if (aPins != null && aPins === bPins && !tieWinner) return toast("It's a tie. Choose who goes through.");
+    $$("input[data-pins]", row).forEach(i => delete i.dataset.dirty);
+    const ok = await commit(d => {
+      const c = d.cups[cup.id];
+      (c.schedule ||= {})[id] = { venue };
+      if (aPins == null) delete c.results[id];
+      else (c.results ||= {})[id] = { a: m.a, b: m.b, aPins, bPins, winner: aPins === bPins ? tieWinner : null };
+    });
+    if (ok) toast(aPins == null ? "Result cleared" : `Result saved: ${entrantLabel(cup, m.a)} ${aPins} – ${bPins} ${entrantLabel(cup, m.b)}`);
+  },
+  async saveFinal() {
+    const cup = this.cup(), scores = {};
+    for (const i of $$("input[data-final]")) { const v = num(i.value); if (v != null) { if (v < 0) return toast("Pins can't be negative."); scores[i.dataset.final] = v; } }
+    const tie = $("#fn-tie")?.value || null;
+    if (await commit(d => { d.cups[cup.id].final = { date: $("#fn-date").value, time: $("#fn-time").value, venue: $("#fn-venue").value || null, scores, winner: tie }; })) {
+      const f = cupFinal(this.cup());
+      toast(f.winner ? `Final saved. ${entrantLabel(cup, f.winner)} won.` : f.tiedTop.length ? "Final saved. It's a tie for first, so choose the winner." : "Final saved");
+    }
+  },
 };
 
 /* ---------- form helpers ---------- */
@@ -1694,8 +2062,9 @@ VIEWS["manage-fixtures"] = {
   },
   reset() {
     const f = $("#fx-form"); f.reset(); delete f.dataset.id;
-    $("#ff-title").textContent = "Add a fixture";
+    $("#ff-title").textContent = "Add a league fixture";
     $("#f-round-wrap").hidden = true;
+    $("#f-comp").value = "league"; $("#f-comp").closest(".field").hidden = true;
     this.fillSelects();
     $$("#mf-list .fx-admin").forEach(c => c.classList.remove("editing"));
   },
@@ -1719,7 +2088,7 @@ VIEWS["manage-fixtures"] = {
     const fx = S.fixtures[id]; if (!fx) return;
     const f = $("#fx-form"); f.dataset.id = id;
     $("#ff-title").textContent = "Edit fixture";
-    $("#f-comp").value = fx.comp; $("#f-round-wrap").hidden = fx.comp !== "cup"; $("#f-round").value = fx.round || "";
+    $("#f-comp").value = fx.comp; $("#f-comp").closest(".field").hidden = fx.comp !== "cup"; $("#f-round-wrap").hidden = fx.comp !== "cup"; $("#f-round").value = fx.round || "";
     $("#f-date").value = fx.date || ""; $("#f-time").value = fx.time || "";
     $("#f-home").innerHTML = teamOptions(fx.home, "Choose team"); $("#f-away").innerHTML = teamOptions(fx.away, "Choose team");
     $("#f-venue").innerHTML = venueOptions(fx.venue || "", "Home team's venue");
@@ -2104,7 +2473,7 @@ VIEWS["league-setup"] = {
           <div class="panel">
             <h3>Example data</h3>
             <p class="muted">Load a short example season into the season you're working on (three venues, six teams in one division, fixtures and some results), then clear it before entering your real league.</p>
-            <div class="actions"><button class="btn ghost" data-act="load-example">Load example season</button><button class="btn danger" data-act="clear-all">Delete this season's teams, venues and fixtures</button></div>
+            <div class="actions"><button class="btn ghost" data-act="load-example">Load example season</button><button class="btn danger" data-act="clear-all">Delete this season's teams, venues, fixtures and cups</button></div>
           </div>
           <div class="panel">
             <h3>Delete this league</h3>
@@ -2175,10 +2544,16 @@ async function loadExample() {
           homePins: p ? 250 + Math.round(rnd() * 80) : null, awayPins: p ? 240 + Math.round(rnd() * 80) : null };
       }
     });
-    for (const [date, h, a, hp, ap] of [["2026-10-22", 0, 3, 301, 288], ["2026-10-22", 2, 5, 276, 276], ["2026-11-26", 1, 4, null, null]]) {
-      const id = newId() + "c" + k++;
-      d.fixtures[id] = { id, comp: "cup", round: "Round 1", date, time: "19:45", home: tid[h], away: tid[a], venue: null, alley: null, homePins: hp, awayPins: ap };
-    }
+    // A six-team knockout cup: two byes, then semi-finals and a final. The first round has been played.
+    const cid = newId() + "cup", draw = [tid[5], tid[0], tid[3], tid[1], tid[4], tid[2]];
+    const cup = { id: cid, name: "League Cup (example)", type: "knockout", format: "team", structure: "full", entries: 6,
+      entrants: tid.map(id => ({ id, label: d.teams[id].name })), draw, results: {}, schedule: {}, final: { scores: {} }, created: new Date().toISOString(),
+      roundDates: { 1: { date: "2026-10-22", time: "19:45" }, 2: { date: "2026-11-26", time: "19:45" }, 3: { date: "2027-01-14", time: "19:45" } } };
+    d.cups = { [cid]: cup };
+    const saved = S.cups; S.cups = d.cups;
+    const firstRound = cupBracket(cup).rounds[0].matches.filter(m => !m.bye);
+    S.cups = saved;
+    firstRound.forEach((m, i) => { cup.results[m.id] = { a: m.a, b: m.b, aPins: [301, 276][i], bPins: [288, 276][i], winner: i === 1 ? m.b : null }; });
   });
   S.busy = false;
   if (ok) toast("Example season loaded");
@@ -2186,15 +2561,17 @@ async function loadExample() {
 async function clearAll() {
   if (S.busy) return;
   S.busy = true;
-  const ok = await commit(d => { d.teams = {}; d.venues = {}; d.fixtures = {}; d.contacts = {}; d.divisions = {}; });
+  const ok = await commit(d => { d.teams = {}; d.venues = {}; d.fixtures = {}; d.contacts = {}; d.divisions = {}; d.cups = {}; });
   S.busy = false;
-  if (ok) toast("This season's teams, venues, divisions and fixtures were deleted");
+  if (ok) toast("This season's teams, venues, divisions, fixtures and cups were deleted");
 }
 
 /* ---------- actions ---------- */
 document.addEventListener("click", async e => {
   const link = e.target.closest("a[data-path]");
   if (link && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); return NAV.go(link.dataset.path, link.dataset.hash); }
+  const jump = e.target.closest("a[data-cup-jump]");
+  if (jump) { e.preventDefault(); return document.getElementById("cup-" + jump.dataset.cupJump)?.scrollIntoView({ behavior: "smooth" }); }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const id = b.dataset.id, act = b.dataset.act;
   if (act === "logout") { signedOut("Logged out"); }
@@ -2212,6 +2589,18 @@ document.addEventListener("click", async e => {
     const r = await leagueRequest(`/seasons/${id}`, "DELETE");
     if (r) { toast("Season deleted"); if (S.seasonId === id) useSeason(S.league.currentSeasonId); else refresh(); VIEWS.seasons.reset?.(); }
   }
+  if (act === "cup-open") VIEWS.cups.open(id);
+  if (act === "cup-close") { S.ui.cupId = null; VIEWS.cups.refresh(); }
+  if (act === "cup-del") {
+    if (!arm(b, "Click again: deletes the cup and its results")) return;
+    const name = S.cups[id]?.name;
+    if (await commit(d => { delete d.cups[id]; })) { S.ui.cupId = null; VIEWS.cups.refresh(); toast(`${name} deleted`); }
+  }
+  if (act === "cup-save-entries") VIEWS.cups.saveEntries();
+  if (act === "cup-draw") VIEWS.cups.makeDraw();
+  if (act === "cup-redraw") { if (!arm(b, "Click again: clears the draw and its results")) return; VIEWS.cups.redraw(); }
+  if (act === "cup-save-match") VIEWS.cups.saveMatch(id);
+  if (act === "cup-save-final") VIEWS.cups.saveFinal();
   if (act === "dv-save") VIEWS.divisions.save();
   if (act === "dv-undo") VIEWS.divisions.undo();
   if (act === "dv-add") VIEWS.divisions.add();
@@ -2287,7 +2676,7 @@ document.addEventListener("visibilitychange", () => {
 /* ---------- boot ---------- */
 async function boot() {
   Object.assign(S, { user: null, myLeagues: [], league: null, seasonId: null, admin: false, status: "connecting", version: 0,
-    teams: {}, venues: {}, fixtures: {}, divisions: {}, contacts: {}, loaded: { teams: false, venues: false, fixtures: false } });
+    teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {}, loaded: { teams: false, venues: false, fixtures: false } });
   S.token = store.get(TOKEN_KEY);
   S.slug = slugFromLocation();
   S.mode = S.slug ? "league" : "account";
