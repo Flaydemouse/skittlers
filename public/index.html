@@ -1084,7 +1084,7 @@ function bracketHtml(cup) {
 }
 function finalTableHtml(cup) {
   const f = cupFinal(cup), when = cup.final || {};
-  return `<p class="lookup-note">${esc(whenText(when.date, when.time))}${when.venue && S.venues[when.venue] ? ` · ${esc(S.venues[when.venue].name)}` : ""}</p>
+  return `<p class="lookup-note">${esc(whenText(when.date, when.time))}${when.venue && S.venues[when.venue] ? ` · ${esc(venueText(when.venue, S.venues[when.venue].alleys > 1 ? when.alley || 1 : null))}` : ""}</p>
     <div class="table-scroll"><table class="league final-table"><thead><tr><th class="pos">Pos</th><th class="team">${cup.format === "team" ? "Team" : "Player"}</th><th>Pins</th></tr></thead>
     <tbody>${f.rows.map((r, i) => `<tr${f.winner === r.id ? ' class="winner"' : ""}><td class="pos">${r.pins === null ? "" : i + 1}</td><td class="team"><span>${esc(entrantLabel(cup, r.id))}${f.winner === r.id ? " 🏆" : ""}</span></td><td>${r.pins ?? "–"}</td></tr>`).join("")}</tbody></table></div>`;
 }
@@ -1153,6 +1153,11 @@ VIEWS.cups = {
         this.updatePickCount();
       }
       if (e.target.matches("[data-round-date], [data-round-time]")) this.saveRoundDate(+e.target.closest("[data-round]").dataset.round);
+      if (e.target.id === "fn-venue") {
+        const v = S.venues[e.target.value];
+        $("#fn-alley-wrap").hidden = !(v?.alleys > 1);
+        $("#fn-alley").innerHTML = alleyOptions(v?.alleys || 1, 1);
+      }
       if (e.target.matches("select[data-venue]")) {
         const row = e.target.closest("[data-match]"), v = S.venues[e.target.value], wrap = $("[data-alley-wrap]", row);
         wrap.hidden = !(v?.alleys > 1);
@@ -1275,6 +1280,7 @@ VIEWS.cups = {
         <div class="field"><label for="fn-date">Date</label><input type="date" id="fn-date" value="${esc(fin.date || "")}"></div>
         <div class="field"><label for="fn-time">Start time</label><input type="time" id="fn-time" value="${esc(fin.time || "")}"></div>
         <div class="field"><label for="fn-venue">Venue</label><select id="fn-venue"><option value="">To be confirmed</option>${venues.map(v => `<option value="${esc(v.id)}"${fin.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></div>
+        <div class="field" id="fn-alley-wrap"${S.venues[fin.venue]?.alleys > 1 ? "" : " hidden"}><label for="fn-alley">Alley</label><select id="fn-alley">${alleyOptions(S.venues[fin.venue]?.alleys || 1, fin.alley || 1)}</select></div>
       </div>
       <div class="final-rows">${(cup.entrants || []).map(e => `<label class="final-row"><span>${esc(entrantLabel(cup, e.id))}</span>
         <input type="number" min="0" inputmode="numeric" data-final="${esc(e.id)}" value="${fin.scores?.[e.id] ?? ""}" aria-label="${esc(entrantLabel(cup, e.id))} pins"></label>`).join("")}</div>
@@ -1390,7 +1396,8 @@ VIEWS.cups = {
     const cup = this.cup(), scores = {};
     for (const i of $$("input[data-final]")) { const v = num(i.value); if (v != null) { if (v < 0) return toast("Pins can't be negative."); scores[i.dataset.final] = v; } }
     const tie = $("#fn-tie")?.value || null;
-    if (await commit(d => { d.cups[cup.id].final = { date: $("#fn-date").value, time: $("#fn-time").value, venue: $("#fn-venue").value || null, scores, winner: tie }; })) {
+    if (await commit(d => { d.cups[cup.id].final = { date: $("#fn-date").value, time: $("#fn-time").value, venue: $("#fn-venue").value || null,
+      alley: S.venues[$("#fn-venue").value]?.alleys > 1 ? +$("#fn-alley").value || 1 : null, scores, winner: tie }; })) {
       const f = cupFinal(this.cup());
       toast(f.winner ? `Final saved. ${entrantLabel(cup, f.winner)} won.` : f.tiedTop.length ? "Final saved. It's a tie for first, so choose the winner." : "Final saved");
     }
