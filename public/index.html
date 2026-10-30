@@ -233,6 +233,7 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cm-meta label { display: flex; gap: 6px; align-items: center; color: var(--muted); font-weight: 600; }
 .cm-meta select { width: auto; padding: 5px 8px; }
 .tie-pick { color: var(--brass-ink) !important; }
+.home-tag { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .cup-match { grid-template-columns: minmax(0, 1fr); }
 .final-rows { display: grid; gap: 6px; }
 .final-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; align-items: center; font-weight: 600; }
@@ -959,6 +960,14 @@ function entrantLabel(cup, id) {
   if (cup.format === "team") return S.teams[id]?.name || cup.entrants?.find(e => e.id === id)?.label || "Unknown team";
   return cup.entrants?.find(e => e.id === id)?.label || "Unknown player";
 }
+// An entrant's home venue and alley: the team's, or for a player, their team's.
+function entrantHome(cup, id) {
+  if (!id) return null;
+  const team = cup.format === "team" ? S.teams[id] : S.teams[String(id).split(":")[1]], v = S.venues[team?.venue];
+  return v ? { venue: v.id, alley: v.alleys > 1 ? (team.alley || 1) : null } : null;
+}
+const homeKey = h => h ? `${h.venue}|${h.alley || 1}` : null;
+const venueText = (venue, alley) => S.venues[venue] ? `${S.venues[venue].name}${alley ? ` · Alley ${alley}` : ""}` : "";
 // Who can be entered: the season's teams, or every player on a team.
 function cupCandidates(cup) {
   if (cup.format === "team") return sortedTeams().map(t => ({ id: t.id, label: t.name, search: t.name }));
@@ -994,14 +1003,44 @@ function cupBracket(cup) {
         m.tie = res.aPins === res.bPins;
         m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
       }
-      const sched = cup.schedule?.[id] || {};
-      m.date = when.date || ""; m.time = when.time || ""; m.venue = sched.venue || (cup.format === "team" && m.a ? S.teams[m.a]?.venue : null) || null;
+      const sched = cup.schedule?.[id] || {}, home = entrantHome(cup, m.a);
+      m.date = when.date || ""; m.time = when.time || "";
+      if (sched.venue && S.venues[sched.venue]) { m.venue = sched.venue; m.alley = S.venues[sched.venue].alleys > 1 ? (sched.alley || 1) : null; m.venueChosen = true; }
+      else { m.venue = home?.venue || null; m.alley = home?.alley || null; m.venueChosen = false; }
       matches.push(m);
     }
+    // Matches in a round are played on the same night, so flag any that share a venue and alley.
+    const byKey = {};
+    for (const m of matches) if (!m.bye && !m.empty && m.a && m.b && m.venue) (byKey[homeKey(m)] ||= []).push(m);
+    for (const list of Object.values(byKey)) if (list.length > 1) list.forEach(m => m.clash = true);
     rounds.push({ r, name: roundName(r, R), date: when.date || "", time: when.time || "", matches });
     prev = matches;
   }
   return { rounds, champion: rounds.at(-1).matches[0].winner };
+}
+// Random draw in which no two first-round home sides (the first-named) share a venue and alley,
+// because the first round is played on one night. Tries fresh shuffles, swapping home and away
+// within a match where that helps; if it can't be done, returns the draw with the fewest clashes.
+function drawAvoidingClashes(cup, ids) {
+  const size = 2 ** cupRoundCount(cup.entries), order = seedOrder(size), n = ids.length;
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  let best = null, bestClashes = Infinity;
+  for (let attempt = 0; attempt < 3000 && bestClashes > 0; attempt++) {
+    const d = shuffle([...ids]), used = new Set();
+    let clashes = 0;
+    for (let k = 0; k < size / 2; k++) {
+      const pa = order[2 * k] - 1, pb = order[2 * k + 1] - 1;
+      if (pa >= n || pb >= n) continue; // a bye or an empty match: nobody plays at home
+      const ka = homeKey(entrantHome(cup, d[pa])), kb = homeKey(entrantHome(cup, d[pb]));
+      if (ka && !used.has(ka)) used.add(ka);
+      else if (kb && !used.has(kb)) { [d[pa], d[pb]] = [d[pb], d[pa]]; used.add(kb); }
+      else if (!ka) { /* home side has no venue: nothing to clash */ }
+      else if (!kb) [d[pa], d[pb]] = [d[pb], d[pa]];
+      else clashes++;
+    }
+    if (clashes < bestClashes) { best = d; bestClashes = clashes; }
+  }
+  return { draw: best, clashes: bestClashes };
 }
 function cupFinal(cup) {
   const scores = cup.final?.scores || {};
@@ -1036,7 +1075,7 @@ function bracketHtml(cup) {
     <div class="b-round"><h4>${esc(r.name)}<span>${esc(whenText(r.date, r.time))}</span></h4>
       <div class="b-matches">${r.matches.map(m => m.empty ? `<div class="b-match empty" aria-hidden="true"><div class="b-side">&nbsp;</div><div class="b-side">&nbsp;</div></div>` : `<div class="b-match${m.bye ? " bye" : ""}">
         ${side(m, m.a, m.aPins)}${side(m, m.b, m.bPins)}
-        ${!m.bye && m.venue && S.venues[m.venue] ? `<div class="b-meta">${esc(S.venues[m.venue].name)}</div>` : ""}
+        ${!m.bye && m.a && m.b && m.venue ? `<div class="b-meta">${esc(venueText(m.venue, m.alley))}</div>` : ""}
         ${m.tie && m.winner ? `<div class="b-meta">Tied; ${esc(entrantLabel(cup, m.winner))} went through</div>` : ""}</div>`).join("")}</div>
     </div>`).join("")}</div></div>`;
 }
@@ -1051,7 +1090,7 @@ function finalTableHtml(cup) {
 VIEWS.cup = {
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Knockout</div><h2>Cups</h2>
-      <p>Draws and results for this season's cup competitions. Cup results don't count towards the league table.</p></div></div><div id="cup-body"></div>`;
+      <p>Draws and results for this season's cup competitions. In each match the first-named side is at home. Cup results don't count towards the league table.</p></div></div><div id="cup-body"></div>`;
   },
   refresh() {
     const body = $("#cup-body");
@@ -1102,6 +1141,11 @@ VIEWS.cups = {
     detail.addEventListener("change", e => {
       if (e.target.matches("input[data-entrant]")) { e.target.checked ? this.picked.add(e.target.value) : this.picked.delete(e.target.value); this.updatePickCount(); }
       if (e.target.matches("[data-round-date], [data-round-time]")) this.saveRoundDate(+e.target.closest("[data-round]").dataset.round);
+      if (e.target.matches("select[data-venue]")) {
+        const row = e.target.closest("[data-match]"), v = S.venues[e.target.value], wrap = $("[data-alley-wrap]", row);
+        wrap.hidden = !(v?.alleys > 1);
+        $("[data-alley]", row).innerHTML = alleyOptions(v?.alleys || 1, 1);
+      }
     });
     detail.addEventListener("input", e => {
       if (e.target.id === "ce-search") this.filterPick();
@@ -1191,14 +1235,16 @@ VIEWS.cups = {
     const ready = m.a && m.b, venues = sortedVenues();
     return `<div class="fx-admin cup-match" data-match="${esc(m.id)}">
       <div class="result-line">
-        <span class="h">${esc(entrantLabel(cup, m.a))}</span>
+        <span class="h">${esc(entrantLabel(cup, m.a))}${m.a ? ` <small class="home-tag">home</small>` : ""}</span>
         <input type="number" min="0" inputmode="numeric" id="cp-a-${esc(m.id)}" data-pins="a" value="${m.aPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.a))} pins"${ready ? "" : " disabled"}>
         <span class="dash">–</span>
         <input type="number" min="0" inputmode="numeric" id="cp-b-${esc(m.id)}" data-pins="b" value="${m.bPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.b))} pins"${ready ? "" : " disabled"}>
         <span class="a">${esc(entrantLabel(cup, m.b))}</span>
       </div>
       <div class="cm-meta">
-        ${venues.length ? `<label>Venue <select data-venue>${`<option value="">${cup.format === "team" ? "First-named team's venue" : "To be confirmed"}</option>`}${venues.map(v => `<option value="${esc(v.id)}"${cup.schedule?.[m.id]?.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>` : ""}
+        ${venues.length ? `<label>Venue <select data-venue><option value="">${(() => { const h = entrantHome(cup, m.a); return h ? `Home venue: ${esc(venueText(h.venue, h.alley))}` : m.a ? "Home team has no venue" : "Home team's venue"; })()}</option>${venues.map(v => `<option value="${esc(v.id)}"${m.venueChosen && m.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>
+          <label data-alley-wrap${m.venueChosen && S.venues[m.venue]?.alleys > 1 ? "" : " hidden"}>Alley <select data-alley>${alleyOptions(S.venues[m.venueChosen ? m.venue : ""]?.alleys || 1, m.alley || 1)}</select></label>` : ""}
+        ${m.clash ? `<span class="chip warn" title="Another match this round is on the same venue and alley">Alley clash</span>` : ""}
         <label class="tie-pick"${m.tie ? "" : " hidden"}>Tied. Who goes through? <select data-tie><option value="">Choose</option>${[m.a, m.b].filter(Boolean).map(x => `<option value="${esc(x)}"${m.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>
         <button class="btn sm" data-act="cup-save-match" data-id="${esc(m.id)}"${ready ? "" : " disabled"}>Save</button>
         ${ready ? "" : `<span class="lookup-note">Waiting for the earlier round.</span>`}
@@ -1274,11 +1320,11 @@ VIEWS.cups = {
     // Uses the entries ticked on screen, saved or not.
     const cup = this.cup(), ticked = $("#ce-list") ? $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label })) : cup.entrants;
     if (ticked.length < 2) return toast("Choose at least 2 entries first.");
-    const ids = ticked.map(e => e.id);
-    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    const { draw: ids, clashes } = drawAvoidingClashes(cup, ticked.map(e => e.id));
     const byes = 2 ** cupRoundCount(cup.entries) - ids.length;
     if (await commit(d => { Object.assign(d.cups[cup.id], { entrants: ticked, draw: ids, results: {}, schedule: {} }); }))
-      toast(`The draw has been made${byes ? ` with ${byes} ${byes === 1 ? "bye" : "byes"}` : ""}`);
+      toast(`The draw has been made${byes ? ` with ${byes} ${byes === 1 ? "bye" : "byes"}` : ""}.` +
+        (clashes ? ` ${clashes === 1 ? "One round-1 match shares" : `${clashes} round-1 matches share`} a home alley with another and couldn't be avoided. They're marked below, so change their venue.` : " No two round-1 home teams share an alley."));
   },
   async redraw() {
     const cup = this.cup();
@@ -1292,6 +1338,7 @@ VIEWS.cups = {
   async saveMatch(id) {
     const cup = this.cup(), row = $(`[data-match="${CSS.escape(id)}"]`), m = cupBracket(cup).rounds.flatMap(r => r.matches).find(x => x.id === id);
     const aPins = num($("[data-pins=a]", row).value), bPins = num($("[data-pins=b]", row).value), venue = $("[data-venue]", row)?.value || null;
+    const alley = venue && S.venues[venue]?.alleys > 1 ? +$("[data-alley]", row).value || 1 : null;
     if ((aPins == null) !== (bPins == null)) return toast("Enter both sides' pins, or clear both.");
     if ((aPins ?? 0) < 0 || (bPins ?? 0) < 0) return toast("Pins can't be negative.");
     const tieWinner = $("[data-tie]", row).value;
@@ -1299,11 +1346,11 @@ VIEWS.cups = {
     $$("input[data-pins]", row).forEach(i => delete i.dataset.dirty);
     const ok = await commit(d => {
       const c = d.cups[cup.id];
-      (c.schedule ||= {})[id] = { venue };
+      (c.schedule ||= {})[id] = { venue, alley };
       if (aPins == null) delete c.results[id];
       else (c.results ||= {})[id] = { a: m.a, b: m.b, aPins, bPins, winner: aPins === bPins ? tieWinner : null };
     });
-    if (ok) toast(aPins == null ? "Result cleared" : `Result saved: ${entrantLabel(cup, m.a)} ${aPins} – ${bPins} ${entrantLabel(cup, m.b)}`);
+    if (ok) toast(aPins != null ? `Result saved: ${entrantLabel(cup, m.a)} ${aPins} – ${bPins} ${entrantLabel(cup, m.b)}` : m.aPins != null ? "Result cleared" : "Venue saved");
   },
   async saveFinal() {
     const cup = this.cup(), scores = {};
