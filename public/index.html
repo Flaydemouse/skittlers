@@ -252,6 +252,7 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .b-matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 10px; }
 .b-match { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 .b-match.bye { opacity: .7; border-style: dashed; }
+.b-match.empty { visibility: hidden; }
 .b-side { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
 .b-side + .b-side { border-top: 1px solid var(--line); }
 .b-side span { min-width: 0; overflow-wrap: anywhere; }
@@ -967,20 +968,28 @@ function cupCandidates(cup) {
 }
 // Works out every round from the draw and the results saved so far. Winners move through automatically;
 // a result is ignored if an earlier result changed who's playing in that match.
+// Places beyond the entries drawn are byes. A match with nobody in it is "empty", and whoever
+// would have met its winner gets a bye through the next round.
 function cupBracket(cup) {
-  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [];
+  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [], n = draw.length;
   const rounds = []; let prev = null;
   for (let r = 1; r <= R; r++) {
     const matches = [], when = cup.roundDates?.[r] || {};
     for (let k = 0; k < size / 2 ** r; k++) {
-      const id = `${r}-${k}`, m = { id, round: r, slot: k, a: null, b: null, aPins: null, bPins: null, winner: null, bye: false, tie: false };
+      const id = `${r}-${k}`, m = { id, round: r, slot: k, a: null, b: null, aPins: null, bPins: null, winner: null, bye: false, empty: false, tie: false };
       if (r === 1) {
         const sa = order[2 * k], sb = order[2 * k + 1];
         m.a = draw[sa - 1] || null; m.b = draw[sb - 1] || null;
-        if (sa > cup.entries || sb > cup.entries) { m.bye = true; m.winner = m.a || m.b; }
-      } else { m.a = prev[2 * k].winner; m.b = prev[2 * k + 1].winner; }
+        if (sa > n && sb > n) m.empty = true;
+        else if (sa > n || sb > n) { m.bye = true; m.winner = m.a || m.b; }
+      } else {
+        const pa = prev[2 * k], pb = prev[2 * k + 1];
+        if (pa.empty && pb.empty) m.empty = true;
+        else if (pa.empty || pb.empty) { m.bye = true; m.a = (pa.empty ? pb : pa).winner; m.winner = m.a; }
+        else { m.a = pa.winner; m.b = pb.winner; }
+      }
       const res = cup.results?.[id];
-      if (!m.bye && res && m.a && m.b && res.a === m.a && res.b === m.b) {
+      if (!m.bye && !m.empty && res && m.a && m.b && res.a === m.a && res.b === m.b) {
         m.aPins = res.aPins; m.bPins = res.bPins;
         m.tie = res.aPins === res.bPins;
         m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
@@ -998,19 +1007,19 @@ function cupFinal(cup) {
   const scores = cup.final?.scores || {};
   const rows = (cup.entrants || []).map(e => ({ id: e.id, pins: Number.isFinite(scores[e.id]) ? scores[e.id] : null }))
     .sort((a, b) => (b.pins ?? -1) - (a.pins ?? -1) || entrantLabel(cup, a.id).localeCompare(entrantLabel(cup, b.id)));
-  const complete = rows.length === cup.entries && rows.every(r => r.pins !== null);
+  const complete = rows.length >= 2 && rows.every(r => r.pins !== null);
   const top = complete ? rows.filter(r => r.pins === rows[0].pins).map(r => r.id) : [];
   const winner = !complete ? null : top.length === 1 ? top[0] : top.includes(cup.final?.winner) ? cup.final.winner : null;
   return { rows, complete, tiedTop: top.length > 1 ? top : [], winner };
 }
 function cupStatus(cup) {
   const n = (cup.entrants || []).length;
-  if (n < cup.entries) return { text: `Choosing entries: ${n} of ${cup.entries}`, state: "todo" };
   if (cup.structure === "final") {
+    if (n < 2) return { text: `Choosing entries: ${n} of ${cup.entries}`, state: "todo" };
     const f = cupFinal(cup);
     return f.winner ? { text: `Won by ${entrantLabel(cup, f.winner)}`, state: "done" } : { text: "Final to play", state: "live" };
   }
-  if (!cup.draw?.length) return { text: "Entries chosen. The draw hasn't been made yet.", state: "todo" };
+  if (!cup.draw?.length) return n < cup.entries ? { text: `Choosing entries: ${n} of ${cup.entries}`, state: "todo" } : { text: "Entries chosen. The draw hasn't been made yet.", state: "todo" };
   const b = cupBracket(cup);
   if (b.champion) return { text: `Won by ${entrantLabel(cup, b.champion)}`, state: "done" };
   return { text: `${b.rounds.find(r => r.matches.some(m => !m.winner)).name} to play`, state: "live" };
@@ -1025,7 +1034,7 @@ function bracketHtml(cup) {
       <span>${esc(who ? entrantLabel(cup, who) : m.bye ? "Bye" : "To be decided")}</span><b>${pins ?? ""}</b></div>`;
   return `<div class="bracket-scroll"><div class="bracket" style="--rounds:${b.rounds.length}">${b.rounds.map(r => `
     <div class="b-round"><h4>${esc(r.name)}<span>${esc(whenText(r.date, r.time))}</span></h4>
-      <div class="b-matches">${r.matches.map(m => `<div class="b-match${m.bye ? " bye" : ""}">
+      <div class="b-matches">${r.matches.map(m => m.empty ? `<div class="b-match empty" aria-hidden="true"><div class="b-side">&nbsp;</div><div class="b-side">&nbsp;</div></div>` : `<div class="b-match${m.bye ? " bye" : ""}">
         ${side(m, m.a, m.aPins)}${side(m, m.b, m.bPins)}
         ${!m.bye && m.venue && S.venues[m.venue] ? `<div class="b-meta">${esc(S.venues[m.venue].name)}</div>` : ""}
         ${m.tie && m.winner ? `<div class="b-meta">Tied; ${esc(entrantLabel(cup, m.winner))} went through</div>` : ""}</div>`).join("")}</div>
@@ -1147,10 +1156,11 @@ VIEWS.cups = {
 
     // Step 1: entries
     html += step(1, `Entries <small>${n} of ${cup.entries} chosen</small>`);
-    if (drawn) html += `<p class="muted">${esc(cup.entrants.map(e => entrantLabel(cup, e.id)).join(", "))}</p>`;
+    if (drawn) html += `<p class="muted">${esc(cup.entrants.map(e => entrantLabel(cup, e.id)).join(", "))}${cup.draw.length < cup.entries ? `. The other ${cup.entries - cup.draw.length} ${cup.entries - cup.draw.length === 1 ? "place is a bye" : "places are byes"}.` : ""}</p>`;
     else {
       const cands = cupCandidates(cup);
       html += cands.length ? `<div class="list-tools"><input type="search" id="ce-search" placeholder="Search ${cup.format === "team" ? "teams" : "players or teams"}" aria-label="Search entries" value="${esc(search)}"><span class="list-count" id="ce-count"></span></div>
+        <div class="actions"><button class="btn ghost sm" data-act="ce-all">Select all</button><button class="btn ghost sm" data-act="ce-none">Clear all</button></div>
         <div class="pick-grid" id="ce-list">${cands.map(c => `<label class="pick" data-search="${esc(searchText(c.search))}"><input type="checkbox" data-entrant value="${esc(c.id)}" data-label="${esc(c.label)}"${this.picked.has(c.id) ? " checked" : ""}> ${esc(c.label)}</label>`).join("")}</div>
         <div class="actions"><button class="btn" data-act="cup-save-entries">Save entries</button></div>`
         : `<p class="muted">${cup.format === "team" ? `Add teams on the <a href="#teams">Teams</a> page first.` : `Add players to teams on the <a href="#teams">Teams</a> page first.`}</p>`;
@@ -1158,9 +1168,7 @@ VIEWS.cups = {
 
     if (cup.structure === "full") {
       html += step(2, "Draw");
-      if (!drawn) html += n === cup.entries
-        ? `<p class="muted">The draw puts the entries into the bracket at random.${cup.entries !== 2 ** cupRoundCount(cup.entries) ? " Byes are spread through the draw." : ""}</p><div class="actions"><button class="btn" data-act="cup-draw">Make the draw</button></div>`
-        : `<p class="muted">Choose all ${cup.entries} entries first.</p>`;
+      if (!drawn) html += `<div id="draw-box"></div>`;
       else html += bracketHtml(cup) + `<div class="actions"><button class="btn danger sm" data-act="cup-redraw">Redo the draw</button></div>`;
       if (drawn) {
         html += step(3, "Dates and results");
@@ -1168,10 +1176,11 @@ VIEWS.cups = {
         html += b.rounds.map(r => `<div class="cup-round" data-round="${r.r}">
           <div class="cup-round-head"><h5>${esc(r.name)}</h5>
             <label>Date <input type="date" data-round-date value="${esc(r.date)}"></label><label>Start <input type="time" data-round-time value="${esc(r.time)}"></label></div>
-          ${r.matches.filter(m => !m.bye).map(m => this.matchRow(cup, m)).join("") || `<p class="muted">Every match in this round is a bye.</p>`}
-          ${r.matches.some(m => m.bye) ? `<p class="lookup-note">Byes: ${esc(r.matches.filter(m => m.bye).map(m => entrantLabel(cup, m.winner)).join(", "))}</p>` : ""}</div>`).join("");
+          ${r.matches.filter(m => !m.bye && !m.empty).map(m => this.matchRow(cup, m)).join("") || `<p class="muted">Every match in this round is a bye.</p>`}
+          ${r.matches.some(m => m.bye && m.winner) ? `<p class="lookup-note">Byes: ${esc(r.matches.filter(m => m.bye && m.winner).map(m => entrantLabel(cup, m.winner)).join(", "))}</p>` : ""}</div>`).join("");
       }
-    } else if (n) html += step(2, "Final") + this.finalForm(cup);
+    } else if (n >= 2) html += step(2, "Final") + this.finalForm(cup);
+    else html += step(2, "Final") + `<p class="muted">Choose at least 2 entries for the final.</p>`;
     html += `</section>`;
     box.innerHTML = html;
     $("#cs-form").addEventListener("submit", e => { e.preventDefault(); this.saveSettings(); });
@@ -1220,6 +1229,32 @@ VIEWS.cups = {
     const full = this.picked.size >= cup.entries;
     $$("input[data-entrant]", l).forEach(i => { i.disabled = full && !i.checked; });
     const small = $(".cup-step small"); if (small) small.textContent = `${this.picked.size} of ${cup.entries} chosen`;
+    this.renderDrawBox();
+  },
+  // The draw step follows the boxes ticked on screen, so it's ready as soon as 2 entries are ticked.
+  renderDrawBox() {
+    const cup = this.cup(), box = $("#draw-box"); if (!cup || !box) return;
+    const n = this.picked.size, empty = cup.entries - n;
+    box.innerHTML = n >= 2
+      ? `<p class="muted">The draw puts the entries into the bracket at random.${empty > 0 ? ` You've chosen ${n} of ${cup.entries}, so the ${empty} empty ${empty === 1 ? "place becomes a bye" : "places become byes"}.` : ""}${2 ** cupRoundCount(cup.entries) > n ? " Byes are spread through the draw." : ""}</p>
+         <div class="actions"><button class="btn" data-act="cup-draw">Make the draw${empty > 0 ? ` with ${empty} ${empty === 1 ? "bye" : "byes"} added` : ""}</button></div>`
+      : `<p class="muted">Choose at least 2 entries, then make the draw. Any places you don't fill become byes.</p>`;
+  },
+  // Ticks every entry currently shown (the search narrows it), up to the cup's number of entries.
+  selectAll() {
+    const cup = this.cup(), shown = $$("#ce-list .pick:not([hidden]) input[data-entrant]");
+    let skipped = 0;
+    for (const i of shown) {
+      if (i.checked) continue;
+      if (this.picked.size >= cup.entries) { skipped++; continue; }
+      i.checked = true; this.picked.add(i.value);
+    }
+    this.updatePickCount();
+    if (skipped) toast(`This cup has ${cup.entries} places, so ${skipped} weren't ticked. Raise the number of entries to fit them all.`);
+  },
+  clearAll() {
+    for (const i of $$("#ce-list .pick:not([hidden]) input[data-entrant]:checked")) { i.checked = false; this.picked.delete(i.value); }
+    this.updatePickCount();
   },
   async saveSettings() {
     const cup = this.cup(), name = $("#cs-name").value.trim(), entries = Math.round(+$("#cs-entries").value);
@@ -1232,12 +1267,18 @@ VIEWS.cups = {
     const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
     if (picked.length > cup.entries) return toast(`This cup has ${cup.entries} entries. Untick ${picked.length - cup.entries}.`);
     if (await commit(d => { d.cups[cup.id].entrants = picked; if (cup.structure === "final") { const keep = new Set(picked.map(p => p.id)); const sc = d.cups[cup.id].final.scores || {}; for (const k of Object.keys(sc)) if (!keep.has(k)) delete sc[k]; } }))
-      toast(picked.length === cup.entries ? (cup.structure === "full" ? "Entries saved. Now make the draw." : "Entries saved. Now add the final's details.") : `Entries saved: ${picked.length} of ${cup.entries}`);
+      toast(picked.length === cup.entries ? (cup.structure === "full" ? "Entries saved. Now make the draw." : "Entries saved. Now add the final's details.")
+        : `Entries saved: ${picked.length} of ${cup.entries}.${picked.length >= 2 && cup.structure === "full" ? " You can make the draw now and the empty places will be byes." : ""}`);
   },
   async makeDraw() {
-    const cup = this.cup(), ids = cup.entrants.map(e => e.id);
+    // Uses the entries ticked on screen, saved or not.
+    const cup = this.cup(), ticked = $("#ce-list") ? $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label })) : cup.entrants;
+    if (ticked.length < 2) return toast("Choose at least 2 entries first.");
+    const ids = ticked.map(e => e.id);
     for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-    if (await commit(d => { Object.assign(d.cups[cup.id], { draw: ids, results: {}, schedule: {} }); })) toast("The draw has been made");
+    const byes = 2 ** cupRoundCount(cup.entries) - ids.length;
+    if (await commit(d => { Object.assign(d.cups[cup.id], { entrants: ticked, draw: ids, results: {}, schedule: {} }); }))
+      toast(`The draw has been made${byes ? ` with ${byes} ${byes === 1 ? "bye" : "byes"}` : ""}`);
   },
   async redraw() {
     const cup = this.cup();
@@ -2597,6 +2638,8 @@ document.addEventListener("click", async e => {
     if (await commit(d => { delete d.cups[id]; })) { S.ui.cupId = null; VIEWS.cups.refresh(); toast(`${name} deleted`); }
   }
   if (act === "cup-save-entries") VIEWS.cups.saveEntries();
+  if (act === "ce-all") VIEWS.cups.selectAll();
+  if (act === "ce-none") VIEWS.cups.clearAll();
   if (act === "cup-draw") VIEWS.cups.makeDraw();
   if (act === "cup-redraw") { if (!arm(b, "Click again: clears the draw and its results")) return; VIEWS.cups.redraw(); }
   if (act === "cup-save-match") VIEWS.cups.saveMatch(id);
