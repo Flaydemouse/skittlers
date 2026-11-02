@@ -128,7 +128,8 @@ table.league { width: 100%; border-collapse: collapse; font-variant-numeric: tab
 .fx .away { font-weight: 600; min-width: 0; }
 .fx .score { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 1.1rem; text-align: center; min-width: 120px; }
 .fx .score .v { color: var(--muted); font-weight: 500; font-size: .95rem; }
-.fx .won { color: var(--win); }
+.fx .won { font-weight: 800; }
+.fx .won .tn::after { content: " ✓"; color: var(--win); }
 .fx .meta { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: .85rem; }
 .chip { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--muted); }
 .chip.cup { background: var(--brass); color: var(--surface); }
@@ -166,6 +167,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .player { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
 .player-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px; }
 .player-row .btn { justify-self: end; align-self: center; }
+.player-roles { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: .84rem; }
+.player-roles .check { gap: 5px; }
+.player-roles .check { font-weight: 600; }
 .dup-note { color: var(--brass-ink); font-size: .82rem; font-weight: 700; }
 .postcode { max-width: 11em; text-transform: uppercase; }
 .lookup-note { font-size: .84rem; color: var(--muted); margin: 0; }
@@ -263,6 +267,18 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .b-side { display: flex; justify-content: space-between; gap: 10px; padding: 7px 10px; font-variant-numeric: tabular-nums; }
 .b-side + .b-side { border-top: 1px solid var(--line); }
 .b-side span { min-width: 0; overflow-wrap: anywhere; }
+.pairs-names, .pairs-missing { display: block; font-size: .8rem; font-weight: 500; color: var(--muted); }
+/* Team names are shown in the site's orange everywhere. */
+.tn, .entrant-team, .card-toggle.tn { color: var(--brass-ink); }
+.entrant-team { font-weight: 700; }
+.nick { font-style: italic; }
+.pick:has(.who-pick) { flex-wrap: wrap; align-items: start; }
+.pick:has(.who-pick) .bye-toggle { order: 4; margin-left: 24px; }
+.who-pick { order: 3; flex-basis: 100%; display: grid; gap: 2px; padding-left: 24px; font-size: .9rem; }
+.who-pick .check { gap: 6px; }
+.who-pick small { color: var(--muted); }
+.entrant-players { display: block; font-weight: 400; color: var(--ink); }
+.pairs-missing { color: var(--brass-ink); font-weight: 700; }
 .b-side.won { font-weight: 800; background: color-mix(in srgb, var(--win) 10%, transparent); }
 .b-side.tbd { color: var(--muted); font-style: italic; }
 .b-meta { padding: 4px 10px 6px; font-size: .78rem; color: var(--muted); border-top: 1px solid var(--line); }
@@ -285,6 +301,12 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .card-head { display: flex; justify-content: space-between; gap: 12px; align-items: start; flex-wrap: wrap; }
 .card-head h3 { font-size: 1.25rem; }
 .card-head .sub { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+.card-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.card-toggle::before { content: ""; flex: none; width: 7px; height: 7px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; }
+.card-toggle[aria-expanded="true"]::before { transform: rotate(45deg); }
+.card-toggle:hover { text-decoration: underline; }
+.card-body { display: grid; gap: 10px; }
+.card-body[hidden] { display: none; }
 .kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: .92rem; margin: 0; }
 .kv dt { color: var(--muted); font-weight: 600; }
 .kv dd { margin: 0; overflow-wrap: anywhere; white-space: pre-line; }
@@ -882,7 +904,7 @@ VIEWS.tables = {
           <th><abbr title="Home pins: total pins scored at home">H Pins</abbr></th><th><abbr title="Away pins: total pins scored away">A Pins</abbr></th><th><abbr title="Pin difference: all pins for minus against">PD</abbr></th><th><abbr title="Away pin difference: away pins for minus against">Away PD</abbr></th>
         </tr></thead>
         <tbody>${g.rows.map((r, i) => `<tr>
-          <td class="pos">${i + 1}</td><td class="team"><span>${esc(r.t.name)}</span></td>
+          <td class="pos">${i + 1}</td><td class="team"><span class="tn">${esc(r.t.name)}</span></td>
           <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="pts">${r.pts}</td>
           <td>${r.hp.toLocaleString("en-GB")}</td><td>${r.ap.toLocaleString("en-GB")}</td>
           <td class="${cls(r.pd)}">${signed(r.pd)}</td><td class="${cls(r.apd)}">${signed(r.apd)}</td></tr>`).join("")}</tbody>
@@ -898,9 +920,9 @@ function fxCard(f, showComp) {
   const hw = p && f.homePins > f.awayPins, aw = p && f.awayPins > f.homePins;
   const where = v ? `${esc(v.name)}${alley ? ` · Alley ${alley}` : ""}` : "Venue to be confirmed";
   return `<div class="fx">
-    <div class="home ${hw ? "won" : ""}">${esc(teamName(f.home))}</div>
+    <div class="home ${hw ? "won" : ""}"><span class="tn">${esc(teamName(f.home))}</span></div>
     <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
-    <div class="away ${aw ? "won" : ""}">${esc(teamName(f.away))}</div>
+    <div class="away ${aw ? "won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></div>
     <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${where}</div>
   </div>`;
 }
@@ -966,6 +988,40 @@ function entrantLabel(cup, id) {
   if (cup.format === "team") return S.teams[id]?.name || cup.entrants?.find(e => e.id === id)?.label || "Unknown team";
   return cup.entrants?.find(e => e.id === id)?.label || "Unknown player";
 }
+// A pairs cup is a team cup whose teams are represented by the players ticked for the Pairs Cup on the Teams page.
+// Cups made before the setting existed count as pairs cups when their name says so.
+const isPairsCup = cup => cup.format === "team" && (cup.pairs ?? /\bpairs?\b/i.test(cup.name));
+// A captains cup is an individual cup only open to players ticked as captain or vice captain on the Teams page.
+const isCaptainsCup = cup => cup.format === "individual" && (cup.captains ?? /\bcaptains?\b/i.test(cup.name));
+// The team's Pairs Cup players under its name; admins get a reminder when none are ticked.
+function pairsLine(cup, id, admin = false) {
+  if (!id || !isPairsCup(cup) || !S.teams[id]) return "";
+  const names = pairsOf(S.teams[id]).map(playerHtml);
+  if (names.length) return `<span class="entrant-players">${names.join(", ")}</span>`;
+  return admin ? `<small class="pairs-missing">No Pairs Cup players ticked yet. Tick them on the Teams page.</small>` : "";
+}
+// Splits an individual entry's label, "Player (Team)", into the player and the team's current name.
+function entrantParts(cup, id) {
+  const label = entrantLabel(cup, id), team = S.teams[String(id).split(":")[1]];
+  if (team && label.endsWith(` (${team.name})`)) return { player: label.slice(0, -team.name.length - 3), team: team.name };
+  // The team may have been renamed: take the last bracketed part, allowing brackets inside it.
+  if (label.endsWith(")")) for (let i = label.length - 1, depth = 0; i > 0; i--) {
+    if (label[i] === ")") depth++;
+    else if (label[i] === "(" && --depth === 0) return label[i - 1] === " " ? { player: label.slice(0, i - 1), team: team?.name || label.slice(i + 1, -1) } : null;
+  }
+  return null;
+}
+// How an entry shows in a draw: plain team name, or the team in bold with its players underneath
+// (a pairs cup's Pairs Cup players, or the player in an individual cup). `tag` goes after the team name.
+function entrantHtml(cup, id, admin = false, tag = "") {
+  if (!id) return esc(entrantLabel(cup, id)) + tag;
+  if (cup.format === "team") return isPairsCup(cup)
+    ? `<span class="entrant-team">${esc(entrantLabel(cup, id))}</span>${tag}${pairsLine(cup, id, admin)}`
+    : `<span class="tn">${esc(entrantLabel(cup, id))}</span>${tag}`;
+  const parts = entrantParts(cup, id), [, tid, key] = String(id).split(":");
+  const player = S.teams[tid] && playersOf(S.teams[tid]).find(p => searchText(fullName(p)) === key);
+  return parts ? `<span class="entrant-team">${esc(parts.team)}</span>${tag}<span class="entrant-players">${player ? playerHtml(player) : esc(parts.player)}</span>` : esc(entrantLabel(cup, id)) + tag;
+}
 // An entrant's home venue and alley: the team's, or for a player, their team's.
 function entrantHome(cup, id) {
   if (!id) return null;
@@ -977,9 +1033,16 @@ const venueText = (venue, alley) => S.venues[venue] ? `${S.venues[venue].name}${
 // Who can be entered: the season's teams, or every player on a team.
 function cupCandidates(cup) {
   if (cup.format === "team") return sortedTeams().map(t => ({ id: t.id, label: t.name, search: t.name }));
-  return sortedTeams().flatMap(t => playersOf(t).filter(p => p.first || p.last).map(p => ({
-    id: `p:${t.id}:${searchText(fullName(p))}`, label: `${playerLabel(p)} (${t.name})`, search: `${fullName(p)} ${p.nick || ""} ${t.name}`,
-  }))).sort((a, b) => a.label.localeCompare(b.label));
+  const entry = (t, p) => ({ id: `p:${t.id}:${searchText(fullName(p))}`, label: `${playerLabel(p)} (${t.name})`, search: `${fullName(p)} ${p.nick || ""} ${t.name}`, team: t.name, player: playerHtml(p) });
+  // A captains cup has one entry per team: the captain, or the vice captain instead.
+  if (isCaptainsCup(cup)) return sortedTeams().flatMap(t => {
+    const ps = playersOf(t), options = [["Captain", ps.find(p => p.captain)], ["Vice captain", ps.find(p => p.vice)]]
+      .filter(([, p]) => p && (p.first || p.last)).map(([role, p]) => ({ ...entry(t, p), role }));
+    return options.length ? [{ team: t.name, teamId: t.id, options, search: options.map(o => o.search).join(" ") }] : [];
+  });
+  // Grouped by team in alphabetical order, then by player.
+  return sortedTeams().flatMap(t => playersOf(t).filter(p => p.first || p.last)
+    .sort((a, b) => playerLabel(a).localeCompare(playerLabel(b))).map(p => entry(t, p)));
 }
 // Works out every round from the draw and the results saved so far. Winners move through automatically;
 // a result is ignored if an earlier result changed who's playing in that match.
@@ -1074,10 +1137,10 @@ const cupSummary = cup => `${CUP_TYPES[cup.type] || "Cup"} · ${CUP_FORMATS[cup.
 const whenText = (date, time) => date ? `${fmtDate(date)}${time ? ` · ${time}` : ""}` : "Date to be set";
 
 /* ---------- cups: shared drawings ---------- */
-function bracketHtml(cup) {
+function bracketHtml(cup, admin = false) {
   const b = cupBracket(cup);
   const side = (m, who, pins) => `<div class="b-side${m.winner && m.winner === who ? " won" : ""}${!who ? " tbd" : ""}">
-      <span>${esc(who ? entrantLabel(cup, who) : m.bye ? "Bye" : "To be decided")}</span><b>${pins ?? ""}</b></div>`;
+      <span>${who ? entrantHtml(cup, who, admin) : m.bye ? "Bye" : "To be decided"}</span><b>${pins ?? ""}</b></div>`;
   return `<div class="bracket-scroll"><div class="bracket" style="--rounds:${b.rounds.length}">${b.rounds.map(r => `
     <div class="b-round"><h4>${esc(r.name)}<span>${esc(whenText(r.date, r.time))}</span></h4>
       <div class="b-matches">${r.matches.map(m => m.empty ? `<div class="b-match empty" aria-hidden="true"><div class="b-side">&nbsp;</div><div class="b-side">&nbsp;</div></div>` : `<div class="b-match${m.bye ? " bye" : ""}">
@@ -1086,11 +1149,11 @@ function bracketHtml(cup) {
         ${m.tie && m.winner ? `<div class="b-meta">Tied; ${esc(entrantLabel(cup, m.winner))} went through</div>` : ""}</div>`).join("")}</div>
     </div>`).join("")}</div></div>`;
 }
-function finalTableHtml(cup) {
+function finalTableHtml(cup, admin = false) {
   const f = cupFinal(cup), when = cup.final || {};
   return `<p class="lookup-note">${esc(whenText(when.date, when.time))}${when.venue && S.venues[when.venue] ? ` · ${esc(venueText(when.venue, S.venues[when.venue].alleys > 1 ? when.alley || 1 : null))}` : ""}</p>
     <div class="table-scroll"><table class="league final-table"><thead><tr><th class="pos">Pos</th><th class="team">${cup.format === "team" ? "Team" : "Player"}</th><th>Pins</th></tr></thead>
-    <tbody>${f.rows.map((r, i) => `<tr${f.winner === r.id ? ' class="winner"' : ""}><td class="pos">${r.pins === null ? "" : i + 1}</td><td class="team"><span>${esc(entrantLabel(cup, r.id))}${f.winner === r.id ? " 🏆" : ""}</span></td><td>${r.pins ?? "–"}</td></tr>`).join("")}</tbody></table></div>`;
+    <tbody>${f.rows.map((r, i) => `<tr${f.winner === r.id ? ' class="winner"' : ""}><td class="pos">${r.pins === null ? "" : i + 1}</td><td class="team"><span>${entrantHtml(cup, r.id, admin, f.winner === r.id ? " 🏆" : "")}</span></td><td>${r.pins ?? "–"}</td></tr>`).join("")}</tbody></table></div>`;
 }
 
 /* ---------- public: cups ---------- */
@@ -1137,6 +1200,8 @@ VIEWS.cups = {
           <fieldset class="field"><legend class="lbl">Rounds</legend><div class="radios">
             <label class="check"><input type="radio" name="c-structure" value="full" checked> Full tournament: knockout rounds through to a final</label>
             <label class="check"><input type="radio" name="c-structure" value="final"> Straight final: one final game, e.g. a pairs cup</label></div></fieldset>
+          <label class="check" id="c-pairs-wrap"><input type="checkbox" id="c-pairs"> Pairs cup: show each team's Pairs Cup players</label>
+          <label class="check" id="c-captains-wrap"><input type="checkbox" id="c-captains"> Captains cup: only captains and vice captains can enter</label>
           <div class="field"><label for="c-entries">Number of entries</label><input type="number" id="c-entries" min="2" max="128" value="16"></div>
           <p class="plan" id="c-plan" aria-live="polite"></p>
           <div class="actions"><button class="btn" type="submit" id="c-go">Create cup</button></div>
@@ -1146,12 +1211,30 @@ VIEWS.cups = {
     const f = $("#cup-form");
     const plan = () => $("#c-plan").textContent = cupPlanText(f.querySelector("[name=c-structure]:checked").value, +$("#c-entries").value);
     f.addEventListener("input", plan); f.addEventListener("change", plan); plan();
+    // Tick "Pairs cup" for a team cup named like one, and "Captains cup" for an individual one, until the box is changed by hand.
+    const kindBoxes = () => {
+      const format = f.querySelector("[name=c-format]:checked").value;
+      for (const [box, fmt, re] of [["c-pairs", "team", /\bpairs?\b/i], ["c-captains", "individual", /\bcaptains?\b/i]]) {
+        $(`#${box}-wrap`).hidden = format !== fmt;
+        if (!$("#" + box).dataset.touched) $("#" + box).checked = format === fmt && re.test($("#c-name").value);
+      }
+    };
+    for (const box of ["c-pairs", "c-captains"]) $("#" + box).addEventListener("change", () => $("#" + box).dataset.touched = "1");
+    f.addEventListener("input", kindBoxes); f.addEventListener("change", kindBoxes); kindBoxes();
     f.addEventListener("submit", e => { e.preventDefault(); this.create(); });
     const detail = $("#cup-detail");
     detail.addEventListener("change", e => {
       if (e.target.matches("input[data-entrant]")) {
         if (e.target.checked) this.picked.add(e.target.value);
         else { this.picked.delete(e.target.value); this.byes.delete(e.target.value); }
+        this.updatePickCount();
+      }
+      if (e.target.matches("input[data-who]")) {
+        // Swap a captains cup entry between the team's captain and vice captain.
+        const pick = e.target.closest(".pick"), box = $("input[data-entrant]", pick), bye = $("input[data-bye]", pick), old = box.value, now = e.target.value;
+        box.value = now; box.dataset.label = e.target.dataset.label; if (bye) bye.value = now;
+        if (this.picked.delete(old)) this.picked.add(now);
+        if (this.byes.delete(old)) this.byes.add(now);
         this.updatePickCount();
       }
       if (e.target.matches("input[data-bye]")) {
@@ -1184,10 +1267,12 @@ VIEWS.cups = {
     if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
     const f = $("#cup-form"), id = newId();
     const cup = { id, name, type: $("#c-type").value, format: f.querySelector("[name=c-format]:checked").value, structure: f.querySelector("[name=c-structure]:checked").value,
+      pairs: f.querySelector("[name=c-format]:checked").value === "team" && $("#c-pairs").checked,
+      captains: f.querySelector("[name=c-format]:checked").value === "individual" && $("#c-captains").checked,
       entries, entrants: [], draw: [], results: {}, schedule: {}, roundDates: {}, final: { scores: {} }, created: new Date().toISOString() };
     if (await commit(d => { (d.cups ||= {})[id] = cup; })) {
       toast(`${name} created. Now choose its entries.`);
-      f.reset(); $("#c-plan").textContent = cupPlanText("full", 16);
+      f.reset(); delete $("#c-pairs").dataset.touched; delete $("#c-captains").dataset.touched; f.dispatchEvent(new Event("change"));
       this.open(id);
     }
   },
@@ -1221,6 +1306,8 @@ VIEWS.cups = {
       <form class="cup-settings" id="cs-form" autocomplete="off">
         <div class="field"><label for="cs-name">Cup name</label><input type="text" id="cs-name" maxlength="60" value="${esc(cup.name)}"></div>
         <div class="field"><label for="cs-entries">Number of entries</label><input type="number" id="cs-entries" min="2" max="128" value="${cup.entries}"${drawn ? " disabled" : ""}></div>
+        ${cup.format === "team" ? `<label class="check"><input type="checkbox" id="cs-pairs"${isPairsCup(cup) ? " checked" : ""}> Pairs cup: show each team's Pairs Cup players</label>`
+          : `<label class="check"><input type="checkbox" id="cs-captains"${isCaptainsCup(cup) ? " checked" : ""}> Captains cup: only captains and vice captains can enter</label>`}
         <div class="actions"><button class="btn ghost" type="submit">Save</button></div>
       </form>
       <p class="plan">${esc(cupPlanText(cup.structure, cup.entries))}${drawn ? " The number of entries can't change once the draw is made." : ""}</p>`;
@@ -1232,18 +1319,25 @@ VIEWS.cups = {
       const cands = cupCandidates(cup);
       html += cands.length ? `<div class="list-tools"><input type="search" id="ce-search" placeholder="Search ${cup.format === "team" ? "teams" : "players or teams"}" aria-label="Search entries" value="${esc(search)}"><span class="list-count" id="ce-count"></span></div>
         <div class="actions"><button class="btn ghost sm" data-act="ce-all">Select all</button><button class="btn ghost sm" data-act="ce-none">Clear all</button></div>
-        <div class="pick-grid" id="ce-list">${cands.map(c => `<div class="pick" data-search="${esc(searchText(c.search))}">
-          <label><input type="checkbox" data-entrant value="${esc(c.id)}" data-label="${esc(c.label)}"${this.picked.has(c.id) ? " checked" : ""}> ${esc(c.label)}</label>
-          ${cup.structure === "full" ? `<label class="bye-toggle" title="Goes straight through to the next round"><input type="checkbox" data-bye value="${esc(c.id)}"${this.byes.has(c.id) ? " checked" : ""}> Bye</label>` : ""}</div>`).join("")}</div>
+        <div class="pick-grid" id="ce-list">${cands.map(c => {
+          // In a captains cup the box enters whichever of the captain and vice captain is chosen below it.
+          const chosen = c.options ? c.options.find(o => this.picked.has(o.id)) || c.options[0] : c;
+          const name = c.options ? `<span class="entrant-team">${esc(c.team)}</span>`
+            : c.team ? `<span class="entrant-team">${esc(c.team)}</span><span class="entrant-players">${c.player}</span>`
+            : isPairsCup(cup) ? `<span class="entrant-team">${esc(c.label)}</span>` : `<span class="tn">${esc(c.label)}</span>`;
+          return `<div class="pick" data-search="${esc(searchText(c.search))}">
+          <label><input type="checkbox" data-entrant value="${esc(chosen.id)}" data-label="${esc(chosen.label)}"${this.picked.has(chosen.id) ? " checked" : ""}> <span>${name}${pairsLine(cup, c.id, true)}</span></label>
+          ${c.options ? `<div class="who-pick">${c.options.map(o => `<label class="check"><input type="radio" name="ce-who-${esc(c.teamId)}" data-who value="${esc(o.id)}" data-label="${esc(o.label)}"${!this.picked.has(chosen.id) ? " disabled" : o === chosen ? " checked" : ""}> <span>${o.player}</span> <small>${o.role}</small></label>`).join("")}</div>` : ""}
+          ${cup.structure === "full" ? `<label class="bye-toggle" title="Goes straight through to the next round"><input type="checkbox" data-bye value="${esc(chosen.id)}"${this.byes.has(chosen.id) ? " checked" : ""}> Bye</label>` : ""}</div>`; }).join("")}</div>
         ${cup.structure === "full" ? `<p class="lookup-note" id="ce-byes"></p>` : `<p class="lookup-note">Everyone entered plays in the one final game.</p>`}
         <div class="actions"><button class="btn" data-act="cup-save-entries">Save entries</button></div>`
-        : `<p class="muted">${cup.format === "team" ? `Add teams on the <a href="#teams">Teams</a> page first.` : `Add players to teams on the <a href="#teams">Teams</a> page first.`}</p>`;
+        : `<p class="muted">${cup.format === "team" ? `Add teams on the <a href="#teams">Teams</a> page first.` : isCaptainsCup(cup) ? `No captains or vice captains are ticked yet. Tick them on the <a href="#teams">Teams</a> page first.` : `Add players to teams on the <a href="#teams">Teams</a> page first.`}</p>`;
     }
 
     if (cup.structure === "full") {
       html += step(2, "Draw");
       if (!drawn) html += `<div id="draw-box"></div>`;
-      else html += bracketHtml(cup) + `<div class="actions"><button class="btn danger sm" data-act="cup-redraw">Redo the draw</button></div>`;
+      else html += bracketHtml(cup, true) + `<div class="actions"><button class="btn danger sm" data-act="cup-redraw">Redo the draw</button></div>`;
       if (drawn) {
         html += step(3, "Dates and results");
         const b = cupBracket(cup);
@@ -1265,11 +1359,11 @@ VIEWS.cups = {
     const ready = m.a && m.b, venues = sortedVenues();
     return `<div class="fx-admin cup-match" data-match="${esc(m.id)}">
       <div class="result-line">
-        <span class="h">${esc(entrantLabel(cup, m.a))}${m.a ? ` <small class="home-tag">home</small>` : ""}</span>
+        <span class="h">${entrantHtml(cup, m.a, true, m.a ? ` <small class="home-tag">home</small>` : "")}</span>
         <input type="number" min="0" inputmode="numeric" id="cp-a-${esc(m.id)}" data-pins="a" value="${m.aPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.a))} pins"${ready ? "" : " disabled"}>
         <span class="dash">–</span>
         <input type="number" min="0" inputmode="numeric" id="cp-b-${esc(m.id)}" data-pins="b" value="${m.bPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.b))} pins"${ready ? "" : " disabled"}>
-        <span class="a">${esc(entrantLabel(cup, m.b))}</span>
+        <span class="a">${entrantHtml(cup, m.b, true)}</span>
       </div>
       <div class="cm-meta">
         ${venues.length ? `<label>Venue <select data-venue><option value="">${(() => { const h = entrantHome(cup, m.a); return h ? `Home venue: ${esc(venueText(h.venue, h.alley))}` : m.a ? "Home team has no venue" : "Home team's venue"; })()}</option>${venues.map(v => `<option value="${esc(v.id)}"${m.venueChosen && m.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>
@@ -1289,11 +1383,11 @@ VIEWS.cups = {
         <div class="field"><label for="fn-venue">Venue</label><select id="fn-venue"><option value="">To be confirmed</option>${venues.map(v => `<option value="${esc(v.id)}"${fin.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></div>
         <div class="field" id="fn-alley-wrap"${S.venues[fin.venue]?.alleys > 1 ? "" : " hidden"}><label for="fn-alley">Alley</label><select id="fn-alley">${alleyOptions(S.venues[fin.venue]?.alleys || 1, fin.alley || 1)}</select></div>
       </div>
-      <div class="final-rows">${(cup.entrants || []).map(e => `<label class="final-row"><span>${esc(entrantLabel(cup, e.id))}</span>
+      <div class="final-rows">${(cup.entrants || []).map(e => `<label class="final-row"><span>${entrantHtml(cup, e.id, true)}</span>
         <input type="number" min="0" inputmode="numeric" data-final="${esc(e.id)}" value="${fin.scores?.[e.id] ?? ""}" aria-label="${esc(entrantLabel(cup, e.id))} pins"></label>`).join("")}</div>
       ${f.tiedTop.length ? `<label class="tie-pick">Tied for first. Who wins? <select id="fn-tie"><option value="">Choose</option>${f.tiedTop.map(x => `<option value="${esc(x)}"${f.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>` : ""}
       <div class="actions"><button class="btn" data-act="cup-save-final">Save final</button></div>
-      ${(cup.entrants || []).length ? finalTableHtml(cup) : ""}</div>`;
+      ${(cup.entrants || []).length ? finalTableHtml(cup, true) : ""}</div>`;
   },
   syncTie(row) {
     if (!row) return;
@@ -1305,6 +1399,13 @@ VIEWS.cups = {
   spareByes() { const cup = this.cup(); return cup ? Math.max(0, 2 ** cupRoundCount(cup.entries) - this.picked.size) : 0; },
   updatePickCount() {
     const cup = this.cup(), l = $("#ce-list"); if (!cup || !l) return;
+    // Captains cup: ticking a team selects its captain, who can then be swapped for the vice captain.
+    // An unticked team has nobody selected and goes back to its captain.
+    for (const pick of $$(".pick:has(.who-pick)", l)) {
+      const box = $("input[data-entrant]", pick), radios = $$("input[data-who]", pick);
+      if (!box.checked) { const first = radios[0]; box.value = first.value; box.dataset.label = first.dataset.label; const bye = $("input[data-bye]", pick); if (bye) bye.value = first.value; }
+      radios.forEach(r => { r.disabled = !box.checked; r.checked = box.checked && r.value === box.value; });
+    }
     const full = this.picked.size >= cup.entries;
     $$("input[data-entrant]", l).forEach(i => { i.disabled = full && !i.checked; });
     const spare = this.spareByes();
@@ -1352,7 +1453,8 @@ VIEWS.cups = {
     if (!name) return toast("Give the cup a name.");
     if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
     if (entries < (cup.entrants || []).length) return toast(`You've already chosen ${entriesText(cup.entrants.length)}. Untick some first.`);
-    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries }); })) toast("Cup saved");
+    const pairs = !!$("#cs-pairs")?.checked, captains = !!$("#cs-captains")?.checked;
+    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries, pairs, captains }); })) toast("Cup saved");
   },
   async saveEntries() {
     const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
@@ -1471,10 +1573,20 @@ const fullName = p => [p.first, p.last].filter(Boolean).join(" ");
 // Only a full first + last name counts when looking for duplicates.
 const nameKey = p => p.first && p.last ? `${p.first} ${p.last}`.toLowerCase().replace(/\s+/g, " ").trim() : null;
 // Older records stored single strings; read them in the new shape.
-const captainOf = t => ("captainFirst" in t || "captainLast" in t) ? { first: t.captainFirst || "", last: t.captainLast || "" } : splitName(t.captain);
-const playersOf = t => (t.players || []).map(p => typeof p === "string" ? { ...splitName(p), nick: "" } : { first: p.first || "", last: p.last || "", nick: p.nick || "" });
-// e.g. John “Smithy” Smith
-const playerLabel = p => [p.first, p.nick && `“${p.nick}”`, p.last].filter(Boolean).join(" ");
+// Roles a player can have in their team: one captain, one vice captain, one sticker up and up to three for the pairs cup.
+const ROLES = [["captain", "Captain"], ["vice", "Vice captain"], ["sticker", "Sticker up"], ["pairs", "Pairs Cup"]];
+const PAIRS_MAX = 3;
+const roleFlags = p => Object.fromEntries(ROLES.filter(([k]) => p[k]).map(([k]) => [k, true]));
+// The captain is the player ticked as captain; teams saved before that keep their typed-in captain's name.
+const captainOf = t => { const p = playersOf(t).find(p => p.captain); return p ? { first: p.first, last: p.last } : ("captainFirst" in t || "captainLast" in t) ? { first: t.captainFirst || "", last: t.captainLast || "" } : splitName(t.captain); };
+const stickerOf = t => playersOf(t).find(p => p.sticker) || null;
+const viceOf = t => playersOf(t).find(p => p.vice) || null;
+const pairsOf = t => playersOf(t).filter(p => p.pairs);
+const playersOf = t => (t.players || []).map(p => typeof p === "string" ? { ...splitName(p), nick: "" } : { first: p.first || "", last: p.last || "", nick: p.nick || "", ...roleFlags(p) });
+// e.g. John Smith “Smithy”
+const playerLabel = p => [p.first, p.last, p.nick && `“${p.nick}”`].filter(Boolean).join(" ");
+// The same for the page: the nickname after the surname, in italics.
+const playerHtml = p => esc(fullName(p)) + (p.nick ? ` <em class="nick">${esc(p.nick)}</em>` : "");
 function venueAddr(v) {
   if ("address1" in v || "postcode" in v) return { address1: v.address1 || "", address2: v.address2 || "", address3: v.address3 || "", postcode: v.postcode || "" };
   const lines = String(v.address || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -1668,6 +1780,8 @@ function playerRow(p = { first: "", last: "", nick: "" }) {
     <input type="text" class="p-last" value="${esc(p.last)}" placeholder="Last name" aria-label="Player last name">
     <input type="text" class="p-nick" value="${esc(p.nick || "")}" placeholder="Nickname (optional)" aria-label="Player nickname">
     <button type="button" class="btn ghost sm" data-act="rm-player">Remove</button></div>
+    <div class="player-roles"${p.first || p.last ? "" : " hidden"}>
+      ${ROLES.map(([k, label]) => `<label class="check"><input type="checkbox" class="p-${k}"${p[k] ? " checked" : ""}> ${label}</label>`).join("")}</div>
     <div class="dup-note" hidden></div></div>`;
 }
 VIEWS.teams = {
@@ -1679,6 +1793,7 @@ VIEWS.teams = {
           <div class="list-tools" role="search">
             <input type="search" id="team-search" placeholder="Search teams, venues, captains or players" aria-label="Search teams">
             <span class="list-count" id="team-count" aria-live="polite"></span>
+            <span class="actions"><button type="button" class="btn ghost sm" data-act="teams-expand">Expand all</button><button type="button" class="btn ghost sm" data-act="teams-collapse">Collapse all</button></span>
           </div>
           <div id="team-list"></div>
         </div>
@@ -1689,15 +1804,13 @@ VIEWS.teams = {
             <div class="field"><label for="t-venue">Home venue</label><select id="t-venue"></select></div>
             <div class="field" id="t-alley-wrap" hidden><label for="t-alley">Home alley</label><select id="t-alley"></select></div>
           </div>
-          <div class="row2">
-            <div class="field"><label for="t-cap-first">Captain's first name</label><input type="text" id="t-cap-first"></div>
-            <div class="field"><label for="t-cap-last">Captain's last name</label><input type="text" id="t-cap-last"></div>
-          </div>
+          <div class="field"><span class="lbl">Captain</span><p class="lookup-note" id="t-cap-name"></p></div>
+          <div class="field"><label for="t-email">Captain's email address</label><input type="email" id="t-email" placeholder="name@example.com"></div>
           <div class="field"><label for="t-address">Captain's home address</label><textarea id="t-address" rows="3"></textarea></div>
           <div class="field"><label for="t-mobile">Captain's mobile number</label><input type="tel" id="t-mobile" placeholder="07…"></div>
           <div class="field"><span class="lbl">Players</span><div class="players" id="t-players"></div>
             <div class="actions"><button type="button" class="btn ghost sm" data-act="add-player">Add player</button></div>
-            <span class="hint">Press Enter to move to the next box. Names already on another team are flagged so you can check them.</span></div>
+            <span class="hint">Press Enter to move to the next box. Tick one captain, one vice captain and one sticker up, and up to three players for the Pairs Cup. Names already on another team are flagged so you can check them.</span></div>
           <div class="actions"><button class="btn" type="submit" id="tf-save">Save team</button><button class="btn ghost" type="button" data-act="cancel-team">Clear form</button></div>
         </form>
         <div class="panel form" id="import-panel">
@@ -1721,7 +1834,27 @@ VIEWS.teams = {
     const f = $("#team-form");
     f.addEventListener("submit", e => { e.preventDefault(); this.save(); });
     $("#t-venue").addEventListener("change", () => this.syncAlley());
-    $("#t-players").addEventListener("input", () => this.checkDuplicates());
+    $("#t-players").addEventListener("input", e => {
+      const row = e.target.closest(".player");
+      if (row) $(".player-roles", row).hidden = !($(".p-first", row).value.trim() || $(".p-last", row).value.trim());
+      this.checkDuplicates(); this.showCaptain();
+    });
+    $("#t-players").addEventListener("change", e => {
+      const box = e.target;
+      if (box.checked && box.classList.contains("p-pairs") && $$("#t-players .p-pairs:checked").length > PAIRS_MAX) {
+        box.checked = false; return toast(`Up to ${PAIRS_MAX} players can be picked for the Pairs Cup. Untick one first.`);
+      }
+      if (box.checked) {
+        // One captain, one vice captain and one sticker up per team.
+        for (const cls of ["p-captain", "p-vice", "p-sticker"]) if (box.classList.contains(cls))
+          $$("#t-players ." + cls).forEach(b => { if (b !== box) b.checked = false; });
+        // The captain and vice captain must be different players.
+        const row = box.closest(".player");
+        if (box.classList.contains("p-captain")) $(".p-vice", row).checked = false;
+        if (box.classList.contains("p-vice")) $(".p-captain", row).checked = false;
+      }
+      this.showCaptain();
+    });
     $("#imp-text").addEventListener("input", () => this.importSummary());
     wireSearch($("#team-search"), "teamSearch", () => this.filter());
     $("#imp-file").addEventListener("change", async e => {
@@ -1756,6 +1889,7 @@ VIEWS.teams = {
     const f = $("#team-form"); f.reset(); delete f.dataset.id;
     $("#tf-title").textContent = "Add a team";
     $("#t-players").innerHTML = playerRow();
+    this.showCaptain();
     $("#t-venue").innerHTML = venueOptions("");
     this.syncAlley();
     $$("#team-list .card").forEach(c => c.classList.remove("editing"));
@@ -1858,16 +1992,26 @@ VIEWS.teams = {
     $("#t-name").value = t.name || "";
     $("#t-venue").innerHTML = venueOptions(t.venue || "");
     this.syncAlley(t.alley || 1);
-    const cap = captainOf(t);
-    $("#t-cap-first").value = cap.first; $("#t-cap-last").value = cap.last;
+    $("#t-email").value = c.email || "";
     $("#t-address").value = c.address || "";
     $("#t-mobile").value = c.mobile || "";
-    const players = playersOf(t);
+    const players = playersOf(t), cap = captainOf(t);
+    // A captain typed in before players could be ticked: tick them in the list, adding them if they aren't in it.
+    if (fullName(cap) && !players.some(p => p.captain)) {
+      const match = players.find(p => nameKey(p) === nameKey(cap));
+      if (match) match.captain = true; else players.unshift({ ...cap, nick: "", captain: true });
+    }
     $("#t-players").innerHTML = (players.length ? players : [undefined]).map(p => playerRow(p)).join("");
+    this.showCaptain();
     this.checkDuplicates();
     $$("#team-list .card").forEach(el => el.classList.toggle("editing", el.dataset.id === id));
     f.scrollIntoView({ behavior: "smooth", block: "start" });
     $("#t-name").focus({ preventScroll: true });
+  },
+  showCaptain() {
+    const row = $$("#t-players .player").find(r => $(".p-captain", r).checked);
+    $("#t-cap-name").textContent = row ? fullName({ first: $(".p-first", row).value.trim(), last: $(".p-last", row).value.trim() }) || "Captain ticked, but their name is empty"
+      : "Tick Captain next to a player below.";
   },
   async save() {
     const f = $("#team-form");
@@ -1880,10 +2024,14 @@ VIEWS.teams = {
     const team = {
       name, venue,
       alley: venue ? Math.min(+$("#t-alley").value || 1, nAlleys) : null,
-      captainFirst: $("#t-cap-first").value.trim(), captainLast: $("#t-cap-last").value.trim(),
-      players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim(), nick: $(".p-nick", r).value.trim() })).filter(p => p.first || p.last || p.nick),
+      players: $$("#t-players .player").map(r => ({ first: $(".p-first", r).value.trim(), last: $(".p-last", r).value.trim(), nick: $(".p-nick", r).value.trim(),
+        ...roleFlags(Object.fromEntries(ROLES.map(([k]) => [k, $(".p-" + k, r).checked]))) })).filter(p => p.first || p.last || p.nick),
     };
-    const contact = { address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
+    const cap = team.players.find(p => p.captain);
+    team.captainFirst = cap?.first || ""; team.captainLast = cap?.last || "";
+    const email = $("#t-email").value.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast("Check the captain's email address.");
+    const contact = { email, address: $("#t-address").value.trim(), mobile: $("#t-mobile").value.trim() };
     const id = f.dataset.id || newId(), editing = !!f.dataset.id;
     $("#tf-save").disabled = true;
     // Divisions are set elsewhere, so keep whatever division the team already has.
@@ -1912,15 +2060,27 @@ VIEWS.teams = {
       const c = S.contacts[t.id] || {}, v = S.venues[t.venue], players = playersOf(t);
       const search = [t.name, v?.name, divisionName(t.division), fullName(captainOf(t)), ...players.map(playerLabel)].join(" ");
       return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}" data-search="${esc(searchText(search))}">
-        <div class="card-head"><div><h3>${esc(t.name)}</h3><div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"}</div></div>
+        <div class="card-head"><div><h3><button type="button" class="card-toggle tn" data-act="toggle-team" data-id="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="tb-${esc(t.id)}">${esc(t.name)}</button></h3>
+          <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${players.length} player${players.length === 1 ? "" : "s"}</div></div>
           <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
-        <dl class="kv"><dt>Captain</dt><dd>${esc(fullName(captainOf(t)) || "—")}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
+        <div class="card-body" id="tb-${esc(t.id)}"${this.open.has(t.id) ? "" : " hidden"}><dl class="kv"><dt>Captain</dt><dd>${(() => { const cp = playersOf(t).find(p => p.captain); return cp ? playerHtml(cp) : esc(fullName(captainOf(t)) || "—"); })()}</dd>
+          <dt>Vice captain</dt><dd>${viceOf(t) ? playerHtml(viceOf(t)) : "—"}</dd><dt>Sticker up</dt><dd>${stickerOf(t) ? playerHtml(stickerOf(t)) : "—"}</dd>
+          <dt>Pairs Cup</dt><dd>${pairsOf(t).map(playerHtml).join(", ") || "—"}</dd>
+          <dt>Email</dt><dd>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : "—"}</dd><dt>Mobile</dt><dd>${esc(c.mobile || "—")}</dd><dt>Address</dt><dd>${esc(c.address || "—")}</dd></dl>
         <div><div class="field"><span class="lbl">Players (${players.length})</span></div>
-          <div class="tags">${players.map(p => `<span class="tag">${esc(playerLabel(p))}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div>
+          <div class="tags">${players.map(p => `<span class="tag">${playerHtml(p)}${p.captain ? " (C)" : ""}${p.vice ? " (VC)" : ""}${p.sticker ? " (S)" : ""}${p.pairs ? " (P)" : ""}</span>`).join("") || `<span class="muted">No players listed</span>`}</div></div></div>
       </article>`;
     }).join("")}</div>`;
     this.filter();
   },
+  // Teams start collapsed; the ones opened stay open while the page is in use.
+  open: new Set(),
+  toggle(id, show = !this.open.has(id)) {
+    show ? this.open.add(id) : this.open.delete(id);
+    const btn = $(`#team-list [data-act="toggle-team"][data-id="${CSS.escape(id)}"]`);
+    if (btn) { btn.setAttribute("aria-expanded", show); document.getElementById("tb-" + id).hidden = !show; }
+  },
+  toggleAll(show) { for (const id of Object.keys(S.teams)) this.toggle(id, show); },
   filter() { applySearch($("#team-list"), S.ui.teamSearch, $("#team-count"), "team"); }
 };
 
@@ -2059,7 +2219,7 @@ VIEWS.venues = {
     const wrap = $("#v-assign-wrap");
     wrap.hidden = n <= 1;
     if (n <= 1) return;
-    $("#v-assign").innerHTML = teams.map(t => `<div class="assign-row"><span>${esc(t.name)}</span>
+    $("#v-assign").innerHTML = teams.map(t => `<div class="assign-row"><span class="tn">${esc(t.name)}</span>
       <select data-team="${esc(t.id)}" aria-label="Alley for ${esc(t.name)}">${alleyOptions(n, Math.min(t.alley || 1, n))}</select></div>`).join("");
     $("#v-assign-hint").textContent = teams.length ? "Changes apply when you save the venue." : id ? "No teams use this venue yet. Pick it as a team's home venue on the Teams page." : "Save the venue, then pick it as a team's home venue to assign alleys.";
   },
@@ -2134,8 +2294,8 @@ VIEWS.venues = {
         ${mapped ? `<div class="map" data-lat="${v.lat}" data-lng="${v.lng}" data-name="${esc(v.name)}" role="img" aria-label="Map showing ${esc(v.name)}"></div>`
           : a.postcode ? `<p class="lookup-note">No map yet: the postcode couldn't be found. Edit the venue to try again.</p>` : ""}
         <div class="alley-grid">${v.alleys > 1
-          ? alleys.map(n => { const ts = teams.filter(t => (t.alley || 1) === n); return `<div class="alley-row"><span class="n">Alley ${n}</span><span>${ts.map(t => esc(t.name)).join(", ") || `<span class="muted">Free</span>`}</span></div>`; }).join("")
-          : `<div class="alley-row"><span class="n">Home to</span><span>${teams.map(t => esc(t.name)).join(", ") || `<span class="muted">No teams yet</span>`}</span></div>`}</div>
+          ? alleys.map(n => { const ts = teams.filter(t => (t.alley || 1) === n); return `<div class="alley-row"><span class="n">Alley ${n}</span><span>${ts.map(t => `<span class="tn">${esc(t.name)}</span>`).join(", ") || `<span class="muted">Free</span>`}</span></div>`; }).join("")
+          : `<div class="alley-row"><span class="n">Home to</span><span>${teams.map(t => `<span class="tn">${esc(t.name)}</span>`).join(", ") || `<span class="muted">No teams yet</span>`}</span></div>`}</div>
       </article>`;
     }).join("")}</div>`;
     $$(".map[data-lat]", list).forEach(el => drawMap(el, +el.dataset.lat, +el.dataset.lng, el.dataset.name));
@@ -2334,11 +2494,11 @@ VIEWS["manage-fixtures"] = {
           <span>${fmtDate(f.date)}${f.time ? ` · ${esc(f.time)}` : ""}</span><span>${v ? esc(v.name) + (alley ? ` · Alley ${alley}` : "") : "No venue"}</span>
           ${clash.has(f.id) ? `<span class="chip warn" title="Another fixture uses this venue and alley on the same date">Alley clash</span>` : ""}</div>
         <div class="result-line">
-          <span class="h">${esc(teamName(f.home))}</span>
+          <span class="h tn">${esc(teamName(f.home))}</span>
           <input type="number" min="0" inputmode="numeric" id="hp-${esc(f.id)}" data-pins="h" value="${f.homePins ?? ""}" aria-label="${esc(teamName(f.home))} pins">
           <span class="dash">–</span>
           <input type="number" min="0" inputmode="numeric" id="ap-${esc(f.id)}" data-pins="a" value="${f.awayPins ?? ""}" aria-label="${esc(teamName(f.away))} pins">
-          <span class="a">${esc(teamName(f.away))}</span>
+          <span class="a tn">${esc(teamName(f.away))}</span>
         </div>
         <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}">Save</button><button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
       </div>`;
@@ -2548,7 +2708,7 @@ VIEWS.divisions = {
       <div class="alloc" id="dv-rows">${teams.map(t => {
         const v = S.venues[t.venue];
         return `<div class="alloc-row" data-search="${esc(searchText([t.name, v?.name].join(" ")))}">
-          <div><strong>${esc(t.name)}</strong><span class="muted">${v ? esc(v.name) : "No home venue"}</span></div>
+          <div><strong class="tn">${esc(t.name)}</strong><span class="muted">${v ? esc(v.name) : "No home venue"}</span></div>
           <label class="visually-hidden" for="dv-t-${esc(t.id)}">Division for ${esc(t.name)}</label>
           <select id="dv-t-${esc(t.id)}" data-team="${esc(t.id)}">${options}</select></div>`;
       }).join("")}</div></div>`;
@@ -2689,9 +2849,9 @@ async function loadExample() {
     const tid = T.map(([name, v, alley], i) => {
       const id = newId() + i;
       const surname = ["Ashby", "Brook", "Carter", "Dunn", "Ellis", "Fry"][i];
-      d.teams[id] = { id, name: `${name} (example)`, division: div, venue: vid[v], alley, captainFirst: "Example", captainLast: surname,
-        players: ["Dave", "Sue", "Tom", "Jan", "Pete", "Liz", "Mark", "Kate"].map(first => ({ first, last: surname, nick: { Dave: "Tank", Liz: "Lucky" }[first] || "" })) };
-      d.contacts[id] = { address: `${i + 10} Example Close\nSomerset`, mobile: `07700 9000${i + 10}` };
+      d.teams[id] = { id, name: `${name} (example)`, division: div, venue: vid[v], alley, captainFirst: "Dave", captainLast: surname,
+        players: ["Dave", "Sue", "Tom", "Jan", "Pete", "Liz", "Mark", "Kate"].map(first => ({ first, last: surname, nick: { Dave: "Tank", Liz: "Lucky" }[first] || "", ...roleFlags({ captain: first === "Dave", vice: first === "Tom", sticker: first === "Sue", pairs: first === "Pete" || first === "Liz" }) })) };
+      d.contacts[id] = { email: `dave.${surname.toLowerCase()}@example.com`, address: `${i + 10} Example Close\nSomerset`, mobile: `07700 9000${i + 10}` };
       return id;
     });
     let seed = 7, k = 0;
@@ -2794,10 +2954,12 @@ document.addEventListener("click", async e => {
   if (act === "rm-player") {
     const rows = $$("#t-players .player");
     if (rows.length > 1) b.closest(".player").remove();
-    else $$("input", rows[0]).forEach(i => i.value = "");
-    VIEWS.teams.checkDuplicates();
+    else { $$("input[type=text]", rows[0]).forEach(i => i.value = ""); $$("input[type=checkbox]", rows[0]).forEach(i => i.checked = false); $(".player-roles", rows[0]).hidden = true; }
+    VIEWS.teams.checkDuplicates(); VIEWS.teams.showCaptain();
   }
   if (act === "edit-team") VIEWS.teams.edit(id);
+  if (act === "toggle-team") VIEWS.teams.toggle(id);
+  if (act === "teams-expand" || act === "teams-collapse") VIEWS.teams.toggleAll(act === "teams-expand");
   if (act === "cancel-team") VIEWS.teams.reset();
   if (act === "del-team") {
     const n = Object.values(S.fixtures).filter(f => f.home === id || f.away === id).length;
