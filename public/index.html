@@ -122,6 +122,12 @@ table.league { width: 100%; border-collapse: collapse; font-variant-numeric: tab
 .seg button { border: 0; background: none; padding: 8px 14px; cursor: pointer; font-weight: 600; color: var(--muted); }
 .seg button[aria-pressed="true"] { background: var(--baize); color: var(--on-baize); }
 .date-group { margin-bottom: 22px; }
+.div-group + .div-group { margin-top: 12px; }
+.div-group h4 { font-size: 1rem; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+.date-group.next > h3 { color: var(--ink); }
+details.late { margin-bottom: 18px; padding: 10px 14px; border: 1px dashed var(--line); border-radius: var(--r); }
+details.late summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+details.late[open] summary { margin-bottom: 12px; }
 .date-group h3 { font-family: var(--font-body); font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
 .fx-list { display: grid; gap: 8px; }
 .fx { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 4px 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 16px; }
@@ -206,6 +212,10 @@ details.sc-details[open] summary { margin-bottom: 8px; }
 .st-table tr.on td { background: color-mix(in srgb, var(--brass) 10%, transparent); }
 .st-player { margin-top: 16px; display: grid; gap: 10px; }
 .st-player h4 { font-size: 1rem; }
+.night-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.night { display: inline-flex; gap: 6px; align-items: center; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .85rem; font-weight: 600; cursor: pointer; }
+.night.off { color: var(--muted); text-decoration: line-through; background: var(--sunk); }
+.ok-note { border-left: 4px solid var(--win); }
 /* Panels, forms, admin */
 .split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .split > * { min-width: 0; }
@@ -1028,12 +1038,21 @@ function fxCard(f, showComp) {
     ${p && f.cards ? `<details class="sc-details"><summary>Scorecard</summary>${boardHtml(f.cards.home, f.cards.away, teamName(f.home), teamName(f.away))}</details>` : ""}
   </div>`;
 }
-function groupByDate(list, desc) {
+// Fixtures under each date; with byDivision, split again by division (from the home team) in division order.
+// The first date still to be played is marked as the next match night.
+function groupByDate(list, desc, byDivision = false) {
   const g = {};
   list.forEach(f => (g[f.date || ""] ||= []).push(f));
   const keys = Object.keys(g).sort();
   if (desc) keys.reverse();
-  return keys.map(d => `<div class="date-group"><h3>${fmtDate(d, true)}</h3><div class="fx-list">${g[d].map(f => fxCard(f)).join("")}</div></div>`).join("");
+  const next = keys.filter(d => d && d >= today() && g[d].some(f => !played(f))).sort()[0];
+  const divs = sortedDivisions(), divOf = f => S.divisions[S.teams[f.home]?.division] ? S.teams[f.home].division : "";
+  const split = fs => {
+    if (!byDivision || !divs.length) return `<div class="fx-list">${fs.map(f => fxCard(f)).join("")}</div>`;
+    return [...divs.map(d => d.id), ""].map(id => [id, fs.filter(f => divOf(f) === id)]).filter(([, x]) => x.length)
+      .map(([id, x]) => `<div class="div-group"><h4>${esc(id ? divisionName(id) : "Not in a division")} <span class="chip">${esc(GAMES[gameOf(S.divisions[id])])}</span></h4><div class="fx-list">${x.map(f => fxCard(f)).join("")}</div></div>`).join("");
+  };
+  return keys.map(d => `<div class="date-group${d === next ? " next" : ""}"><h3>${fmtDate(d, true)}${d === next ? ` <span class="chip ok">Next match night</span>` : ""}</h3>${split(g[d])}</div>`).join("");
 }
 VIEWS.fixtures = {
   mount(el) {
@@ -1063,7 +1082,11 @@ VIEWS.fixtures = {
     if (!list.length) return body.innerHTML = Object.keys(S.teams).length
       ? `<div class="empty"><strong>${S.ui.fxShow === "results" ? "No results yet" : S.ui.fxShow === "upcoming" ? "No upcoming fixtures" : "No fixtures yet"}</strong>${S.admin ? `Add fixtures under <a href="#manage-fixtures">Fixtures &amp; results</a>.` : "Check back once the fixture list is published."}</div>`
       : noTeamsBlock();
-    body.innerHTML = groupByDate(list, S.ui.fxShow === "results");
+    // Upcoming starts at the next match night; earlier games still waiting for a result are tucked away above.
+    const late = S.ui.fxShow === "upcoming" ? list.filter(f => f.date && f.date < today()) : [];
+    const rest = list.filter(f => !late.includes(f));
+    body.innerHTML = (late.length ? `<details class="late"><summary>${plural(late.length, "earlier game")} still waiting for a result</summary>${groupByDate(late, false, true)}</details>` : "") +
+      (rest.length ? groupByDate(rest, S.ui.fxShow === "results", true) : `<div class="empty"><strong>No more fixtures to come</strong>Every fixture date has passed.</div>`);
   }
 };
 
@@ -2853,18 +2876,22 @@ VIEWS["manage-fixtures"] = {
             <div class="actions"><button class="btn" type="submit" id="ff-save">Save fixture</button><button class="btn ghost" type="button" data-act="cancel-fx">Clear form</button></div>
           </form>
           <form class="panel form" id="gen-form" autocomplete="off">
-            <h3>Generate a league fixture list</h3>
-            <p class="muted" style="margin:0">Every team in the division plays every other team, home and away. Venue and alley come from each home team.</p>
+            <h3>Generate the league fixtures</h3>
+            <p class="muted" style="margin:0">Every team plays each team in its division once in the first half of the season, then again in the second half with home and away swapped. Teams that share a home alley are never both at home on the same night.</p>
             <div class="row2">
-              <div class="field"><label for="g-div">Division</label><select id="g-div"></select></div>
-              <div class="field"><label for="g-start">First match night</label><input type="date" id="g-start"></div>
+              <div class="field"><label for="g-from">First match night</label><input type="date" id="g-from"></div>
+              <div class="field"><label for="g-to">Last match night</label><input type="date" id="g-to"></div>
             </div>
             <div class="row2">
+              <div class="field"><label for="g-day">Night of the week</label><select id="g-day">${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((d, i) => `<option value="${i}"${i === 4 ? " selected" : ""}>${d}</option>`).join("")}</select></div>
               <div class="field"><label for="g-time-h">Start time</label>${timePicker('id="g-time"', "19:45", "g-time-h")}</div>
-              <div class="field"><label for="g-gap">Weeks between rounds</label><input type="number" id="g-gap" min="1" max="8" value="1"></div>
             </div>
-            <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="g-double" checked> Home and away (double round robin)</label>
-            <div class="actions"><button class="btn ghost" type="submit" id="g-go">Generate fixtures</button></div>
+            <div class="field"><span class="lbl">Match nights</span><span class="hint">Untick any night with no league games, such as cup nights or the Christmas break.</span>
+              <div class="night-grid" id="g-nights"></div></div>
+            <div class="field"><label for="g-half">Second half starts on</label><select id="g-half"></select></div>
+            <p class="plan" id="g-plan" aria-live="polite"></p>
+            <div class="actions"><button class="btn" type="submit" id="g-go">Generate fixtures</button></div>
+            <div id="g-report"></div>
           </form>
         </div>
       </div>`;
@@ -2880,7 +2907,18 @@ VIEWS["manage-fixtures"] = {
     $$(".seg button[data-comp]", el).forEach(b => b.addEventListener("click", () => { S.ui.adminComp = b.dataset.comp; this.refresh(); }));
     $$(".seg button[data-st]", el).forEach(b => b.addEventListener("click", () => { S.ui.adminShow = b.dataset.st; this.refresh(); }));
     $("#mf-list").addEventListener("input", e => { if (e.target.matches("input[data-pins]")) e.target.dataset.dirty = "1"; });
-    $("#g-start").value = nextWeekday(4);
+    // The generator: nights follow the dates and weekday; unticked nights are remembered while the page is open.
+    this.genOff = new Set();
+    const season = currentSeason();
+    $("#g-from").value = season?.start || nextWeekday(4); $("#g-to").value = season?.end || addDays($("#g-from").value, 210);
+    if (season?.start) $("#g-day").value = new Date(season.start + "T12:00:00").getDay();
+    const gen = $("#gen-form");
+    gen.addEventListener("change", e => {
+      if (e.target.matches("[data-night]")) e.target.checked ? this.genOff.delete(e.target.value) : this.genOff.add(e.target.value);
+      if (e.target.id !== "g-half") delete $("#g-half").dataset.picked; else $("#g-half").dataset.picked = "1";
+      if (e.target.matches("[data-night], #g-from, #g-to, #g-day, #g-half")) this.genNights();
+    });
+    this.genNights();
   },
   reset() {
     const f = $("#fx-form"); f.reset(); delete f.dataset.id;
@@ -2897,8 +2935,7 @@ VIEWS["manage-fixtures"] = {
     $("#f-away").innerHTML = teamOptions(a, "Choose team");
     $("#f-venue").innerHTML = venueOptions(v, "Home team's venue");
     this.syncAlley();
-    const d = $("#g-div"), dv = d.value, divs = sortedDivisions();
-    d.innerHTML = divs.length ? divs.map(x => `<option value="${esc(x.id)}"${x.id === dv ? " selected" : ""}>${esc(x.name)}</option>`).join("") : `<option value="">All teams (no divisions yet)</option>`;
+    if ($("#g-nights")) this.genNights();
   },
   syncAlley(selected) {
     const vid = $("#f-venue").value || S.teams[$("#f-home").value]?.venue;
@@ -2968,26 +3005,66 @@ VIEWS["manage-fixtures"] = {
     const ok = await commit(d => { if (d.fixtures[id]) Object.assign(d.fixtures[id], { homePins: hp, awayPins: ap }); });
     if (ok) toast(hp == null ? "Result cleared" : `Result saved: ${teamName(S.fixtures[id].home)} ${hp} – ${ap} ${teamName(S.fixtures[id].away)}`);
   },
+  // The divisions to plan: each division's teams, or every team when there are no divisions yet.
+  genDivisions() {
+    const divs = sortedDivisions();
+    return divs.length ? divs.map(d => ({ id: d.id, name: d.name, teams: sortedTeams().filter(t => t.division === d.id).map(t => t.id) })).filter(d => d.teams.length > 1)
+      : [{ id: "", name: "All teams", teams: sortedTeams().map(t => t.id) }];
+  },
+  genRounds() { return Math.max(0, ...this.genDivisions().map(d => d.teams.length % 2 ? d.teams.length : d.teams.length - 1)); },
+  // Lists every chosen weekday between the dates, and the nights the second half can start on.
+  genNights() {
+    const from = $("#g-from").value, to = $("#g-to").value, day = +$("#g-day").value, box = $("#g-nights");
+    const all = [];
+    if (from && to && from <= to) { let d = addDays(from, (day - new Date(from + "T12:00:00").getDay() + 7) % 7); while (d <= to && all.length < 80) { all.push(d); d = addDays(d, 7); } }
+    box.innerHTML = all.length ? all.map(d => `<label class="night${this.genOff.has(d) ? " off" : ""}"><input type="checkbox" data-night value="${d}"${this.genOff.has(d) ? "" : " checked"}> ${esc(new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }))}</label>`).join("")
+      : `<p class="muted">Choose the first and last match nights.</p>`;
+    const nights = all.filter(d => !this.genOff.has(d)), R = this.genRounds(), half = $("#g-half");
+    // Start the second half halfway through the nights, leaving room for a whole half on each side.
+    const keep = half.dataset.picked && nights.includes(half.value) ? half.value : nights[Math.min(Math.max(R, Math.ceil(nights.length / 2)), Math.max(R, nights.length - R))];
+    half.innerHTML = nights.map(d => `<option value="${d}"${d === keep ? " selected" : ""}>${esc(fmtDate(d))}</option>`).join("");
+    this.genNightsChosen = nights;
+    const first = nights.filter(d => d < half.value), second = nights.filter(d => d >= half.value);
+    const divs = this.genDivisions(), fmt = d => new Date(d + "T12:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    $("#g-plan").textContent = !R ? "Add teams (and put them in divisions) first." :
+      `${divs.map(d => `${d.name}: ${plural(d.teams.length, "team")}`).join(" · ")}. Each half needs ${plural(R, "match night")}. ` +
+      `First half: ${first.length} available${first.length ? ` (${fmt(first[0])} to ${fmt(first.at(-1))})` : ""}. Second half: ${second.length} available${second.length ? ` (${fmt(second[0])} to ${fmt(second.at(-1))})` : ""}.` +
+      (first.length >= R && second.length >= R ? ` Each half uses its first ${R} nights; any after that are left free.` : "") +
+      (first.length < R || second.length < R ? ` Not enough nights: ${first.length < R ? "move the second half later or add nights" : "move the second half earlier or add nights"}.` : "");
+  },
   async generate() {
-    const div = $("#g-div").value, start = $("#g-start").value;
-    const ids = sortedTeams().filter(t => !div || t.division === div).map(t => t.id);
-    if (ids.length < 2) return toast("A division needs at least two teams.");
-    if (!start) return toast("Choose the first match night.");
-    const gap = Math.max(1, +$("#g-gap").value || 1), time = $("#g-time").value || null;
-    const rounds = roundRobin(ids, $("#g-double").checked);
-    const btn = $("#g-go"); btn.disabled = true;
+    const divs = this.genDivisions(), R = this.genRounds(), half = $("#g-half").value, time = $("#g-time").value || null;
+    const nights = this.genNightsChosen || [], first = nights.filter(d => d < half), second = nights.filter(d => d >= half);
+    if (!R) return toast("Add teams, and put them in divisions, first.");
+    if (first.length < R || second.length < R) return toast(`Each half needs ${plural(R, "match night")}. Change the dates, the nights ticked or when the second half starts.`);
+    const league = Object.values(S.fixtures).filter(f => f.comp === "league");
+    if (league.some(played)) return toast("Some league fixtures already have results, so a new list can't replace them. Delete those fixtures first if you really want to start again.");
+    if (league.length && !arm($("#g-go"), `Replace the ${league.length} league fixtures`)) return;
+    const btn = $("#g-go"); btn.disabled = true; btn.textContent = "Working out fixtures…";
+    await new Promise(r => setTimeout(r, 30));
+    const alleyOf = id => { const t = S.teams[id], v = S.venues[t?.venue]; return v ? `${v.id}|${v.alleys > 1 ? t.alley || 1 : 1}` : null; };
+    const plan = planLeague(divs, alleyOf);
+    btn.textContent = "Generate fixtures"; btn.disabled = false;
+    const report = $("#g-report"), fmt = d => fmtDate(d);
+    if (plan.clashes.length) {
+      const where = key => { const [vid, al] = key.split("|"); return venueText(vid, S.venues[vid]?.alleys > 1 ? +al : null); }, n = plan.clashes.length;
+      const list = plan.clashes.slice(0, 12).map(c => `<li>${fmt((c.half === 1 ? first : second)[c.night])}: ${c.teams.map(t => `<span class="tn">${esc(teamName(t))}</span>`).join(" and ")} would both be at home on ${esc(where(c.alley))}</li>`).join("");
+      report.innerHTML = `<div class="notice"><strong>No fixture list keeps every shared alley clear.</strong> The best one found still has ${n} ${n === 1 ? "clash" : "clashes"}${n > 12 ? ", including" : ""}:<ul>${list}</ul>Usually this means three or more teams share one alley. Move a team to another alley on the Teams page, or ask to allow these clashes. No fixtures were created.</div>`;
+      return;
+    }
     let made = 0;
     const ok = await commit(d => {
-      rounds.forEach((pairs, r) => {
-        const date = addDays(start, r * gap * 7);
-        for (const [home, away] of pairs) {
+      for (const id of Object.keys(d.fixtures)) if (d.fixtures[id].comp === "league" && !played(d.fixtures[id])) delete d.fixtures[id];
+      plan.nights.forEach((games, k) => games.forEach(g => {
+        for (const [date, home, away] of [[first[k], g.home, g.away], [second[k], g.away, g.home]]) {
           const id = newId() + made++;
           d.fixtures[id] = { id, comp: "league", round: null, date, time, home, away, venue: null, alley: null, homePins: null, awayPins: null };
         }
-      });
+      }));
     });
-    btn.disabled = false;
-    if (ok) toast(`Added ${made} fixtures for ${div ? divisionName(div) : "all teams"}`);
+    if (!ok) return;
+    report.innerHTML = `<div class="notice ok-note"><strong>${plural(made, "fixture")} created.</strong> First half ${fmt(first[0])} to ${fmt(first[plan.nights.length - 1])}, second half ${fmt(second[0])} to ${fmt(second[plan.nights.length - 1])}. No two teams that share an alley are at home on the same night, in either half.</div>`;
+    toast(`${plural(made, "fixture")} created`);
   },
   refresh() {
     this.fillSelects();
@@ -3040,6 +3117,83 @@ function roundRobin(ids, double) {
     t.splice(1, 0, t.pop());
   }
   return double ? rounds.concat(rounds.map(p => p.map(([a, b]) => [b, a]))) : rounds;
+}
+// Plans a season's league fixtures. Each division plays everyone once in the first half; the second half
+// repeats the same nights with home and away swapped. Teams that share a home alley (in any division)
+// must never both be at home on the same night, in either half. That means on every night, of the
+// teams sharing an alley, at most one is at home and at most one is away.
+// divs: [{ id, teams: [ids] }]; alleyOf(team) gives its home "venue|alley", or null.
+// Returns { nights: [[{ div, home, away }]], clashes: [{ night, half, alley, teams }] }: of many tries, the one
+// with fewest clashes, then with home and away games most even and fewest runs of home or away games.
+function planLeague(divs, alleyOf, { tries = 3000, keepLooking = 200, seed = 12345 } = {}) {
+  let s = seed;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const shared = {};
+  for (const d of divs) for (const t of d.teams) { const k = alleyOf(t); if (k) (shared[k] ||= []).push(t); }
+  const groups = Object.entries(shared).filter(([, ts]) => ts.length > 1);
+  const groupOf = {}; groups.forEach(([k, ts]) => ts.forEach(t => groupOf[t] = k));
+  // How uneven a plan is: each team's first-half home and away difference, plus three in a row at home or away.
+  const unevenness = plan => {
+    const seq = {};
+    plan.nights.forEach(ms => ms.forEach(g => { (seq[g.home] ||= []).push("h"); (seq[g.away] ||= []).push("a"); }));
+    return Object.values(seq).reduce((n, x) => n + Math.abs(x.filter(c => c === "h").length * 2 - x.length) + (x.join("").match(/hhh|aaa/g) || []).length, 0);
+  };
+  let best = null, good = 0;
+  for (let attempt = 0; attempt < tries && good < keepLooking; attempt++) {
+    // A fresh draw: teams placed at random in each division's round robin, and its rounds in a random order.
+    const perDiv = divs.map(d => shuffle(roundRobin(shuffle([...d.teams]), false)));
+    const n = Math.max(0, ...perDiv.map(r => r.length));
+    const nights = upTo(n).map(k => perDiv.flatMap((rounds, i) => (rounds[k] || []).map(([a, b]) => ({ div: divs[i].id, a, b }))));
+    const plan = orientNights(nights, groups, groupOf);
+    plan.uneven = unevenness(plan);
+    if (!best || plan.clashes.length < best.clashes.length || (plan.clashes.length === best.clashes.length && plan.uneven < best.uneven)) best = plan;
+    if (!plan.clashes.length) good++;
+  }
+  return best || { nights: [], clashes: [] };
+}
+// Decides who is at home in each match. On each night, two teams sharing an alley must be on opposite
+// sides (one home, one away), which links the matches they're in; each linked set is then turned the
+// way that keeps every team's home and away games most even.
+function orientNights(nights, groups, groupOf) {
+  const home = {}, away = {}, last = {}, out = [], clashes = [];
+  nights.forEach((ms, night) => {
+    // Union-find with parity: flip[m] says whether match m is the other way round from its root.
+    const parent = ms.map((_, i) => i), par = ms.map(() => 0);
+    const find = i => { if (parent[i] === i) return i; const r = find(parent[i]); par[i] ^= par[parent[i]]; parent[i] = r; return r; };
+    const where = {}; ms.forEach((m, i) => { where[m.a] = [i, 1]; where[m.b] = [i, 0]; });
+    for (const [, ts] of groups) {
+      const playing = ts.filter(t => where[t]);
+      for (let x = 0; x < playing.length; x++) for (let y = x + 1; y < playing.length; y++) {
+        const [i, fa] = where[playing[x]], [j, fb] = where[playing[y]];
+        if (i === j) continue;
+        // Team t is at home when its "first" flag xor the match's flip is 1; the two must differ.
+        const want = 1 ^ fa ^ fb, ri = find(i), rj = find(j);
+        if (ri !== rj) { parent[ri] = rj; par[ri] = par[i] ^ par[j] ^ want; }
+      }
+    }
+    // Turn each linked set whichever way evens out home and away games, avoiding runs at home.
+    const sets = {}; ms.forEach((_, i) => (sets[find(i)] ||= []).push(i));
+    const flip = [];
+    for (const idx of Object.values(sets)) {
+      const cost = rootFlip => idx.reduce((c, i) => {
+        const f = par[i] ^ rootFlip, h = f ? ms[i].b : ms[i].a, a = f ? ms[i].a : ms[i].b;
+        return c + ((home[h] || 0) - (away[h] || 0)) + ((away[a] || 0) - (home[a] || 0)) + (last[h] === "h" ? 2 : 0) + (last[a] === "a" ? 2 : 0);
+      }, 0);
+      const rootFlip = cost(1) < cost(0) || (cost(1) === cost(0) && Math.random() < 0.5) ? 1 : 0;
+      for (const i of idx) flip[i] = par[i] ^ rootFlip;
+    }
+    const games = ms.map((m, i) => ({ div: m.div, home: flip[i] ? m.b : m.a, away: flip[i] ? m.a : m.b }));
+    for (const g of games) { home[g.home] = (home[g.home] || 0) + 1; away[g.away] = (away[g.away] || 0) + 1; last[g.home] = "h"; last[g.away] = "a"; }
+    // Check the rule for both halves: the second half swaps home and away.
+    for (const [k, ts] of groups) {
+      const h = ts.filter(t => games.some(g => g.home === t)), a = ts.filter(t => games.some(g => g.away === t));
+      if (h.length > 1) clashes.push({ night, half: 1, alley: k, teams: h });
+      if (a.length > 1) clashes.push({ night, half: 2, alley: k, teams: a });
+    }
+    out.push(games);
+  });
+  return { nights: out, clashes };
 }
 function addDays(d, n) { const dt = new Date(d + "T12:00:00"); dt.setDate(dt.getDate() + n); return dt.toISOString().slice(0, 10); }
 function nextWeekday(wd) { const dt = new Date(); dt.setHours(12); dt.setDate(dt.getDate() + ((wd - dt.getDay() + 7) % 7 || 7)); return dt.toISOString().slice(0, 10); }
