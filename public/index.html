@@ -754,7 +754,9 @@ async function commit(mutate) {
     const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: S.version, changes });
     // Nights that this save finished off: a result entered for a game that didn't have one. Bulk changes
     // (loading an example season, importing or generating fixtures) never start a report.
-    const newlyPlayed = changes.length > 20 ? [] : changes.filter(c => c.in === "fixtures" && c.value?.date && played(c.value) && S.fixtures[c.id] && !played(S.fixtures[c.id])).map(c => c.value.date);
+    const newlyPlayed = changes.length > 20 ? [] : [
+      ...changes.filter(c => c.in === "fixtures" && c.value?.date && played(c.value) && S.fixtures[c.id] && !played(S.fixtures[c.id])).map(c => c.value.date),
+      ...changes.filter(c => c.in === "cups" && c.value && S.cups[c.id]).flatMap(c => cupResultDates(S.cups[c.id], c.value))];
     apply({ ...draft, version: r.version });
     reportCheck(newlyPlayed);
     if (r.stale) loadSeason().then(() => setTimeout(() => toast("Someone else also saved changes just now. They're shown here too."), 1500));
@@ -1365,17 +1367,29 @@ function groupByDivisionHtml(list) {
 
 /* ---------- match night reports ---------- */
 // A night is complete when every fixture and cup match dated that night has a result.
+// A cup final played on its own (a "straight final" cup) counts too, so a night with only a final gets a report.
 function nightGames(date) {
   const fx = Object.values(S.fixtures).filter(f => f.date === date);
-  const cupMatches = [];
-  for (const cup of Object.values(S.cups)) if (cup.structure === "full") for (const r of cupBracket(cup).rounds)
-    for (const m of r.matches) if (m.date === date && !m.bye && !m.empty && m.a && m.b) cupMatches.push({ cup, round: r.name, m });
-  return { fx, cupMatches, complete: fx.length + cupMatches.length > 0 && fx.every(played) && cupMatches.every(x => x.m.aPins != null) };
+  const cupMatches = [], finals = [];
+  for (const cup of Object.values(S.cups)) {
+    if (cup.structure === "full") for (const r of cupBracket(cup).rounds)
+      for (const m of r.matches) if (m.date === date && !m.bye && !m.empty && m.a && m.b) cupMatches.push({ cup, round: r.name, m });
+    if (cup.structure === "final" && cup.final?.date === date && (cup.entrants || []).length >= 2) finals.push({ cup, f: cupFinal(cup) });
+  }
+  return { fx, cupMatches, finals, complete: fx.length + cupMatches.length + finals.length > 0 && fx.every(played) && cupMatches.every(x => x.m.aPins != null) && finals.every(x => x.f.complete) };
 }
-const completeNights = () => [...new Set([...Object.values(S.fixtures).map(f => f.date).filter(Boolean)])].filter(d => d <= today() && nightGames(d).complete).sort().reverse();
+function gameDates() {
+  const dates = Object.values(S.fixtures).map(f => f.date);
+  for (const cup of Object.values(S.cups)) {
+    if (cup.structure === "final") dates.push(cup.final?.date);
+    else for (const r of cupBracket(cup).rounds) for (const m of r.matches) dates.push(m.date);
+  }
+  return [...new Set(dates.filter(Boolean))];
+}
+const completeNights = () => gameDates().filter(d => d <= today() && nightGames(d).complete).sort().reverse();
 // Everything worth writing about one night, worked out here from the results, so the report only uses real figures.
 function nightFacts(date) {
-  const c = cfg(), { fx, cupMatches } = nightGames(date), season = currentSeason();
+  const c = cfg(), { fx, cupMatches, finals } = nightGames(date), season = currentSeason();
   const posMap = groups => { const m = {}; for (const g of groups) g.rows.forEach((r, i) => m[r.t.id] = { pos: i + 1, pts: r.pts, P: r.P, div: g.division?.name || null }); return m; };
   const beforeG = standings(f => f.date < date), afterG = standings(f => f.date <= date), pb = posMap(beforeG), pa = posMap(afterG);
   const results = fx.filter(played).sort(fxSort).map(f => {
@@ -1392,10 +1406,23 @@ function nightFacts(date) {
   });
   for (const { cup, round, m } of cupMatches) results.push({ competition: `${cup.name}, ${round}`, home: entrantLabel(cup, m.a), away: entrantLabel(cup, m.b), homePins: m.aPins, awayPins: m.bPins,
     winner: m.winner ? entrantLabel(cup, m.winner) : "Draw", margin: Math.abs(m.aPins - m.bPins) });
+  // Finals: two sides head to head, or every entry's total when several play off together.
+  for (const { cup, f } of finals) {
+    const label = id => entrantLabel(cup, id), venue = S.venues[cup.final.venue]?.name || null;
+    const winner = f.winner ? label(f.winner) : "Not decided (tied)", margin = f.rows.length > 1 ? f.rows[0].pins - f.rows[1].pins : 0;
+    if (f.rows.length === 2) {
+      const [a, b] = (cup.entrants || []).map(e => e.id), pins = id => f.rows.find(r => r.id === id).pins;
+      const r = { competition: `${cup.name} final`, final: true, home: label(a), away: label(b), homePins: pins(a), awayPins: pins(b), winner, margin, venue };
+      const H = handTotals(cup.final.cards?.[a]), A = handTotals(cup.final.cards?.[b]);
+      if (H && A && H.length === A.length) r.handsWon = { [label(a)]: H.filter((x, i) => x > A[i]).length, [label(b)]: A.filter((x, i) => x > H[i]).length };
+      results.push(r);
+    } else results.push({ competition: `${cup.name} final`, final: true, format: CUP_FORMATS[cup.format], standings: f.rows.map((r, i) => ({ position: i + 1, entry: label(r.id), pins: r.pins })), winner, winningMargin: margin, venue });
+  }
   // Players: top scores, best hands, spares, personal bests and season records.
   const games = statGames(), tonight = games.players.filter(g => g.date === date), earlier = games.players.filter(g => g.date && g.date < date);
   const who = g => ({ name: g.name, ...(g.nick ? { nickname: g.nick } : {}), team: teamName(g.teamId) });
-  const topScores = [...tonight].sort((a, b) => b.total - a.total).slice(0, 6).map(g => ({ ...who(g), score: g.total, against: g.opp, competition: g.comp === "league" ? "League" : "Cup" }));
+  const compOf = g => g.comp === "league" ? "League" : `${S.cups[g.cupId]?.name || "Cup"}${g.opp === "Final" ? " final" : ""}`;
+  const topScores = [...tonight].sort((a, b) => b.total - a.total).slice(0, 6).map(g => ({ ...who(g), score: g.total, ...(g.opp !== "Final" ? { against: g.opp } : {}), competition: compOf(g) }));
   const hands = tonight.flatMap(g => (g.hands || []).map((v, i) => ({ g, v, n: i + 1, spare: !!g.spares?.[i] })));
   const bestHand = hands.reduce((b, h) => !b || h.v > b.v ? h : b, null);
   const spares = hands.filter(h => h.spare).sort((a, b) => b.v - a.v);
@@ -1430,13 +1457,20 @@ function nightFacts(date) {
     if (f.comp === "league" && pa[f.home] && pa[f.away] && pa[f.home].div === pa[f.away].div && pa[f.home].pos <= 3 && pa[f.away].pos <= 3) g.bigGame = `${ordinal(pa[f.home].pos)} v ${ordinal(pa[f.away].pos)}`;
     return g;
   }).slice(0, 40) } : null;
+  const leagueNight = fx.some(f => f.comp === "league" && played(f));
   return {
-    league: c.name, season: season?.name || "", matchNight: fmtDate(date, true),
+    league: c.name, season: season?.name || "", matchNight: fmtDate(date, true), ...(leagueNight ? {} : { note: "No league games were played this night, so there's nothing to say about the league tables." }),
     howTheGameIsPlayed: `${c.players} a side, ${c.hands} hands of ${c.balls} balls each`, points: `${c.win} for a win, ${c.draw} for a draw`,
     results, topScores, bestHand: bestHand ? { ...who(bestHand.g), score: bestHand.v, hand: bestHand.n, spare: bestHand.spare } : null,
     spares: { total: spares.length, best: spares.slice(0, 5).map(h => ({ ...who(h.g), score: h.v, hand: h.n })) },
-    personalBests: personalBests.slice(0, 6), seasonRecords: records, tables, form, nextNight,
+    personalBests: personalBests.slice(0, 6), seasonRecords: records, tables: leagueNight ? tables : [], form, nextNight,
   };
+}
+// The dates of cup results that a save has just entered: a final now complete, or a match given its result.
+function cupResultDates(before, after) {
+  if (after.structure === "final") return after.final?.date && (after.entrants || []).length >= 2 && cupFinal(after).complete && !cupFinal(before).complete ? [after.final.date] : [];
+  const fresh = Object.entries(after.results || {}).filter(([mid, r]) => r?.aPins != null && before.results?.[mid]?.aPins == null).map(([mid]) => mid);
+  return fresh.length ? cupBracket(after).rounds.flatMap(r => r.matches).filter(m => fresh.includes(m.id) && m.date).map(m => m.date) : [];
 }
 // After a result is saved, if it was the last one of a recent match night, ask for a report to be drafted.
 async function reportCheck(dates) {
