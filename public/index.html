@@ -161,7 +161,21 @@ details.late[open] summary { margin-bottom: 12px; }
 .sc-side-head h4 { font-size: 1.05rem; }
 .sc-rows { display: grid; gap: 10px; }
 .sc-row { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); gap: 6px 12px; align-items: center; }
-.sc-player { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.sc-player { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.sc-board-name { flex: 1 0 100%; font-size: .78rem; color: var(--brass-ink); font-weight: 600; }
+.sc-photo { display: grid; gap: 8px; padding: 10px 12px; border: 1px dashed var(--line); border-radius: 10px; background: var(--sunk); }
+.sc-photo-bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.sc-photo-bar .btn svg { vertical-align: -3px; margin-right: 4px; }
+.sc-photo-msg:empty { display: none; }
+.sc-photo-msg p { margin: 0; }
+.sc-photo-msg .bad { color: var(--loss); font-weight: 600; }
+.sc-photo-msg .good { font-weight: 600; }
+.sc-photo-msg ul { margin: 6px 0 0; padding-left: 20px; font-size: .9rem; }
+.sc-photo-msg .btn { margin-left: 8px; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -1px; margin-right: 4px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+.sc-dlg .hand-cell.unsure input { outline: 3px solid var(--brass); outline-offset: 1px; background: var(--warn-bg); }
 .sc-player > select, .sc-player > .sc-fixed { flex: 1; min-width: 0; }
 .sc-move { display: inline-flex; flex-direction: column; gap: 2px; }
 .sc-dlg .sc-move button { width: 26px; height: 20px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--muted); font-size: .7rem; line-height: 1; cursor: pointer; }
@@ -304,6 +318,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .save-bar .btn.ghost:hover { background: color-mix(in srgb, var(--paper) 12%, transparent); }
 .sub-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
 .sub-row .field { flex: 0 1 160px; }
+.addon-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.addon-row .addon-head { flex: 1 0 100%; }
+.addon-row .field:nth-of-type(2) { flex-basis: 190px; }
 .temp-pass { margin: 0; padding: 10px 12px; border-radius: 6px; background: var(--warn-bg); font-size: .9rem; overflow-wrap: anywhere; }
 .division.loose h3 { color: var(--muted); }
 body:has(.save-bar:not([hidden])) .toast { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
@@ -786,6 +803,14 @@ function refresh() {
   renderBrand();
   current?.refresh();
 }
+// The photo reading add-on: an extra yearly subscription that reads scores from a photo of the board.
+const photoActive = u => !!u.photos?.until && u.photos.until >= today();
+function photoNote(u) {
+  if (u.isSuper) return "Always on for the overall admin";
+  if (!u.photos?.until) return "Not added";
+  const limit = u.photos.monthlyLimit ? `, up to ${u.photos.monthlyLimit} photos a month per league` : "";
+  return photoActive(u) ? `Until ${dayMonthYear(u.photos.until)}${limit}` : `Ended ${dayMonthYear(u.photos.until)}`;
+}
 function subscriptionNote(u) {
   const s = u.subscription || {}, when = dayMonthYear(s.until);
   if (u.isSuper) return "You're the overall admin, so there's no subscription to pay.";
@@ -950,7 +975,8 @@ VIEWS.account = {
   refresh() {
     const u = S.user;
     $("#ac-details").innerHTML = `<dt>Name</dt><dd>${esc(u.name)}</dd><dt>Email</dt><dd>${esc(u.email)}</dd><dt>Joined</dt><dd>${dayMonthYear(u.created)}</dd>
-      <dt>Subscription</dt><dd>${esc(subscriptionNote(u))}</dd>`;
+      <dt>Subscription</dt><dd>${esc(subscriptionNote(u))}</dd>
+      <dt>Photo reading</dt><dd>${esc(u.isSuper ? photoNote(u) : u.photos?.until ? photoNote(u) : "Not added. Reading scores from a photo of the board is an extra subscription; contact the site owner to add it.")}</dd>`;
   }
 };
 
@@ -961,6 +987,7 @@ VIEWS.super = {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Overall admin</div><h2>Accounts</h2>
       <p>Every secretary's account, their leagues and subscription. Payments aren't connected yet, so set each account's paid-until date here.</p></div>
       <div class="list-tools" style="margin:0"><input type="search" id="su-search" placeholder="Search names, emails or leagues" aria-label="Search accounts"><span class="list-count" id="su-count"></span></div></div>
+      <div id="su-photo-note"></div>
       <div id="su-list"><div class="empty"><strong>Loading accounts…</strong></div></div>
       <div id="su-legacy"></div>`;
     $("#su-search").addEventListener("input", () => this.filter());
@@ -968,21 +995,29 @@ VIEWS.super = {
   },
   async load() {
     try {
-      const [{ users }, legacy] = await Promise.all([api("/api/super/users"), api("/api/super/legacy")]);
-      this.users = users; this.legacy = legacy; this.render();
+      const [{ users, photoReading, month }, legacy] = await Promise.all([api("/api/super/users"), api("/api/super/legacy")]);
+      this.users = users; this.legacy = legacy; this.photoReading = photoReading; this.month = month; this.render();
     } catch (x) { saveError(x); }
   },
   render() {
     const list = $("#su-list"); if (!list || !this.users) return;
     const users = [...this.users].sort((a, b) => a.name.localeCompare(b.name));
+    $("#su-photo-note").innerHTML = this.photoReading ? "" : `<div class="notice" role="note">Photo reading isn't switched on for the site yet. Add an <code>ANTHROPIC_API_KEY</code> in Netlify's environment variables, then redeploy. You can still set who has the add-on.</div>`;
     list.innerHTML = `<div class="cards">${users.map(u => `<article class="card" data-id="${esc(u.id)}" data-search="${esc(searchText([u.name, u.email, ...u.leagues.map(l => l.name)].join(" ")))}">
       <div class="card-head"><div><h3>${esc(u.name)}${u.isSuper ? ` <span class="chip">Overall admin</span>` : ""}</h3><div class="sub">${esc(u.email)} · joined ${dayMonthYear(u.created)}</div></div>
         <span class="chip ${u.canEdit ? "" : "warn"}">${u.isSuper ? "No subscription" : u.canEdit ? (u.subscription?.status === "paid" ? "Paid" : "Trial") + " until " + dayMonthYear(u.subscription?.until) : "Ended " + dayMonthYear(u.subscription?.until)}</span></div>
-      <dl class="kv"><dt>Leagues</dt><dd>${u.leagues.map(l => leagueLink(l.slug, "seasons", esc(l.name))).join(", ") || "None yet"}</dd></dl>
+      <dl class="kv"><dt>Leagues</dt><dd>${u.leagues.map(l => leagueLink(l.slug, "seasons", esc(l.name))).join(", ") || "None yet"}</dd>
+        ${u.leagues.some(l => l.photosThisMonth) ? `<dt>Photos read</dt><dd>${u.leagues.filter(l => l.photosThisMonth).map(l => `${esc(l.name)}: ${l.photosThisMonth}`).join(", ")} this month</dd>` : ""}</dl>
       ${u.isSuper ? "" : `<div class="sub-row">
         <div class="field"><label for="su-st-${esc(u.id)}">Status</label><select id="su-st-${esc(u.id)}"><option value="trial"${u.subscription?.status === "trial" ? " selected" : ""}>Trial</option><option value="paid"${u.subscription?.status === "paid" ? " selected" : ""}>Paid</option></select></div>
         <div class="field"><label for="su-until-${esc(u.id)}">Until</label><input type="date" id="su-until-${esc(u.id)}" value="${esc(u.subscription?.until || "")}"></div>
         <div class="actions"><button class="btn sm" data-act="su-save" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-year" data-id="${esc(u.id)}">Paid for a year</button><button class="btn danger sm" data-act="su-reset" data-id="${esc(u.id)}">Reset password</button></div>
+      </div>
+      <div class="sub-row addon-row">
+        <div class="addon-head"><strong>Photo reading add-on</strong> <span class="chip ${photoActive(u) ? "ok" : ""}">${esc(photoNote(u))}</span></div>
+        <div class="field"><label for="su-ph-until-${esc(u.id)}">Until</label><input type="date" id="su-ph-until-${esc(u.id)}" value="${esc(u.photos?.until || "")}"></div>
+        <div class="field"><label for="su-ph-limit-${esc(u.id)}">Photos a month</label><input type="number" min="0" max="10000" step="1" id="su-ph-limit-${esc(u.id)}" value="${u.photos?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>
+        <div class="actions"><button class="btn sm" data-act="su-ph-save" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-ph-year" data-id="${esc(u.id)}">Add for a year</button>${u.photos ? `<button class="btn ghost sm" data-act="su-ph-remove" data-id="${esc(u.id)}">Remove</button>` : ""}</div>
       </div>`}
       <p class="temp-pass" id="su-temp-${esc(u.id)}" hidden></p>
     </article>`).join("")}</div>`;
@@ -1004,6 +1039,10 @@ VIEWS.super = {
     </div>`;
     const sync = () => { const l = leagues.find(x => x.id === $("#lgc-league").value); $("#lgc-season").innerHTML = l.seasons.map(s => `<option value="${esc(s.id)}"${s.id === l.currentSeasonId ? " selected" : ""}>${esc(s.name)}</option>`).join(""); };
     if (leagues.length) { $("#lgc-league").addEventListener("change", sync); sync(); }
+  },
+  async savePhotos(id, photos) {
+    try { const r = await send(`/api/super/users/${id}`, "PATCH", { photos }); Object.assign(this.users.find(u => u.id === id), r.user); this.render(); toast(`Saved: ${photoNote(r.user)}`); }
+    catch (x) { saveError(x); }
   },
   async saveSub(id, sub) {
     try { const r = await send(`/api/super/users/${id}`, "PATCH", { subscription: sub }); Object.assign(this.users.find(u => u.id === id), r.user); this.render(); toast(`Saved: ${subscriptionNote(r.user)}`); }
@@ -1936,7 +1975,10 @@ function openScorecard({ title, sides, onSave }) {
   if (!dlg) {
     dlg = document.createElement("dialog"); dlg.id = "sc-dlg"; dlg.className = "sc-dlg"; dlg.setAttribute("aria-labelledby", "sc-title");
     document.body.append(dlg);
+    dlg.addEventListener("close", () => scPhotoStop());
+    dlg.addEventListener("change", e => { if (e.target.id === "sc-photo-file") { const files = [...e.target.files]; e.target.value = ""; if (files.length) scPhotoRead(files); } });
     dlg.addEventListener("input", e => {
+      if (e.target.matches("[data-hand], [data-total]")) e.target.closest(".hand-cell, .sc-total-in")?.classList.remove("unsure");
       if (e.target.matches("[data-hand]")) scCell(e.target, true);
       if (e.target.matches("[data-hand], [data-total]")) scRecalc(+e.target.closest("[data-side]").dataset.side);
     });
@@ -1945,6 +1987,8 @@ function openScorecard({ title, sides, onSave }) {
       if (b.matches("[data-sp]")) { const cell = b.closest(".hand-cell"); cell.dataset.manual = cell.dataset.manual === "1" ? "0" : "1"; scCell($("input", cell), false); }
       if (b.dataset.mode) { const side = b.closest("[data-side]"); $(".sc-rows", side).dataset.mode = b.dataset.mode; $$("[data-mode]", side).forEach(x => x.setAttribute("aria-pressed", x === b)); scRecalc(+side.dataset.side); }
       if (b.dataset.mv) scMove(b.closest(".sc-row"), +b.dataset.mv);
+      if (b.dataset.sc === "photo") $("#sc-photo-file").click();
+      if (b.dataset.sc === "photo-stop") scPhotoStop("Stopped. The reading still counts towards this month's photos.");
       if (b.dataset.sc === "close") dlg.close();
       if (b.dataset.sc === "remove") { if (!arm(b, "Confirm remove")) return; dlg.close(); SC.onSave(null); }
     });
@@ -1966,6 +2010,12 @@ function openScorecard({ title, sides, onSave }) {
   dlg.innerHTML = `<form class="sc-form" autocomplete="off" novalidate>
     <div class="sc-head"><h3 id="sc-title">${esc(title)}</h3><button type="button" class="btn ghost sm" data-sc="close">Close</button></div>
     <p class="lookup-note">Type each hand's score and press Enter to move on. For a spare of 9 or under, type S after the score or tap S. Anything 10 or over is always a spare. Spares are circled.</p>
+    <div class="sc-photo" id="sc-photo" hidden>
+      <div class="sc-photo-bar"><button type="button" class="btn ghost sm" data-sc="photo"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg> Read scores from a photo</button>
+        <span class="lookup-note" id="sc-photo-use"></span>
+        <input type="file" id="sc-photo-file" accept="image/jpeg,image/png,image/webp" multiple hidden></div>
+      <div class="sc-photo-msg" id="sc-photo-msg" role="status" aria-live="polite"></div>
+    </div>
     <div class="sc-sides">${sides.map(scSideHtml).join("")}</div>
     <div class="sc-foot"><p class="sc-msg" id="sc-msg" role="alert"></p>
       <div class="actions"><button type="submit" class="btn">Save scorecard</button><button type="button" class="btn ghost" data-sc="close">Cancel</button>
@@ -1973,6 +2023,7 @@ function openScorecard({ title, sides, onSave }) {
   $$(".hand-cell input", dlg).forEach(i => scCell(i, false));
   dlg.classList.toggle("two", sides.length === 2);
   sides.forEach((_, i) => { scRecalc(i); scNumber(i); });
+  scPhotoOffer();
   dlg.showModal();
   $("select[data-player], [data-hand], [data-total]", dlg)?.focus();
 }
@@ -1996,6 +2047,122 @@ function scRowHtml(s, r) {
       <output class="sc-row-total" aria-label="Player ${r + 1} total">0</output></div>
     <div class="sc-total-in"><input type="text" inputmode="numeric" autocomplete="off" maxlength="4" data-total value="${s.card?.mode === "totals" && saved ? saved.total : ""}" placeholder="Total" aria-label="Player ${r + 1} total"></div>
   </div>`;
+}
+/* ---------- reading scores from a photo of the board ---------- */
+// An add-on: the secretary photographs the board, Claude reads it, and the rows are filled in here in the order
+// written on the board, for them to check before saving. Anything Claude wasn't sure of is highlighted.
+const PHOTO = { job: null, timer: null, status: null, statusFor: null };
+async function photoStatus() {
+  if (PHOTO.statusFor === S.league.id && PHOTO.status) return PHOTO.status;
+  PHOTO.status = await api(`/api/leagues/${S.league.id}/photo-reading`); PHOTO.statusFor = S.league.id;
+  return PHOTO.status;
+}
+const photoUse = st => st.limit ? `${st.used} of ${st.limit} photo readings used this month` : st.used ? `${plural(st.used, "photo reading")} this month` : "";
+async function scPhotoOffer() {
+  const box = $("#sc-photo"); if (!box) return;
+  box.hidden = true; $("#sc-photo-msg").innerHTML = "";
+  if (!S.admin || !S.league?.id) return;
+  let st; try { st = await photoStatus(); } catch { return; }
+  if (!$("#sc-dlg")?.open) return;
+  box.hidden = false;
+  $("[data-sc=photo]", box).disabled = !st.available;
+  $("#sc-photo-use").textContent = st.available ? photoUse(st) : st.reason;
+}
+// Shrinks a photo to a size Claude reads well (about 1,600 pixels on the long side) and returns it as base64 JPEG.
+async function photoData(file) {
+  if (!/^image\//.test(file.type)) throw new Error(`${file.name} isn't a photo.`);
+  const img = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => { throw new Error(`${file.name} couldn't be opened. Try a JPEG or PNG photo.`); });
+  const scale = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+  c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); img.close?.();
+  const url = c.toDataURL("image/jpeg", 0.85);
+  return { mediaType: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
+}
+// What Claude is told about the match: each side's name, its players, and how the game is played.
+function scMatch() {
+  const s0 = SC.sides[0];
+  return { title: $("#sc-title").textContent, game: s0.game, hands: s0.hands, balls: s0.balls,
+    teams: SC.sides.map(s => ({ title: s.title, rows: s.rows, players: (s.fixed ? [s.fixed] : s.players).map(p => ({ key: p.key, name: p.name || p.label, nick: p.nick || "" })) })) };
+}
+function scPhotoMsg(html, busy = false) {
+  $("#sc-photo-msg").innerHTML = html;
+  $("#sc-photo [data-sc=photo]").disabled = busy || !PHOTO.status?.available;
+}
+function scPhotoStop(msg) {
+  clearTimeout(PHOTO.timer); PHOTO.timer = null;
+  if (PHOTO.job && msg) scPhotoMsg(`<p>${esc(msg)}</p>`);
+  PHOTO.job = null;
+}
+async function scPhotoRead(files) {
+  if (files.length > 2) return scPhotoMsg(`<p class="bad">Choose one or two photos of the board.</p>`);
+  scPhotoMsg(`<p><span class="spin" aria-hidden="true"></span> Getting the photo ready…</p>`, true);
+  let images;
+  try { images = await Promise.all(files.map(photoData)); }
+  catch (e) { return scPhotoMsg(`<p class="bad">${esc(e.message)}</p>`); }
+  let r;
+  try { r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/read-board`, "POST", { images, match: scMatch() }); }
+  catch (e) { PHOTO.status = null; scPhotoOffer(); return scPhotoMsg(`<p class="bad">${esc(e.message || "The photo couldn't be sent.")}</p>`); }
+  if (PHOTO.status) { PHOTO.status.used = r.used; $("#sc-photo-use").textContent = photoUse(PHOTO.status); }
+  const job = PHOTO.job = r.job, started = Date.now();
+  const tick = async () => {
+    if (PHOTO.job !== job) return;
+    const secs = Math.round((Date.now() - started) / 1000);
+    scPhotoMsg(`<p><span class="spin" aria-hidden="true"></span> Reading the board… ${secs ? `${secs}s` : ""} This usually takes under a minute. <button type="button" class="btn ghost sm" data-sc="photo-stop">Stop</button></p>`, true);
+    let res;
+    try { res = await api(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/read-board/${job}`); }
+    catch (e) { if (PHOTO.job === job) { PHOTO.job = null; scPhotoMsg(`<p class="bad">${esc(e.message || "The reading couldn't be collected.")}</p>`); } return; }
+    if (PHOTO.job !== job) return;
+    if (res.status === "reading") { PHOTO.timer = setTimeout(tick, 2500); return; }
+    PHOTO.job = null;
+    if (res.status === "failed") return scPhotoMsg(`<p class="bad">${esc(res.error)}</p>`);
+    scPhotoApply(res.result);
+  };
+  PHOTO.timer = setTimeout(tick, 1500);
+}
+// Fills the scorecard from the reading, in the board's order, and lists anything to check.
+function scPhotoApply(result) {
+  const checks = [], dlg = $("#sc-dlg");
+  let filled = 0;
+  SC.sides.forEach((s, i) => {
+    const side = $(`[data-side="${i}"]`, dlg), t = result.teams.find(x => x.team === i);
+    if (!t || !t.rows.length) { checks.push(`${esc(s.title)} weren't found on the photo.`); return; }
+    const hb = $(`[data-mode="hands"]`, side); $(".sc-rows", side).dataset.mode = "hands"; $$("[data-mode]", side).forEach(x => x.setAttribute("aria-pressed", x === hb));
+    if (t.rows.length > s.rows) checks.push(`${esc(s.title)}: the board has ${t.rows.length} rows but the scorecard takes ${s.rows}. The first ${s.rows} are filled in.`);
+    $$(".sc-row", side).forEach((row, r) => {
+      const got = t.rows[r], sel = $("[data-player]", row);
+      $(".sc-board-name", row)?.remove();
+      if (sel) sel.value = got?.key && [...sel.options].some(o => o.value === got.key) ? got.key : "";
+      if (got && sel && !sel.value) {
+        $(".sc-player", row).insertAdjacentHTML("beforeend", `<span class="sc-board-name">Board: “${esc(got.boardName || "?")}”</span>`);
+        checks.push(`${esc(s.title)}: choose who “${esc(got.boardName || "?")}” is on row ${r + 1}.`);
+      }
+      $$(".hand-cell", row).forEach((cell, h) => {
+        const input = $("input", cell), v = got?.hands[h];
+        input.value = v ?? "";
+        cell.dataset.manual = got?.spares[h] && v < 10 ? "1" : "0";
+        cell.classList.toggle("unsure", !!got && (v == null || got.unsure.includes(h)));
+        scCell(input, false);
+      });
+      $("[data-total]", row).value = "";
+      if (!got) return;
+      filled++;
+      const sum = got.hands.reduce((a, b) => a + (b || 0), 0), who = got.boardName || `row ${r + 1}`;
+      if (got.unsure.length) checks.push(`${esc(s.title)}: check ${esc(who)}'s hand${got.unsure.length > 1 ? "s" : ""} ${got.unsure.map(h => h + 1).join(", ")}.`);
+      if (got.writtenTotal != null && got.writtenTotal !== sum) checks.push(`${esc(s.title)}: ${esc(who)}'s hands add up to ${sum}, but the board says ${got.writtenTotal}.`);
+    });
+    const used = t.rows.slice(0, s.rows);
+    t.handTotals.forEach((tot, h) => {
+      const sum = used.reduce((a, r) => a + (r.hands[h] || 0), 0);
+      if (tot != null && tot !== sum) checks.push(`${esc(s.title)}: hand ${h + 1} adds up to ${sum}, but the board says ${tot}.`);
+    });
+    const all = used.reduce((a, r) => a + r.hands.reduce((x, y) => x + (y || 0), 0), 0);
+    if (t.writtenTotal != null && t.writtenTotal !== all) checks.push(`${esc(s.title)}: the scores add up to ${all}, but the board's total is ${t.writtenTotal}.`);
+    scNumber(i); scRecalc(i);
+  });
+  if (result.notes) checks.push(esc(result.notes));
+  scPhotoMsg(filled
+    ? `<p class="good">Read ${plural(filled, "player")} from the photo, in the order on the board. ${checks.length ? "Check these, and any highlighted boxes, then save:" : "Everything adds up. Have a look, then save."}</p>${checks.length ? `<ul>${checks.map(c => `<li>${c}</li>`).join("")}</ul>` : ""}`
+    : `<p class="bad">No scores could be read from that photo. Try a clearer photo taken straight on, with the whole board in view.</p>${checks.length ? `<ul>${checks.map(c => `<li>${c}</li>`).join("")}</ul>` : ""}`);
 }
 // Moves a row up or down one place, so the card keeps the order the players threw in.
 function scMove(row, by) {
@@ -3812,6 +3979,12 @@ document.addEventListener("click", async e => {
     if (!until) return toast("Choose the date the subscription runs until.");
     VIEWS.super.saveSub(id, { status: act === "su-year" ? "paid" : $(`#su-st-${CSS.escape(id)}`).value, until });
   }
+  if (act === "su-ph-save" || act === "su-ph-year") {
+    const until = act === "su-ph-year" ? addDays(today(), 365) : $(`#su-ph-until-${CSS.escape(id)}`).value;
+    if (!until) return toast("Choose the date the photo reading add-on runs until.");
+    VIEWS.super.savePhotos(id, { until, monthlyLimit: Math.max(0, Math.round(num($(`#su-ph-limit-${CSS.escape(id)}`).value) || 0)) });
+  }
+  if (act === "su-ph-remove") { if (!arm(b, "Click again to remove")) return; VIEWS.super.savePhotos(id, null); }
   if (act === "su-reset") {
     if (!arm(b, "Click again to reset")) return;
     try {

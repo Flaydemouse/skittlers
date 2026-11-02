@@ -9,13 +9,21 @@ const pub = root + "public";
 process.env.SESSION_SECRET ||= "local-secret";
 process.env.SUPERADMIN_EMAIL ||= "owner@skittlers.test";
 const fn = await import(root + "netlify/functions/api.mjs");
+// Photo reading runs in a background function on Netlify; here it's started the same way and answers 202 straight away.
+// Set ANTHROPIC_API_KEY to read real photos, or BOARD_FAKE=1 for a made-up reading.
+const boardFn = await import(root + "netlify/functions/read-board-background.mjs");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".csv": "text/csv" };
 
 http.createServer(async (req, res) => {
   const path = new URL(req.url, "http://localhost").pathname;
+  if (path === "/.netlify/functions/read-board-background" && req.method === "POST") {
+    const chunks = []; for await (const c of req) chunks.push(c);
+    boardFn.default(new Request("http://localhost:8899" + req.url, { method: "POST", headers: req.headers, body: Buffer.concat(chunks) })).catch(e => console.error(e));
+    res.writeHead(202); res.end(); return;
+  }
   if (path.startsWith("/api/")) {
     const chunks = []; for await (const c of req) chunks.push(c);
-    const r = new Request("http://localhost" + req.url, { method: req.method, headers: req.headers, body: ["GET", "HEAD"].includes(req.method) ? undefined : Buffer.concat(chunks) });
+    const r = new Request("http://localhost:8899" + req.url, { method: req.method, headers: req.headers, body: ["GET", "HEAD"].includes(req.method) ? undefined : Buffer.concat(chunks) });
     const out = await fn.default(r);
     res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(await out.text()); return;
   }

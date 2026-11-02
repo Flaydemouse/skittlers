@@ -8,6 +8,7 @@
     "test": "node dev/core.test.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
     "@netlify/blobs": "11.1.7"
   }
 }

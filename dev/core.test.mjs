@@ -1,7 +1,7 @@
 // Checks the API in lib/core.mjs: accounts, leagues, seasons, permissions, subscriptions and the overall admin.
 import { webcrypto } from "node:crypto";
 import assert from "node:assert/strict";
-import { createApi } from "../lib/core.mjs";
+import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt } from "../lib/core.mjs";
 const data = new Map();
 const store = { get: async k => data.has(k) ? JSON.parse(data.get(k)) : null, set: async (k, v) => data.set(k, JSON.stringify(v)), del: async k => data.delete(k), list: async p => [...data.keys()].filter(k => k.startsWith(p)) };
 let day = "2026-10-29", clock = Date.parse("2026-10-29T19:00:00Z");
@@ -62,7 +62,7 @@ r = await call("PATCH", `leagues/${L.id}`, { name: "New name", slug: "yeovil-lea
 r = await call("GET", "public/yeovil"); assert.equal(r.status, 404); r = await call("GET", "public/yeovil-league"); assert.equal(r.body.league.settings.win, 3);
 r = await call("PATCH", `super/users/${secUser.id}`, { resetPassword: true }, boss); const temp = r.body.temporaryPassword; assert.match(temp, /^\w{4}-\w{4}-\w{4}$/);
 r = await call("GET", "auth/me", null, sec2); assert.equal(r.status, 401);
-r = await call("POST", "auth/login", { email: "sec@x.com", password: temp }); assert.equal(r.status, 200);
+r = await call("POST", "auth/login", { email: "sec@x.com", password: temp }); assert.equal(r.status, 200); const sec3 = r.body.token;
 r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: 3, data: season, contacts: {} }, boss); assert.equal(r.status, 200, "overall admin can edit any league");
 // legacy import
 r = await call("GET", "super/legacy", null, boss); assert.equal(r.body.teams, 3);
@@ -104,6 +104,58 @@ for (const bad of [[], [{ in: "users", id: "x", value: {} }], [{ in: "teams", id
 r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "teams", id: "x", value: {} }] }, other); assert.equal(r.status, 404);
 for (let i = 0; i < 45; i++) { clock += 11 * 60e3; await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: season, contacts: {} }, boss); }
 assert.equal((await hist()).length, 40, "only the newest 40 copies are kept"); assert.equal([...data.keys()].filter(k => k.startsWith(`history/${L.id}/${S1.id}/`)).length, 40);
+// reading a photo of the board: an add-on set by the overall admin, counted per league each month
+r = await call("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.available, false); assert.match(r.body.reason, /switched on/);
+let lastRead = null, readerFails = false;
+const runner = createBoardRunner({ store, webcrypto, env: { SESSION_SECRET: "s" }, read: async input => {
+  lastRead = input; if (readerFails) throw new Error("Overloaded");
+  return { teams: [{ team: 0, rows: [{ boardName: "Sue", playerKey: "sue ashby", hands: [7, 13, 5.2, 40, "x", 6], spares: [false, true, false, false, false, true], unsure: [2, 9], writtenTotal: 43 },
+    { boardName: "Sue again", playerKey: "sue ashby", hands: [1, 1, 1, 1, 1, 1], spares: [], unsure: [], writtenTotal: -1 }], handTotals: [8, 14], writtenTotal: 49 },
+    { team: 7, rows: [] }], notes: "Second row is hard to read." };
+} });
+const started = [];
+const api2 = createApi({ store, webcrypto, env: { SESSION_SECRET: "s", SUPERADMIN_EMAIL: "Owner@Test.com" }, today: () => day, pause: async () => {}, now: () => clock, startBoardJob: async key => { started.push(key); } });
+const call2 = async (method, path, body, token) => { const r = await api2(new Request("http://x/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined })); return { status: r.status, body: await r.json() }; };
+const match = { title: "Red Devils v Rollers", game: "rough", hands: 6, balls: 3, teams: [{ title: "Red Devils", rows: 6, players: [{ key: "sue ashby", name: "Sue Ashby", nick: "" }] }, { title: "Rollers", rows: 6, players: [] }] };
+const photo = { mediaType: "image/jpeg", data: "A".repeat(400) };
+r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.available, false); assert.match(r.body.reason, /add-on/);
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, sec3); assert.equal(r.status, 403);
+r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2026-11-30", monthlyLimit: 2 } }, boss); assert.equal(r.body.user.photos.monthlyLimit, 2);
+r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.match(r.body.reason, /ended on 30 November 2026/);
+r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2027-12-01", monthlyLimit: "lots" } }, boss); assert.equal(r.status, 400);
+r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2027-12-01", monthlyLimit: 2 } }, boss);
+r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.deepEqual(r.body, { available: true, reason: null, used: 0, limit: 2, until: "2027-12-01" });
+for (const bad of [{ images: [], match }, { images: [{ ...photo, mediaType: "image/gif" }], match }, { images: [{ ...photo, data: "not base64!" + "A".repeat(200) }], match }, { images: [photo, photo, photo], match }, { images: [photo], match: { ...match, hands: 0 } }, { images: [photo], match: { ...match, teams: [] } }]) {
+  r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, bad, sec3); assert.equal(r.status, 400);
+}
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, other); assert.equal(r.status, 404, "other accounts can't use it");
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, sec3); assert.equal(r.status, 200); assert.equal(r.body.used, 1);
+const job1 = r.body.job, key1 = started.at(-1);
+r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${job1}`, null, sec3); assert.equal(r.body.status, "reading");
+assert.equal(await runner.verify(key1, await runner.sign(key1)), true); assert.equal(await runner.verify(key1, "nope"), false); assert.equal(await runner.verify("users/x", await runner.sign("users/x")), false);
+await runner.run(key1);
+assert.equal(lastRead.images[0].data, photo.data); assert.match(lastRead.prompt, /sue ashby \| Sue Ashby/); assert.match(lastRead.prompt, /up to 27/); assert.equal(lastRead.schema.required[0], "teams");
+assert.equal((await store.get(key1)).images, null, "photos are dropped once read");
+r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${job1}`, null, other); assert.equal(r.status, 404);
+r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${job1}`, null, sec3); assert.equal(r.body.status, "done");
+const read1 = r.body.result; assert.equal(read1.teams.length, 1, "unknown team dropped"); assert.equal(read1.notes, "Second row is hard to read.");
+assert.deepEqual(read1.teams[0].rows[0], { boardName: "Sue", key: "sue ashby", hands: [7, 13, 5, null, null, 6], spares: [false, true, false, false, false, true], unsure: [2, 3, 4], writtenTotal: 43 });
+assert.equal(read1.teams[0].rows[1].key, "", "a player can only be matched once"); assert.equal(read1.teams[0].rows[1].writtenTotal, null);
+assert.deepEqual(read1.teams[0].handTotals, [8, 14]);
+r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${job1}`, null, sec3); assert.equal(r.status, 404, "a reading is collected once");
+readerFails = true;
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, sec3); assert.equal(r.body.used, 2);
+await runner.run(started.at(-1));
+r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${r.body.job}`, null, sec3); assert.deepEqual(r.body, { status: "failed", error: "Overloaded" });
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, sec3); assert.equal(r.status, 403); assert.match(r.body.error, /all 2 photo readings/);
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, { images: [photo], match }, boss); assert.equal(r.status, 200, "no limit for the overall admin");
+clock += 6 * 60e3; r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read-board/${r.body.job}`, null, boss); assert.equal(r.body.status, "failed", "a reading that never finishes times out");
+r = await call2("GET", "super/users", null, boss); assert.equal(r.body.users.find(u => u.email === "sec@x.com").leagues[0].photosThisMonth, 3); assert.equal(r.body.photoReading, true);
+day = "2027-01-02"; r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.used, 0, "a new month starts again"); day = "2026-12-01";
+r = await call2("PATCH", `super/users/${secUser.id}`, { photos: null }, boss); assert.equal(r.body.user.photos, null);
+assert.equal(boardMatch({ ...match, teams: [{ title: "", players: [] }] }), null);
+assert.match(boardPrompt(boardMatch({ ...match, game: "nomination", balls: 2 })), /nomination skittles.*up to 18/s);
+assert.deepEqual(parseBoard(null, boardMatch(match)), { teams: [], notes: "" });
 r = await call("DELETE", `leagues/${L.id}`, null, boss); r = await call("GET", "public/yeovil-league"); assert.equal(r.status, 404);
-assert.equal([...data.keys()].filter(k => k.startsWith("seasons/") || k.startsWith("contacts/") || k.startsWith("history")).length, 0);
+assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "board-jobs/", "usage/"].some(p => k.startsWith(p))).length, 0);
 console.log("all API checks passed");

@@ -97,7 +97,25 @@ ${core}
     del: async k => { await ready; delete db[k]; if (shared) await deleteShared(k); else persist(); },
     list: async prefix => { await ready; return Object.keys(db).filter(k => k.startsWith(prefix)); },
   };
-  const handle = createApi({ store, webcrypto: window.crypto, env: { SESSION_SECRET: "preview-only-secret", SUPERADMIN_EMAIL: "owner@skittlers.test" } });
+  // Photo reading: the live site sends the photo to Claude from the server. Here Claude reads it through the
+  // Claude app instead, on the viewer's own Claude plan, after they allow it.
+  const SAMPLE_ERRORS = {
+    not_granted: "Claude wasn't allowed to read photos for this preview. Reload the page to be asked again.",
+    rate_limited: "Claude is busy, or your Claude usage limit has been reached. Try again later.",
+    image_rejected: "That photo couldn't be used. Try a JPEG or PNG photo.",
+    images_unavailable: "This preview can't send photos to Claude here. Open it in the Claude app or claude.ai.",
+    invalid_json: "The reading came back in the wrong shape. Try again.",
+    refused: "This photo couldn't be read.",
+  };
+  const boardRunner = createBoardRunner({ store, webcrypto: window.crypto, env: { SESSION_SECRET: "preview-only-secret" }, read: async ({ images, prompt }) => {
+    const sample = window.claude ? await window.claude.use("sample") : null;
+    if (!sample) throw new Error("Reading photos in the preview only works when it's open in Claude.");
+    const blobs = images.map(i => new Blob([Uint8Array.from(atob(i.data), c => c.charCodeAt(0))], { type: i.mediaType }));
+    try { return await sample.json(prompt, { images: blobs, modelTier: "complex", cache: false }); }
+    catch (e) { throw new Error(SAMPLE_ERRORS[e?.code] || "Photo reading didn't work just now. Try again in a minute."); }
+  } });
+  const handle = createApi({ store, webcrypto: window.crypto, env: { SESSION_SECRET: "preview-only-secret", SUPERADMIN_EMAIL: "owner@skittlers.test" },
+    startBoardJob: async key => { boardRunner.run(key); } });
   const realFetch = window.fetch.bind(window);
   window.fetch = async (url, opts = {}) => {
     const u = new URL(url, "https://preview.skittlers.co.uk");
