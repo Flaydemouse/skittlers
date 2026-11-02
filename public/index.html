@@ -381,7 +381,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .addon-set { display: grid; gap: 8px; padding: 10px 0; border-top: 1px dashed var(--line); }
 .addon-set .seg { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .addon-set .seg label { display: flex; gap: 6px; align-items: center; font-weight: 500; }
+.addon-set .addon-fields { display: flex; flex-wrap: wrap; gap: 10px 20px; }
 .addon-set .field { max-width: 260px; }
+.money { display: flex; align-items: center; gap: 6px; }
+.money span { font-weight: 700; }
+.money input { max-width: 140px; }
 .addon-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .addon-row .addon-head { flex: 1 0 100%; }
 .addon-row .field:nth-of-type(2) { flex-basis: 190px; }
@@ -894,6 +898,7 @@ function refresh() {
 // Add-ons: reading scores from a photo of the board, and match night reports written by Claude. The overall
 // admin decides whether each is included in the basic subscription or an extra given to chosen accounts.
 const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" } };
+const money = pence => `£${(pence / 100).toFixed(2)}`;
 const addonActive = (u, k) => !!u[k]?.until && u[k].until >= today();
 function addonNote(u, k, mode) {
   if (u.isSuper) return "Always on for the overall admin";
@@ -1068,7 +1073,8 @@ VIEWS.account = {
     const u = S.user;
     $("#ac-details").innerHTML = `<dt>Name</dt><dd>${esc(u.name)}</dd><dt>Email</dt><dd>${esc(u.email)}</dd><dt>Joined</dt><dd>${dayMonthYear(u.created)}</dd>
       <dt>Subscription</dt><dd>${esc(subscriptionNote(u))}</dd>
-      ${Object.entries(ADDON_INFO).map(([k, a]) => `<dt>${a.name}</dt><dd>${esc(addonNote(u, k, S.siteAddons?.[k]?.mode))}${!u.isSuper && S.siteAddons?.[k]?.mode !== "included" && !u[k]?.until ? ". Contact the site owner to add it." : ""}</dd>`).join("")}`;
+      ${Object.entries(ADDON_INFO).map(([k, a]) => { const site = S.siteAddons?.[k], offer = !u.isSuper && site?.mode !== "included" && !addonActive(u, k);
+        return `<dt>${a.name}</dt><dd>${esc(addonNote(u, k, site?.mode))}${offer ? `. ${site?.price ? `Add it for ${money(site.price)} a year: c` : "C"}ontact the site owner.` : ""}</dd>`; }).join("")}`;
   }
 };
 
@@ -1098,10 +1104,13 @@ VIEWS.super = {
     $("#su-photo-note").innerHTML = this.photoReading ? "" : `<div class="notice" role="note">Photo reading and match night reports aren't switched on for the site yet. Add an <code>ANTHROPIC_API_KEY</code> in Netlify's environment variables, then redeploy. You can still choose how the add-ons are sold and who has them.</div>`;
     $("#su-addons").innerHTML = `<section class="panel form su-addons"><h3>Add-ons</h3>
       <p class="muted" style="margin:0">Choose for each whether it comes with every subscription or is an extra you give to chosen accounts below. You can change this at any time.</p>
-      ${Object.entries(ADDON_INFO).map(([k, a]) => { const cur = this.addons?.[k] || { mode: "extra", monthlyLimit: 0 }; return `<div class="addon-set">
+      ${Object.entries(ADDON_INFO).map(([k, a]) => { const cur = this.addons?.[k] || { mode: "extra", monthlyLimit: 0, price: 0 }; return `<div class="addon-set">
         <strong>${a.name}</strong>
         <div class="seg" role="radiogroup" aria-label="${a.name}"><label><input type="radio" name="am-${k}" value="included"${cur.mode === "included" ? " checked" : ""}> Included in the basic subscription</label><label><input type="radio" name="am-${k}" value="extra"${cur.mode !== "included" ? " checked" : ""}> Extra add-on</label></div>
-        <div class="field"><label for="al-${k}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month when included</label><input type="number" id="al-${k}" min="0" max="10000" step="1" value="${cur.monthlyLimit || 0}"><span class="hint">Per league. 0 for no limit</span></div>
+        <div class="addon-fields">
+          <div class="field"><label for="ap-${k}">Price as an extra</label><div class="money"><span aria-hidden="true">£</span><input type="number" id="ap-${k}" min="0" max="1000" step="0.01" inputmode="decimal" value="${((cur.price || 0) / 100).toFixed(2)}"></div><span class="hint">A year, shown to secretaries</span></div>
+          <div class="field"><label for="al-${k}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month when included</label><input type="number" id="al-${k}" min="0" max="10000" step="1" value="${cur.monthlyLimit || 0}"><span class="hint">Per league. 0 for no limit</span></div>
+        </div>
       </div>`; }).join("")}
       <div class="actions"><button class="btn sm" data-act="su-addons-save">Save add-on settings</button></div></section>`;
     list.innerHTML = `<div class="cards">${users.map(u => `<article class="card" data-id="${esc(u.id)}" data-search="${esc(searchText([u.name, u.email, ...u.leagues.map(l => l.name)].join(" ")))}">
@@ -1116,7 +1125,7 @@ VIEWS.super = {
         <div class="actions"><button class="btn sm" data-act="su-save" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-year" data-id="${esc(u.id)}">Paid for a year</button><button class="btn danger sm" data-act="su-reset" data-id="${esc(u.id)}">Reset password</button></div>
       </div>
       ${Object.entries(ADDON_INFO).map(([k, a]) => this.addons?.[k]?.mode === "included" ? `<div class="sub-row addon-row"><div class="addon-head"><strong>${a.name}</strong> <span class="chip ok">Included in the subscription</span></div></div>` : `<div class="sub-row addon-row">
-        <div class="addon-head"><strong>${a.name} add-on</strong> <span class="chip ${addonActive(u, k) ? "ok" : ""}">${esc(addonNote(u, k))}</span></div>
+        <div class="addon-head"><strong>${a.name} add-on</strong>${this.addons?.[k]?.price ? ` <span class="muted">${money(this.addons[k].price)} a year</span>` : ""} <span class="chip ${addonActive(u, k) ? "ok" : ""}">${esc(addonNote(u, k))}</span></div>
         <div class="field"><label for="su-${k}-until-${esc(u.id)}">Until</label><input type="date" id="su-${k}-until-${esc(u.id)}" value="${esc(u[k]?.until || "")}"></div>
         <div class="field"><label for="su-${k}-limit-${esc(u.id)}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month</label><input type="number" min="0" max="10000" step="1" id="su-${k}-limit-${esc(u.id)}" value="${u[k]?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>
         <div class="actions"><button class="btn sm" data-act="su-addon-save" data-kind="${k}" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-addon-year" data-kind="${k}" data-id="${esc(u.id)}">Add for a year</button>${u[k] ? `<button class="btn ghost sm" data-act="su-addon-remove" data-kind="${k}" data-id="${esc(u.id)}">Remove</button>` : ""}</div>
@@ -1147,7 +1156,8 @@ VIEWS.super = {
     catch (x) { saveError(x); }
   },
   async saveAddonModes() {
-    const addons = Object.fromEntries(Object.keys(ADDON_INFO).map(k => [k, { mode: $(`[name=am-${k}]:checked`).value, monthlyLimit: Math.max(0, num($(`#al-${k}`).value) || 0) }]));
+    const price = k => { const v = parseFloat($(`#ap-${k}`).value); return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : 0; };
+    const addons = Object.fromEntries(Object.keys(ADDON_INFO).map(k => [k, { mode: $(`[name=am-${k}]:checked`).value, monthlyLimit: Math.max(0, num($(`#al-${k}`).value) || 0), price: price(k) }]));
     try { const r = await send("/api/super/settings", "PATCH", { addons }); this.addons = r.addons; this.render(); toast("Add-on settings saved"); }
     catch (x) { saveError(x); }
   },

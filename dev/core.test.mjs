@@ -157,10 +157,13 @@ r = await call2("PATCH", `super/users/${secUser.id}`, { photos: null }, boss); a
 r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.available, false);
 r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "free" } } }, boss); assert.equal(r.status, 400);
 r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "included", monthlyLimit: 5 } } }, sec3); assert.equal(r.status, 404);
-r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "included", monthlyLimit: 5 } } }, boss); assert.deepEqual(r.body.addons.photos, { mode: "included", monthlyLimit: 5 }); assert.equal(r.body.addons.reports.mode, "extra");
+r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "included", monthlyLimit: 5 } } }, boss); assert.deepEqual(r.body.addons.photos, { mode: "included", monthlyLimit: 5, price: 0 }); assert.equal(r.body.addons.reports.mode, "extra");
 r = await call2("GET", `leagues/${L.id}/addons`, null, sec3); assert.equal(r.body.photos.available, true); assert.equal(r.body.photos.limit, 5); assert.equal(r.body.reports.available, false); assert.match(r.body.reports.reason, /Match night reports is an add-on/);
 // match night reports: drafted by Claude from the night's facts, published by the secretary
 const facts = { league: "Yeovil", date: "2026-11-26", results: [{ home: "Red Devils", away: "Rollers", homePins: 240, awayPins: 231 }] };
+r = await call2("PATCH", "super/settings", { addons: { reports: { price: "lots" } } }, boss); assert.equal(r.status, 400);
+r = await call2("PATCH", "super/settings", { addons: { reports: { price: 24.5 } } }, boss); assert.equal(r.body.addons.reports.price, 2450); assert.equal(r.body.addons.photos.mode, "included", "other settings kept");
+r = await call2("GET", `leagues/${L.id}/addons`, null, sec3); assert.match(r.body.reports.reason, /£24\.50 a year/);
 r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts }, sec3); assert.equal(r.status, 403);
 r = await call2("PATCH", `super/users/${secUser.id}`, { reports: { until: "2027-12-01" } }, boss); assert.equal(r.body.user.reports.until, "2027-12-01");
 r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "nope", facts }, sec3); assert.equal(r.status, 400);
