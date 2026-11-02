@@ -75,6 +75,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .tabs a { flex: none; color: var(--on-baize-muted); text-decoration: none; font-weight: 600; padding: 10px 14px; border-radius: var(--r) var(--r) 0 0; white-space: nowrap; }
 .tabs a:hover { color: var(--on-baize); background: var(--baize-2); }
 .tabs a[aria-current="page"] { background: var(--paper); color: var(--ink); }
+.tabs .tab-row { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs .tab-row::-webkit-scrollbar { display: none; }
+.tabs:has(.tab-row) { flex-direction: column; gap: 10px; overflow: visible; }
+.tabs .admin-row { gap: 6px; align-items: center; }
+.tabs .admin-row a { padding: 5px 12px; border-radius: 999px; font-size: .9rem; background: var(--baize-2); }
+.tabs .admin-row a[aria-current="page"] { background: var(--paper); color: var(--ink); }
+.tabs .admin-row .sep { margin-left: 0; }
 .tabs .sep { flex: none; align-self: center; margin: 0 8px; color: var(--on-baize-muted); font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
 .tabs .end { margin-left: auto; }
 .tabs button.end { flex: none; background: none; border: 0; color: var(--on-baize-muted); font-weight: 600; padding: 10px 14px; cursor: pointer; }
@@ -730,8 +737,8 @@ function standings() {
 }
 
 /* ---------- shell & routing ---------- */
-const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"]];
-const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Venues"], ["teams", "Teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["league-setup", "League setup"]];
+const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"], ["league-teams", "Teams"], ["league-venues", "Venues"]];
+const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Manage venues"], ["teams", "Manage teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["league-setup", "League setup"]];
 const ACCOUNT_VIEWS = [["leagues", "My leagues"], ["account", "Account"]];
 let current = null;
 
@@ -747,7 +754,9 @@ function renderNav() {
     return;
   }
   if (!S.league) { $("#tabs").innerHTML = ""; $("#acct").innerHTML = ""; return; }
-  $("#tabs").innerHTML = PUBLIC_VIEWS.map(link).join("") + (S.admin ? `<span class="sep">Admin</span>` + ADMIN_VIEWS.map(link).join("") : "");
+  // League admins get their own row of admin tabs above the public ones.
+  $("#tabs").innerHTML = (S.admin ? `<div class="tab-row admin-row"><span class="sep">Admin</span>${ADMIN_VIEWS.map(link).join("")}</div>` : "")
+    + `<div class="tab-row">${PUBLIC_VIEWS.map(link).join("")}</div>`;
   $("#acct").innerHTML = S.admin
     ? `<span class="who">${esc(S.user.name)}</span>${accountLink("leagues", "My leagues")}${logout}`
     : `<a href="/#login" data-act="secretary-login">Secretary login</a>`;
@@ -1571,6 +1580,92 @@ VIEWS.cup = {
         <p class="lookup-note">${esc(GAMES[gameOf(c)])} · ${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
     }
     body.innerHTML = `<nav class="cup-jump" aria-label="Cups">${items.map(([id, name]) => `<button type="button" data-cup-jump="${esc(id)}" aria-pressed="${id === pick}">${esc(name)}</button>`).join("")}</nav>${shown}`;
+  }
+};
+
+/* ---------- public: teams and venues ---------- */
+// What anyone can see about each team: division, home alley, captain, vice captain, sticker up and players.
+// Captains' contact details stay on the admin Teams page.
+VIEWS["league-teams"] = {
+  open: new Set(),
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">This season</div><h2>Teams</h2>
+      <p>Every team, where they play at home, and their players. Click a team to see its players.</p></div></div>
+      <div class="list-tools" role="search">
+        <input type="search" id="pt-search" placeholder="Search teams, venues or players" aria-label="Search teams">
+        <span class="list-count" id="pt-count" aria-live="polite"></span>
+        <span class="actions"><button type="button" class="btn ghost sm" data-pt-all="1">Expand all</button><button type="button" class="btn ghost sm" data-pt-all="0">Collapse all</button></span>
+      </div><div id="pt-list"></div>`;
+    wireSearch($("#pt-search"), "pubTeamSearch", () => this.filter());
+    el.addEventListener("click", e => {
+      const b = e.target.closest("[data-pt], [data-pt-all]"); if (!b) return;
+      if (b.dataset.ptAll) { for (const id of Object.keys(S.teams)) this.toggle(id, b.dataset.ptAll === "1"); return; }
+      this.toggle(b.dataset.pt);
+    });
+  },
+  toggle(id, show = !this.open.has(id)) {
+    show ? this.open.add(id) : this.open.delete(id);
+    const btn = $(`#pt-list [data-pt="${CSS.escape(id)}"]`);
+    if (btn) { btn.setAttribute("aria-expanded", show); document.getElementById("ptb-" + id).hidden = !show; }
+  },
+  refresh() {
+    const list = $("#pt-list"); $("#pt-count").textContent = "";
+    const st = statusBlock(); if (st) return list.innerHTML = st;
+    const order = Object.fromEntries(sortedDivisions().map((d, i) => [d.id, i]));
+    const teams = sortedTeams().sort((a, b) => (order[a.division] ?? 999) - (order[b.division] ?? 999));
+    if (!teams.length) return list.innerHTML = `<div class="empty"><strong>No teams yet</strong>Teams appear here once they're added.</div>`;
+    const role = (label, p) => p ? `<dt>${label}</dt><dd>${playerHtml(p)}</dd>` : "";
+    list.innerHTML = `<div class="cards">${teams.map(t => {
+      const v = S.venues[t.venue], players = playersOf(t), cap = players.find(p => p.captain);
+      const search = [t.name, v?.name, divisionName(t.division), ...players.map(playerLabel)].join(" ");
+      return `<article class="card" data-search="${esc(searchText(search))}">
+        <div class="card-head"><div><h3><button type="button" class="card-toggle tn" data-pt="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="ptb-${esc(t.id)}">${esc(t.name)}</button></h3>
+          <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `<a href="#league-venues">${esc(v.name)}</a>${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${plural(players.length, "player")}</div></div></div>
+        <div class="card-body" id="ptb-${esc(t.id)}"${this.open.has(t.id) ? "" : " hidden"}>
+          <dl class="kv">${role("Captain", cap)}${role("Vice captain", viceOf(t))}${role("Sticker up", stickerOf(t))}</dl>
+          <div class="tags">${players.map(p => `<span class="tag">${playerHtml(p)}${p.captain ? " (C)" : ""}${p.vice ? " (VC)" : ""}</span>`).join("") || `<span class="muted">No players listed</span>`}</div>
+        </div></article>`;
+    }).join("")}</div>`;
+    this.filter();
+  },
+  filter() { applySearch($("#pt-list"), S.ui.pubTeamSearch, $("#pt-count"), "team"); }
+};
+// Where matches are played: address, phone, map, and which teams play on each alley.
+VIEWS["league-venues"] = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">This season</div><h2>Venues</h2>
+      <p>The pubs and clubs where matches are played, and the teams at home on each alley.</p></div></div>
+      <div class="list-tools" role="search">
+        <input type="search" id="pv-search" placeholder="Search venues, towns or teams" aria-label="Search venues">
+        <span class="list-count" id="pv-count" aria-live="polite"></span>
+      </div><div id="pv-list"></div>`;
+    wireSearch($("#pv-search"), "pubVenueSearch", () => this.filter());
+  },
+  refresh() {
+    const list = $("#pv-list"); $("#pv-count").textContent = "";
+    dropMaps(list);
+    const st = statusBlock(); if (st) return list.innerHTML = st;
+    const venues = sortedVenues();
+    if (!venues.length) return list.innerHTML = `<div class="empty"><strong>No venues yet</strong>Venues appear here once they're added.</div>`;
+    list.innerHTML = `<div class="cards">${venues.map(v => {
+      const teams = sortedTeams().filter(t => t.venue === v.id), a = venueAddr(v), mapped = Number.isFinite(v.lat) && Number.isFinite(v.lng);
+      const alleys = Array.from({ length: v.alleys || 1 }, (_, i) => i + 1);
+      return `<article class="card" data-search="${esc(searchText([v.name, addrText(a), ...teams.map(t => t.name)].join(" ")))}">
+        <div class="card-head"><div><h3>${esc(v.name)}</h3><div class="sub">${v.alleys > 1 ? `${v.alleys} alleys` : "1 alley"}</div></div></div>
+        <dl class="kv"><dt>Address</dt><dd>${esc(addrText(a) || "—")}</dd>${v.phone ? `<dt>Telephone</dt><dd><a href="tel:${esc(v.phone.replace(/\s+/g, ""))}">${esc(v.phone)}</a></dd>` : ""}</dl>
+        ${mapped ? `<div class="map" data-lat="${v.lat}" data-lng="${v.lng}" data-name="${esc(v.name)}" role="img" aria-label="Map showing ${esc(v.name)}"></div>` : ""}
+        <div class="alley-grid">${v.alleys > 1
+          ? alleys.map(n => { const ts = teams.filter(t => (t.alley || 1) === n); return `<div class="alley-row"><span class="n">Alley ${n}</span><span>${ts.map(t => `<span class="tn">${esc(t.name)}</span>`).join(", ") || `<span class="muted">No home team</span>`}</span></div>`; }).join("")
+          : `<div class="alley-row"><span class="n">Home to</span><span>${teams.map(t => `<span class="tn">${esc(t.name)}</span>`).join(", ") || `<span class="muted">No teams this season</span>`}</span></div>`}</div>
+      </article>`;
+    }).join("")}</div>`;
+    $$(".map[data-lat]", list).forEach(el => drawMap(el, +el.dataset.lat, +el.dataset.lng, el.dataset.name));
+    this.filter();
+  },
+  filter() {
+    const list = $("#pv-list");
+    applySearch(list, S.ui.pubVenueSearch, $("#pv-count"), "venue");
+    $$(".card:not([hidden]) .map", list).forEach(el => maps.get(el)?.invalidateSize());
   }
 };
 
