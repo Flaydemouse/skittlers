@@ -248,7 +248,9 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cup-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .cup-title h3 { font-size: 1.4rem; }
 .cup-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
-.cup-jump a { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); text-decoration: none; font-weight: 600; font-size: .9rem; }
+.cup-jump button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; }
+.cup-jump button:hover { border-color: var(--baize-2); }
+.cup-jump button[aria-pressed="true"] { background: var(--baize); border-color: var(--baize); color: var(--on-baize); }
 .bracket-scroll { overflow-x: auto; padding-bottom: 6px; }
 .bracket { display: grid; grid-template-columns: repeat(var(--rounds), minmax(190px, 1fr)); gap: 18px; min-width: calc(var(--rounds) * 200px); }
 .b-round { display: flex; flex-direction: column; gap: 10px; }
@@ -1102,16 +1104,19 @@ VIEWS.cup = {
     const st = statusBlock(); if (st) return body.innerHTML = st;
     const cups = sortedCups(), old = Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort);
     if (!cups.length && !old.length) return body.innerHTML = `<div class="empty"><strong>No cups yet</strong>${S.admin ? `Set up a cup on the <a href="#cups">Manage cups</a> page.` : "Cup draws appear here once they're made."}</div>`;
-    body.innerHTML = (cups.length > 1 ? `<nav class="cup-jump" aria-label="Cups">${cups.map(c => `<a href="#cup" data-cup-jump="${esc(c.id)}">${esc(c.name)}</a>`).join("")}</nav>` : "") +
-      cups.map(c => {
-        const st = cupStatus(c);
-        const inner = c.structure === "final"
-          ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
-          : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
-        return `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
-          <p class="lookup-note">${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
-      }).join("") +
-      (old.length ? `<section class="cup-section"><h3>Other cup fixtures</h3>${groupByDate(old)}</section>` : "");
+    const items = cups.map(c => [c.id, c.name]).concat(old.length ? [["other", "Other cup fixtures"]] : []);
+    const pick = items.some(([id]) => id === S.ui.pubCup) ? S.ui.pubCup : null, c = S.cups[pick];
+    let shown = `<div class="empty"><strong>Choose a cup</strong>Pick a cup above to see its draw and results.</div>`;
+    if (pick === "other") shown = `<section class="cup-section"><h3>Other cup fixtures</h3>${groupByDate(old)}</section>`;
+    else if (c) {
+      const st = cupStatus(c);
+      const inner = c.structure === "final"
+        ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
+        : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
+      shown = `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
+        <p class="lookup-note">${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
+    }
+    body.innerHTML = `<nav class="cup-jump" aria-label="Cups">${items.map(([id, name]) => `<button type="button" data-cup-jump="${esc(id)}" aria-pressed="${id === pick}">${esc(name)}</button>`).join("")}</nav>${shown}`;
   }
 };
 
@@ -2726,8 +2731,8 @@ async function clearAll() {
 document.addEventListener("click", async e => {
   const link = e.target.closest("a[data-path]");
   if (link && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); return NAV.go(link.dataset.path, link.dataset.hash); }
-  const jump = e.target.closest("a[data-cup-jump]");
-  if (jump) { e.preventDefault(); return document.getElementById("cup-" + jump.dataset.cupJump)?.scrollIntoView({ behavior: "smooth" }); }
+  const jump = e.target.closest("[data-cup-jump]");
+  if (jump) { S.ui.pubCup = S.ui.pubCup === jump.dataset.cupJump ? null : jump.dataset.cupJump; return VIEWS.cup.refresh(); }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const id = b.dataset.id, act = b.dataset.act;
   if (act === "logout") { signedOut("Logged out"); }
