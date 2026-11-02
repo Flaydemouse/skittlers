@@ -152,7 +152,7 @@ details.late[open] summary { margin-bottom: 12px; }
 .sc-head h3 { font-size: 1.25rem; }
 .sc-dlg.two { width: min(1260px, calc(100vw - 16px)); }
 .sc-sides { display: grid; gap: 14px; }
-@media (min-width: 1180px) { .sc-dlg.two .sc-sides { grid-template-columns: 1fr 1fr; gap: 20px; } .sc-dlg.two .sc-row { grid-template-columns: 150px minmax(0, 1fr); } .sc-dlg.two .hand-cell input { width: 40px; height: 40px; } }
+@media (min-width: 1180px) { .sc-dlg.two .sc-sides { grid-template-columns: 1fr 1fr; gap: 20px; } .sc-dlg.two .sc-row { grid-template-columns: 180px minmax(0, 1fr); } .sc-dlg.two .hand-cell input { width: 40px; height: 40px; } }
 .sc-margins { font-size: .9rem; color: var(--muted); }
 .sc-margins:empty { display: none; }
 .sc-margins b { color: var(--ink); }
@@ -160,7 +160,13 @@ details.late[open] summary { margin-bottom: 12px; }
 .sc-side-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; align-items: center; }
 .sc-side-head h4 { font-size: 1.05rem; }
 .sc-rows { display: grid; gap: 10px; }
-.sc-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+.sc-row { display: grid; grid-template-columns: minmax(180px, 250px) minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+.sc-player { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.sc-player > select, .sc-player > .sc-fixed { flex: 1; min-width: 0; }
+.sc-move { display: inline-flex; flex-direction: column; gap: 2px; }
+.sc-dlg .sc-move button { width: 26px; height: 20px; padding: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--muted); font-size: .7rem; line-height: 1; cursor: pointer; }
+.sc-dlg .sc-move button:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); }
+.sc-dlg .sc-move button:disabled { opacity: .35; cursor: default; }
 .sc-hands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .sc-rows[data-mode="hands"] .sc-total-in, .sc-rows[data-mode="totals"] .sc-hands { display: none; }
 .sc-dlg .sc-total-in input { width: 90px; text-align: center; }
@@ -206,6 +212,7 @@ details.sc-details[open] summary { margin-bottom: 8px; }
 .st-table .sort { border: 0; background: none; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; white-space: nowrap; }
 .st-table .sorted, .st-table .sorted .sort, .st-table .sorted .st-name { color: var(--brass-ink); font-weight: 800; }
 .st-table th.sorted { border-bottom-color: var(--brass); }
+.st-pos tr.best td { color: var(--brass-ink); font-weight: 800; }
 .st-table .st-name { border: 0; background: none; padding: 0; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; text-align: left; }
 .st-table .st-name:hover { text-decoration: underline; }
 .st-table .st-team { display: block; font-size: .8rem; }
@@ -216,6 +223,13 @@ details.sc-details[open] summary { margin-bottom: 8px; }
 .night { display: inline-flex; gap: 6px; align-items: center; padding: 5px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); font-size: .85rem; font-weight: 600; cursor: pointer; }
 .night.off { color: var(--muted); text-decoration: line-through; background: var(--sunk); }
 .ok-note { border-left: 4px solid var(--win); }
+.bk-panel h4 { font-size: 1rem; margin-top: 6px; }
+.bk-copies { display: grid; gap: 6px; max-height: 360px; overflow-y: auto; }
+.bk-copy { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: .88rem; }
+.bk-copy span { display: block; font-size: .8rem; }
+.bk-panel { display: grid; gap: 10px; }
+.mv-dlg { width: min(560px, calc(100vw - 16px)); }
+.mv-dlg #mv-date { width: auto; margin-left: 6px; }
 /* Panels, forms, admin */
 .split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .split > * { min-width: 0; }
@@ -625,19 +639,27 @@ function saveError(e) {
   if (e.status === 401) signedOut("Your login has ended. Log in again.");
   else toast(e.status ? e.message : "Couldn't save. Check your connection and try again.");
 }
-// Every change sends the whole season back with the version it was based on.
-// If someone else saved in between, the server refuses (409) and we reload their version.
+// Every change sends only the items it changed (a fixture, a team, a cup...), which keeps saving quick on a
+// phone. The server applies them to the latest copy of the season; if someone else saved in between, their
+// changes to other items are kept and the page reloads to show them.
+const SEASON_KINDS = ["teams", "venues", "fixtures", "divisions", "cups", "contacts"];
 async function commit(mutate) {
   if (!S.seasonId) { toast("Set up a season first, on the Seasons page."); return false; }
-  const draft = structuredClone({ teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, cups: S.cups, contacts: S.contacts });
+  const draft = structuredClone(Object.fromEntries(SEASON_KINDS.map(k => [k, S[k]])));
   mutate(draft);
-  const { contacts, ...data } = draft;
+  const changes = [];
+  for (const k of SEASON_KINDS) for (const id of new Set([...Object.keys(S[k] || {}), ...Object.keys(draft[k] || {})])) {
+    const before = S[k]?.[id], after = draft[k]?.[id];
+    if (JSON.stringify(before) !== JSON.stringify(after)) changes.push({ in: k, id, value: after ?? null });
+  }
+  if (!changes.length) return true;
   try {
-    apply(await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}`, "PUT", { version: S.version, data, contacts }));
+    const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: S.version, changes });
+    apply({ ...draft, version: r.version });
+    if (r.stale) loadSeason().then(() => setTimeout(() => toast("Someone else also saved changes just now. They're shown here too."), 1500));
     return true;
   } catch (e) {
-    if (e.status === 409) { apply(e.body); toast("Someone else saved changes just now. The page has been updated, so make your change again."); }
-    else saveError(e);
+    saveError(e);
     return false;
   }
 }
@@ -1034,7 +1056,7 @@ function fxCard(f, showComp) {
     <div class="home ${hw ? "won" : ""}"><span class="tn">${esc(teamName(f.home))}</span></div>
     <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
     <div class="away ${aw ? "won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></div>
-    <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${where}</div>
+    <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${f.postponedFrom && !p ? `<span class="chip warn">Postponed from ${esc(fmtDate(f.postponedFrom))}</span> ` : ""}${where}</div>
     ${p && f.cards ? `<details class="sc-details"><summary>Scorecard</summary>${boardHtml(f.cards.home, f.cards.away, teamName(f.home), teamName(f.away))}</details>` : ""}
   </div>`;
 }
@@ -1043,8 +1065,9 @@ function fxCard(f, showComp) {
 function groupByDate(list, desc, byDivision = false) {
   const g = {};
   list.forEach(f => (g[f.date || ""] ||= []).push(f));
-  const keys = Object.keys(g).sort();
+  const keys = Object.keys(g).filter(Boolean).sort();
   if (desc) keys.reverse();
+  if (g[""]) keys.push("");
   const next = keys.filter(d => d && d >= today() && g[d].some(f => !played(f))).sort()[0];
   const divs = sortedDivisions(), divOf = f => S.divisions[S.teams[f.home]?.division] ? S.teams[f.home].division : "";
   const split = fs => {
@@ -1052,7 +1075,7 @@ function groupByDate(list, desc, byDivision = false) {
     return [...divs.map(d => d.id), ""].map(id => [id, fs.filter(f => divOf(f) === id)]).filter(([, x]) => x.length)
       .map(([id, x]) => `<div class="div-group"><h4>${esc(id ? divisionName(id) : "Not in a division")} <span class="chip">${esc(GAMES[gameOf(S.divisions[id])])}</span></h4><div class="fx-list">${x.map(f => fxCard(f)).join("")}</div></div>`).join("");
   };
-  return keys.map(d => `<div class="date-group${d === next ? " next" : ""}"><h3>${fmtDate(d, true)}${d === next ? ` <span class="chip ok">Next match night</span>` : ""}</h3>${split(g[d])}</div>`).join("");
+  return keys.map(d => `<div class="date-group${d === next ? " next" : ""}"><h3>${d ? fmtDate(d, true) : "Date to be arranged"}${d === next ? ` <span class="chip ok">Next match night</span>` : ""}</h3>${split(g[d])}</div>`).join("");
 }
 VIEWS.fixtures = {
   mount(el) {
@@ -1283,13 +1306,14 @@ function finalTableHtml(cup, admin = false) {
 
 /* ---------- statistics ---------- */
 // Every game a player or team played, from the scorecards and results saved this season.
-// A player's game: { comp, cupId, date, side, teamId, key, name, nick, total, hands, spares, opp, match }
+// A player's game: { comp, cupId, date, side, teamId, key, name, nick, total, hands, spares, opp, match, pos }
+// pos is where the player threw in the team's order (1 = first), or null for a one-player card.
 // A team's game: { comp, cupId, date, side, teamId, total, spares, opp }. side is "home", "away" or null (a final).
 function statGames() {
   const players = [], teams = [];
   const addCard = (card, base) => {
-    for (const r of card?.rows || []) players.push({ ...base, key: `${base.teamId}|${r.key}`, name: r.name, nick: r.nick || "", total: r.total,
-      hands: card.mode === "hands" ? r.hands : null, spares: card.mode === "hands" ? r.spares : null });
+    (card?.rows || []).forEach((r, i) => players.push({ ...base, key: `${base.teamId}|${r.key}`, name: r.name, nick: r.nick || "", total: r.total,
+      hands: card.mode === "hands" ? r.hands : null, spares: card.mode === "hands" ? r.spares : null, pos: card.rows.length > 1 ? i + 1 : null }));
   };
   const spareCount = card => card?.mode === "hands" ? card.rows.reduce((n, r) => n + r.spares.filter(Boolean).length, 0) : null;
   for (const f of Object.values(S.fixtures)) {
@@ -1342,17 +1366,19 @@ function statSum(games) {
 
 /* ---------- public: stats ---------- */
 const avgText = n => n == null ? "–" : n.toFixed(2);
+const ordinal = n => n + (n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th");
 VIEWS.stats = {
   mount(el) {
-    S.ui.st ||= { view: "players", comp: "all", where: "all", div: "", team: "", min: 1, sort: "avg", desc: true, player: null };
+    S.ui.st ||= { view: "players", comp: "all", where: "all", div: "", team: "", pos: "", min: 1, sort: "avg", desc: true, player: null };
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Statistics</div><h2>Stats</h2>
-      <p>Averages, totals, top scores and spares from the scorecards. Choose the competition and home or away to narrow them down. Click a player for their games and spares.</p></div></div>
+      <p>Averages, totals, top scores and spares from the scorecards. Choose the competition, home or away, or the position a player threw in to narrow them down. Click a player for their games, spares and how they do in each position.</p></div></div>
       <div class="st-tools">
         <div class="seg" role="group" aria-label="Show"><button type="button" data-st-view="players">Players</button><button type="button" data-st-view="teams">Teams</button></div>
         <label>Competition <select id="st-comp"></select></label>
         <label id="st-div-wrap">Division <select id="st-div"></select></label>
         <label>Team <select id="st-team"></select></label>
         <div class="seg" role="group" aria-label="Home or away"><button type="button" data-st-where="all">All</button><button type="button" data-st-where="home">Home</button><button type="button" data-st-where="away">Away</button></div>
+        <label id="st-pos-wrap" title="Where the player threw in the team's order">Position <select id="st-pos"></select></label>
         <label id="st-min-wrap">At least <select id="st-min">${[1, 3, 5, 10].map(n => `<option value="${n}">${plural(n, "game")}</option>`).join("")}</select></label>
         <input type="search" id="st-search" placeholder="Search players or teams" aria-label="Search">
       </div>
@@ -1372,6 +1398,7 @@ VIEWS.stats = {
       if (e.target.id === "st-div") { S.ui.st.div = e.target.value; S.ui.st.team = ""; }
       if (e.target.id === "st-team") S.ui.st.team = e.target.value;
       if (e.target.id === "st-min") S.ui.st.min = +e.target.value;
+      if (e.target.id === "st-pos") S.ui.st.pos = e.target.value;
       this.refresh();
     });
     $("#st-search").addEventListener("input", () => this.refresh());
@@ -1397,8 +1424,14 @@ VIEWS.stats = {
     $$("[data-st-view]").forEach(b => b.setAttribute("aria-pressed", b.dataset.stView === st.view));
     $$("[data-st-where]").forEach(b => b.setAttribute("aria-pressed", b.dataset.stWhere === st.where));
     const all = statGames(), q = searchText($("#st-search").value || "");
+    // Position: 1st to last place in the team's order, as far as any scorecard goes.
+    const maxPos = Math.max(cfg().players, 0, ...all.players.map(g => g.pos || 0));
+    $("#st-pos-wrap").hidden = st.view !== "players";
+    $("#st-pos").innerHTML = `<option value="">Any position</option>` + upTo(maxPos).map(i => `<option value="${i + 1}">${ordinal(i + 1)}${i === 0 ? " (leading off)" : ""}</option>`).join("");
+    if (st.pos && +st.pos > maxPos) st.pos = "";
+    $("#st-pos").value = st.pos;
     const ours = g => (!st.team || g.teamId === st.team) && (!st.div || divOf(g.teamId) === st.div);
-    const players = statFilter(all.players, st.comp, st.where).filter(ours), teams = statFilter(all.teams, st.comp, st.where).filter(ours);
+    const players = statFilter(all.players, st.comp, st.where).filter(g => ours(g) && (!st.pos || g.pos === +st.pos)), teams = statFilter(all.teams, st.comp, st.where).filter(ours);
     this.records(players, teams);
     if (!all.players.length && !all.teams.length) { body.innerHTML = `<div class="empty"><strong>No stats yet</strong>They build up as results and scorecards are entered.</div>`; $("#st-detail").innerHTML = ""; return; }
     // One row per player or team.
@@ -1425,7 +1458,8 @@ VIEWS.stats = {
         ${P ? td("handAvg", avgText(r.handAvg)) + td("bestHand", r.bestHand ?? "–") : ""}${td("spares", r.spares ?? "–")}${td("bestSpare", r.bestSpare ?? "–")}</tr>`).join("")}</tbody></table></div>
       <div class="legend"><span><b>P</b> games played</span><span><b>Avg</b> pins a game</span><span><b>Top</b> best game</span>${P ? `<span><b>Hand avg</b> pins a hand</span>` : `<span>Team figures are whole-team scores in league and team cup games</span>`}<span>Spares count from hand-by-hand scorecards</span></div>`
       : `<div class="empty"><strong>Nothing to show</strong>No ${P ? "players" : "teams"} match these choices.</div>`;
-    this.detail(players);
+    // The player's own panel shows every position, so they can be compared side by side.
+    this.detail(statFilter(all.players, st.comp, st.where).filter(ours));
   },
   // The best single performances for the current choices.
   records(players, teams) {
@@ -1449,13 +1483,19 @@ VIEWS.stats = {
     if (!games.length) return box.innerHTML = "";
     const g0 = games.at(-1), sum = statSum(games), spares = games.flatMap(g => (g.hands || []).map((v, i) => g.spares[i] ? { g, v, n: i + 1 } : null).filter(Boolean));
     const n = Math.max(0, ...games.map(g => g.hands?.length || 0));
+    const byPos = [...new Set(games.map(g => g.pos).filter(Boolean))].sort((a, b) => a - b).map(p => [p, statSum(games.filter(g => g.pos === p))]);
+    const bestPos = byPos.length > 1 ? byPos.reduce((b, x) => x[1].avg > b[1].avg ? x : b)[0] : null;
     box.innerHTML = `<section class="panel st-player">
       <div class="card-head"><div><div class="eyebrow">Player</div><h3>${esc(g0.name)}${g0.nick ? ` <em class="nick">${esc(g0.nick)}</em>` : ""}</h3><div class="sub tn">${esc(teamName(g0.teamId))}</div></div>
         <button type="button" class="btn ghost sm" data-st-player="${esc(st.player)}">Close</button></div>
       <p class="lookup-note">${plural(sum.games, "game")} · ${sum.pins} pins · average ${avgText(sum.avg)}${sum.handAvg != null ? ` · ${avgText(sum.handAvg)} a hand` : ""} · ${plural(sum.spares || 0, "spare")}</p>
-      <div class="table-scroll"><table class="sc-table st-games"><thead><tr><th class="pl">Date</th><th class="pl">Game</th><th>H/A</th>${upTo(n).map(h => `<th>${h + 1}</th>`).join("")}<th class="tot">Total</th></tr></thead>
-        <tbody>${games.map(g => `<tr><td class="pl">${g.date ? dayMonth(g.date) : ""}</td><td class="pl">${g.comp === "league" ? "League" : esc(S.cups[g.cupId]?.name || "Cup")} v ${esc(g.opp)}</td><td>${g.side === "home" ? "H" : g.side === "away" ? "A" : "–"}</td>
+      <div class="table-scroll"><table class="sc-table st-games"><thead><tr><th class="pl">Date</th><th class="pl">Game</th><th>H/A</th><th title="Position in the team's order">Pos</th>${upTo(n).map(h => `<th>${h + 1}</th>`).join("")}<th class="tot">Total</th></tr></thead>
+        <tbody>${games.map(g => `<tr><td class="pl">${g.date ? dayMonth(g.date) : ""}</td><td class="pl">${g.comp === "league" ? "League" : esc(S.cups[g.cupId]?.name || "Cup")} v ${esc(g.opp)}</td><td>${g.side === "home" ? "H" : g.side === "away" ? "A" : "–"}</td><td>${g.pos ? ordinal(g.pos) : "–"}</td>
           ${upTo(n).map(h => `<td>${g.hands?.[h] == null ? "" : g.spares[h] ? `<span class="circ">${g.hands[h]}</span>` : g.hands[h]}</td>`).join("")}<td class="tot">${g.total}</td></tr>`).join("")}</tbody></table></div>
+      ${byPos.length ? `<h4>By position</h4>
+      <div class="table-scroll"><table class="sc-table st-pos"><thead><tr><th class="pl">Position</th><th>P</th><th>Avg</th><th>Top</th><th>Hand avg</th><th>Spares</th></tr></thead>
+        <tbody>${byPos.map(([p, s]) => `<tr${p === bestPos ? ' class="best"' : ""}><td class="pl">${ordinal(p)}${p === 1 ? " (leading off)" : ""}</td><td>${s.games}</td><td>${avgText(s.avg)}</td><td>${s.best ?? "–"}</td><td>${avgText(s.handAvg)}</td><td>${s.spares ?? "–"}</td></tr>`).join("")}</tbody></table></div>
+      ${byPos.length > 1 ? `<p class="lookup-note">Best average when throwing ${ordinal(bestPos)}.</p>` : ""}` : ""}
       <h4>Spares${spares.length ? ` (${spares.length})` : ""}</h4>
       ${spares.length ? `<div class="tags">${spares.map(x => `<span class="tag"><span class="circ">${x.v}</span> hand ${x.n} v ${esc(x.g.opp)}${x.g.date ? `, ${dayMonth(x.g.date)}` : ""}</span>`).join("")}</div>` : `<p class="muted">No spares recorded${games.some(g => !g.hands) ? " (spares only show from hand-by-hand scorecards)" : ""}.</p>`}
     </section>`;
@@ -1904,6 +1944,7 @@ function openScorecard({ title, sides, onSave }) {
       const b = e.target.closest("button"); if (!b) return;
       if (b.matches("[data-sp]")) { const cell = b.closest(".hand-cell"); cell.dataset.manual = cell.dataset.manual === "1" ? "0" : "1"; scCell($("input", cell), false); }
       if (b.dataset.mode) { const side = b.closest("[data-side]"); $(".sc-rows", side).dataset.mode = b.dataset.mode; $$("[data-mode]", side).forEach(x => x.setAttribute("aria-pressed", x === b)); scRecalc(+side.dataset.side); }
+      if (b.dataset.mv) scMove(b.closest(".sc-row"), +b.dataset.mv);
       if (b.dataset.sc === "close") dlg.close();
       if (b.dataset.sc === "remove") { if (!arm(b, "Confirm remove")) return; dlg.close(); SC.onSave(null); }
     });
@@ -1931,7 +1972,7 @@ function openScorecard({ title, sides, onSave }) {
       ${sides.some(s => s.card) ? `<button type="button" class="btn danger" data-sc="remove">Remove scorecard</button>` : ""}</div></div></form>`;
   $$(".hand-cell input", dlg).forEach(i => scCell(i, false));
   dlg.classList.toggle("two", sides.length === 2);
-  sides.forEach((_, i) => scRecalc(i));
+  sides.forEach((_, i) => { scRecalc(i); scNumber(i); });
   dlg.showModal();
   $("select[data-player], [data-hand], [data-total]", dlg)?.focus();
 }
@@ -1950,11 +1991,32 @@ function scRowHtml(s, r) {
   const who = s.fixed ? `<span class="sc-fixed">${cardName(s.fixed)}</span>`
     : `<select data-player aria-label="${esc(s.title)} player ${r + 1}"><option value="">Choose player ${r + 1}</option>${players.map(p => `<option value="${esc(p.key)}"${p.key === key ? " selected" : ""}>${esc(p.label)}</option>`).join("")}</select>`;
   return `<div class="sc-row" data-row="${r}">
-    <div class="sc-player">${who}</div>
+    <div class="sc-player">${s.rows > 1 ? `<span class="sc-move"><button type="button" data-mv="-1" tabindex="-1" aria-label="Move player ${r + 1} up">▲</button><button type="button" data-mv="1" tabindex="-1" aria-label="Move player ${r + 1} down">▼</button></span>` : ""}${who}</div>
     <div class="sc-hands">${upTo(s.hands).map(h => `<span class="hand-cell" data-manual="${hands?.spares?.[h] && hands.hands[h] < 10 ? 1 : 0}"><input type="text" inputmode="numeric" autocomplete="off" maxlength="3" data-hand="${h}" value="${hands?.hands?.[h] ?? ""}" aria-label="Player ${r + 1}, hand ${h + 1}"><button type="button" class="sp" data-sp tabindex="-1" aria-label="Spare, player ${r + 1} hand ${h + 1}">S</button></span>`).join("")}
       <output class="sc-row-total" aria-label="Player ${r + 1} total">0</output></div>
     <div class="sc-total-in"><input type="text" inputmode="numeric" autocomplete="off" maxlength="4" data-total value="${s.card?.mode === "totals" && saved ? saved.total : ""}" placeholder="Total" aria-label="Player ${r + 1} total"></div>
   </div>`;
+}
+// Moves a row up or down one place, so the card keeps the order the players threw in.
+function scMove(row, by) {
+  const other = by < 0 ? row.previousElementSibling : row.nextElementSibling; if (!other) return;
+  by < 0 ? other.before(row) : other.after(row);
+  const i = +row.closest("[data-side]").dataset.side; scNumber(i); scRecalc(i);
+  const b = $(`[data-mv="${by}"]`, row); (b.disabled ? $(`[data-mv="${-by}"]`, row) : b).focus();
+}
+// Numbers the rows in their current order for screen readers, and greys out moves off the ends.
+function scNumber(i) {
+  const side = $(`#sc-dlg [data-side="${i}"]`), title = SC.sides[i].title, rows = $$(".sc-row", side);
+  rows.forEach((row, r) => {
+    const n = r + 1, sel = $("[data-player]", row);
+    if (sel) { sel.setAttribute("aria-label", `${title} player ${n}`); if (sel.options[0] && !sel.options[0].value) sel.options[0].textContent = `Choose player ${n}`; }
+    $$("[data-hand]", row).forEach((x, h) => x.setAttribute("aria-label", `Player ${n}, hand ${h + 1}`));
+    $$("[data-sp]", row).forEach((x, h) => x.setAttribute("aria-label", `Spare, player ${n} hand ${h + 1}`));
+    $("[data-total]", row)?.setAttribute("aria-label", `Player ${n} total`);
+    const up = $('[data-mv="-1"]', row), down = $('[data-mv="1"]', row);
+    if (up) { up.disabled = r === 0; up.setAttribute("aria-label", `Move player ${n} up`); }
+    if (down) { down.disabled = r === rows.length - 1; down.setAttribute("aria-label", `Move player ${n} down`); }
+  });
 }
 // Reads one hand box: an S (or /) typed with the score marks a spare; 10 or more is always one.
 function scCell(input, typed) {
@@ -2997,6 +3059,58 @@ VIEWS["manage-fixtures"] = {
         toast(`Result saved: ${teamName(f.home)} ${cardTotal(cards[0])} – ${cardTotal(cards[1])} ${teamName(f.away)}${handPts && cards.some(x => x.mode !== "hands") ? ". Hand points need both cards hand by hand." : ""}`);
       } });
   },
+  // Postpones a fixture: to another night (with warnings for clashes) or to a date still to be arranged.
+  move(id) {
+    const f = S.fixtures[id]; if (!f) return;
+    let dlg = $("#mv-dlg");
+    if (!dlg) {
+      dlg = document.createElement("dialog"); dlg.id = "mv-dlg"; dlg.className = "sc-dlg mv-dlg"; document.body.append(dlg);
+      dlg.addEventListener("input", () => this.moveCheck());
+      dlg.addEventListener("change", () => this.moveCheck());
+      dlg.addEventListener("click", e => { if (e.target.closest("[data-mv=close]")) dlg.close(); });
+      dlg.addEventListener("submit", e => { e.preventDefault(); this.moveSave(); });
+    }
+    const was = f.postponedFrom || f.date;
+    dlg.dataset.id = id;
+    dlg.innerHTML = `<form class="sc-form" autocomplete="off">
+      <div class="sc-head"><h3>Postpone or move</h3><button type="button" class="btn ghost sm" data-mv="close">Close</button></div>
+      <p><span class="tn">${esc(teamName(f.home))}</span> v <span class="tn">${esc(teamName(f.away))}</span>, ${f.date ? esc(fmtDate(f.date, true)) : "date to be arranged"}${f.postponedFrom ? ` (first set for ${esc(fmtDate(f.postponedFrom))})` : ""}</p>
+      <fieldset class="field"><legend class="lbl">New date</legend><div class="radios">
+        <label class="check"><input type="radio" name="mv-how" value="date" checked> Move it to <input type="date" id="mv-date" value="${esc(f.date ? addDays(f.date, 7) : today())}"></label>
+        <label class="check"><input type="radio" name="mv-how" value="tba"> Postponed, date to be arranged</label></div></fieldset>
+      <div class="field"><label for="mv-time-h">Start time</label>${timePicker('id="mv-time"', f.time || "19:45", "mv-time-h")}</div>
+      <div id="mv-warn" aria-live="polite"></div>
+      <div class="actions"><button type="submit" class="btn">Save</button><button type="button" class="btn ghost" data-mv="close">Cancel</button>
+        ${f.postponedFrom ? `<span class="lookup-note">It'll still be shown as postponed from ${esc(fmtDate(was))}.</span>` : ""}</div></form>`;
+    dlg.showModal(); this.moveCheck();
+  },
+  // Warns if, on the new night, the home alley is already in use, or either team is already playing.
+  moveCheck() {
+    const dlg = $("#mv-dlg"), f = S.fixtures[dlg.dataset.id], tba = dlg.querySelector("[name=mv-how]:checked").value === "tba", date = $("#mv-date").value;
+    $("#mv-date").disabled = tba;
+    const warn = [];
+    if (!tba && date) {
+      const { vid, alley } = fxVenue(f), others = Object.values(S.fixtures).filter(x => x.id !== f.id && x.date === date);
+      for (const x of others) {
+        const o = fxVenue(x);
+        if (vid && o.vid === vid && (o.alley || 1) === (alley || 1)) warn.push(`${teamName(x.home)} are at home on the same alley that night (v ${teamName(x.away)}).`);
+        for (const t of [f.home, f.away]) if (x.home === t || x.away === t) warn.push(`${teamName(t)} already play that night (${teamName(x.home)} v ${teamName(x.away)}).`);
+      }
+      if (date === f.date) warn.push("That's the date it's already on.");
+    }
+    $("#mv-warn").innerHTML = warn.length ? `<div class="notice"><strong>Check before saving:</strong><ul>${[...new Set(warn)].map(w => `<li>${esc(w)}</li>`).join("")}</ul>You can still save if it's been agreed.</div>`
+      : !tba && date ? `<p class="lookup-note">No clashes: the home alley is free that night and neither team is playing.</p>` : "";
+  },
+  async moveSave() {
+    const dlg = $("#mv-dlg"), id = dlg.dataset.id, f = S.fixtures[id], tba = dlg.querySelector("[name=mv-how]:checked").value === "tba", date = tba ? null : $("#mv-date").value;
+    if (!tba && !date) return toast("Choose the new date, or mark it as to be arranged.");
+    const ok = await commit(d => {
+      const x = d.fixtures[id]; if (!x) return;
+      if (!x.postponedFrom && x.date && x.date !== date) x.postponedFrom = x.date;
+      x.date = date; x.time = $("#mv-time").value || x.time;
+    });
+    if (ok) { dlg.close(); toast(tba ? `${teamName(f.home)} v ${teamName(f.away)} postponed, date to be arranged` : `${teamName(f.home)} v ${teamName(f.away)} moved to ${fmtDate(date)}`); }
+  },
   async saveResult(id, row) {
     const hp = num($(`input[data-pins="h"]`, row).value), ap = num($(`input[data-pins="a"]`, row).value);
     if ((hp == null) !== (ap == null)) return toast("Enter both teams' pins, or clear both.");
@@ -3088,7 +3202,7 @@ VIEWS["manage-fixtures"] = {
       const { v, alley } = fxVenue(f);
       return `<div class="fx-admin${f.id === editing ? " editing" : ""}" data-id="${esc(f.id)}">
         <div class="top">${f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span>` : `<span class="chip">League</span>`}
-          <span>${fmtDate(f.date)}${f.time ? ` · ${esc(f.time)}` : ""}</span><span>${v ? esc(v.name) + (alley ? ` · Alley ${alley}` : "") : "No venue"}</span>
+          <span>${fmtDate(f.date)}${f.time ? ` · ${esc(f.time)}` : ""}</span>${f.postponedFrom ? `<span class="chip warn">Postponed from ${esc(fmtDate(f.postponedFrom))}</span>` : ""}<span>${v ? esc(v.name) + (alley ? ` · Alley ${alley}` : "") : "No venue"}</span>
           ${clash.has(f.id) ? `<span class="chip warn" title="Another fixture uses this venue and alley on the same date">Alley clash</span>` : ""}</div>
         <div class="result-line">
           <span class="h tn">${esc(teamName(f.home))}</span>
@@ -3097,7 +3211,7 @@ VIEWS["manage-fixtures"] = {
           <input type="number" min="0" inputmode="numeric" id="ap-${esc(f.id)}" data-pins="a" value="${f.awayPins ?? ""}" aria-label="${esc(teamName(f.away))} pins"${f.cards ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
           <span class="a tn">${esc(teamName(f.away))}</span>
         </div>
-        <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}"${f.cards ? " hidden" : ""}>Save</button><button class="btn ghost sm" data-act="fx-card" data-id="${esc(f.id)}">${f.cards ? "Edit scorecard" : "Scorecard"}</button><button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
+        <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}"${f.cards ? " hidden" : ""}>Save</button><button class="btn ghost sm" data-act="fx-card" data-id="${esc(f.id)}">${f.cards ? "Edit scorecard" : "Scorecard"}</button>${played(f) ? "" : `<button class="btn ghost sm" data-act="fx-move" data-id="${esc(f.id)}">Postpone or move</button>`}<button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
       </div>`;
     }).join("")}</div>`;
     for (const [id, val] of Object.entries(kept)) { const i = document.getElementById(id); if (i) { i.value = val; i.dataset.dirty = "1"; } }
@@ -3478,6 +3592,16 @@ VIEWS["league-setup"] = {
           <div class="actions"><button class="btn" type="submit">Save league details</button></div>
         </form>
         <div class="form-col">
+          <div class="panel bk-panel">
+            <h3>Backups</h3>
+            <p class="muted">Before changes are saved, a copy of this season is kept automatically: at most one every 10 minutes, and the newest 40. Download a backup file now and then too, and keep it somewhere safe.</p>
+            <div class="actions"><button class="btn" data-act="bk-download">Download a backup of this season</button></div>
+            <div class="field"><label for="bk-file">Restore from a backup file</label><input type="file" id="bk-file" accept=".json,application/json"></div>
+            <p class="lookup-note" id="bk-file-note"></p>
+            <div class="actions" id="bk-file-go" hidden><button class="btn danger" data-act="bk-restore-file">Restore from this file</button></div>
+            <h4>Copies kept automatically</h4>
+            <div id="bk-list"><p class="muted">Loading…</p></div>
+          </div>
           <div class="panel">
             <h3>Example data</h3>
             <p class="muted">Load a short example season into the season you're working on (three venues, six teams in one division, fixtures and some results), then clear it before entering your real league.</p>
@@ -3491,6 +3615,7 @@ VIEWS["league-setup"] = {
         </div>
       </div>`;
     $("#s-pre").textContent = `${SITE_HOST}/`;
+    $("#bk-file").addEventListener("change", e => this.readBackup(e.target.files[0]));
     const f = $("#set-form");
     f.addEventListener("input", () => { f.dataset.dirty = "1"; showGameMax("s"); });
     f.addEventListener("change", () => { f.dataset.dirty = "1"; showGameMax("s"); });
@@ -3512,8 +3637,57 @@ VIEWS["league-setup"] = {
     $("#s-name").value = S.league.name; $("#s-slug").value = S.league.slug; $("#s-slug-note").textContent = `Later this will also be ${S.league.slug}.skittlers.co.uk`;
     $("#s-win").value = c.win; $("#s-draw").value = c.draw; $("#s-loss").value = c.loss; $("#s-hwin").value = c.handWin; $("#s-hdraw").value = c.handDraw;
     $("#s-game").innerHTML = gameFields("s", c); showGameMax("s");
+    this.loadCopies();
+  },
+  // Lists the copies the server keeps before changes.
+  async loadCopies() {
+    const box = $("#bk-list"); if (!box || !S.seasonId) return;
+    try {
+      const { copies } = await api(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/history`);
+      const when = at => new Date(at).toLocaleString("en-GB", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      box.innerHTML = copies.length ? `<div class="bk-copies">${copies.map(c => `<div class="bk-copy"><div><strong>${esc(when(c.at))}</strong>
+          <span class="muted">${plural(c.teams, "team")} · ${plural(c.fixtures, "fixture")} · ${plural(c.results, "result")} · ${plural(c.cups, "cup")}${c.reason ? ` · ${esc(c.reason.toLowerCase())}${c.by ? `, by ${esc(c.by)}` : ""}` : c.by ? ` · before a change by ${esc(c.by)}` : ""}</span></div>
+          <button class="btn ghost sm" data-act="bk-restore" data-id="${esc(c.id)}">Restore</button></div>`).join("")}</div>`
+        : `<p class="muted">None yet. The first copy is kept the next time a change is saved.</p>`;
+    } catch (e) { box.innerHTML = `<p class="muted">The copies couldn't be loaded just now.</p>`; }
+  },
+  async restoreCopy(id, btn) {
+    if (!arm(btn, "Replace the season with this copy")) return;
+    try { apply(await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/history/${encodeURIComponent(id)}`, "POST")); toast("The earlier copy has been restored. The season as it was just now is kept too, in case you need it back."); this.loadCopies(); }
+    catch (e) { saveError(e); }
+  },
+  // Checks a backup file before offering to restore it.
+  async readBackup(file) {
+    const note = $("#bk-file-note"); $("#bk-file-go").hidden = true; this.backup = null;
+    if (!file) return note.textContent = "";
+    let b; try { b = JSON.parse(await file.text()); } catch { b = null; }
+    if (b?.skittlersBackup !== 1 || !b.data?.teams) return note.textContent = "That file isn't a Skittlers season backup.";
+    const n = k => Object.keys(b.data[k] || {}).length, other = b.league?.id && b.league.id !== S.league.id;
+    note.textContent = `Backup of ${b.league?.name || "a league"}, season ${b.season?.name || "?"}, made ${new Date(b.exported).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}: ` +
+      `${plural(n("teams"), "team")}, ${plural(n("fixtures"), "fixture")}, ${plural(n("cups"), "cup")}. Restoring replaces everything in season ${currentSeason()?.name || ""}.${other ? " Note: this backup is from a different league." : ""}`;
+    this.backup = b; $("#bk-file-go").hidden = false;
+  },
+  async restoreFile(btn) {
+    if (!this.backup || !arm(btn, "Replace the season with this file")) return;
+    try {
+      apply(await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/restore`, "POST", { skittlersBackup: 1, data: this.backup.data, contacts: this.backup.contacts || {} }));
+      toast("Season restored from the file. The season as it was just now is kept too, in case you need it back.");
+      this.backup = null; $("#bk-file").value = ""; $("#bk-file-note").textContent = ""; $("#bk-file-go").hidden = true; this.loadCopies();
+    } catch (e) { saveError(e); }
   }
 };
+// A file with everything in the season, including captains' private contact details.
+function downloadBackup() {
+  if (!S.seasonId) return toast("Set up a season first.");
+  const season = currentSeason(), backup = { skittlersBackup: 1, exported: new Date().toISOString(),
+    league: { id: S.league.id, name: S.league.name, slug: S.league.slug, settings: S.league.settings }, season,
+    data: { teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, cups: S.cups }, contacts: S.contacts };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 1)], { type: "application/json" }));
+  a.download = `skittlers-${S.league.slug}-${(season?.name || "season").replace(/[^\w-]+/g, "-")}-${today()}.json`;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  toast("Backup downloaded. It includes captains' contact details, so keep it private.");
+}
 
 /* ---------- example season & clearing ---------- */
 async function loadExample() {
@@ -3658,6 +3832,9 @@ document.addEventListener("click", async e => {
     VIEWS.teams.checkDuplicates(); VIEWS.teams.showCaptain();
   }
   if (act === "edit-team") VIEWS.teams.edit(id);
+  if (act === "bk-download") downloadBackup();
+  if (act === "bk-restore") VIEWS["league-setup"].restoreCopy(id, b);
+  if (act === "bk-restore-file") VIEWS["league-setup"].restoreFile(b);
   if (act === "toggle-team") VIEWS.teams.toggle(id);
   if (act === "teams-expand" || act === "teams-collapse") VIEWS.teams.toggleAll(act === "teams-expand");
   if (act === "cancel-team") VIEWS.teams.reset();
@@ -3683,6 +3860,7 @@ document.addEventListener("click", async e => {
   }
   if (act === "save-result") VIEWS["manage-fixtures"].saveResult(id, b.closest(".fx-admin"));
   if (act === "fx-card") VIEWS["manage-fixtures"].scorecard(id);
+  if (act === "fx-move") VIEWS["manage-fixtures"].move(id);
   if (act === "cup-card") VIEWS.cups.matchCard(id);
   if (act === "cup-final-card") VIEWS.cups.finalCard(id);
   if (act === "edit-fx") VIEWS["manage-fixtures"].edit(id);

@@ -4,9 +4,9 @@ import assert from "node:assert/strict";
 import { createApi } from "../lib/core.mjs";
 const data = new Map();
 const store = { get: async k => data.has(k) ? JSON.parse(data.get(k)) : null, set: async (k, v) => data.set(k, JSON.stringify(v)), del: async k => data.delete(k), list: async p => [...data.keys()].filter(k => k.startsWith(p)) };
-let day = "2026-10-29";
+let day = "2026-10-29", clock = Date.parse("2026-10-29T19:00:00Z");
 const legacyData = { league: { teams: { a: { id: "a", name: "Red Devils", division: "Division 1" }, b: { id: "b", name: "Rollers", division: "Division 2" }, c: { id: "c", name: "Poachers" } }, venues: { v: { id: "v", name: "The Bell" } }, fixtures: {}, settings: { win: 3, draw: 1, loss: 0 } }, contacts: { a: { mobile: "07700" } } };
-const api = createApi({ store, webcrypto, env: { SESSION_SECRET: "s", SUPERADMIN_EMAIL: "Owner@Test.com" }, legacy: async () => legacyData, today: () => day, pause: async () => {} });
+const api = createApi({ store, webcrypto, env: { SESSION_SECRET: "s", SUPERADMIN_EMAIL: "Owner@Test.com" }, legacy: async () => legacyData, today: () => day, pause: async () => {}, now: () => clock });
 const call = async (method, path, body, token) => { const r = await api(new Request("http://x/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined })); return { status: r.status, body: await r.json() }; };
 let r;
 r = await call("POST", "auth/signup", { name: "Sec", email: "sec@x.com", password: "short" }); assert.equal(r.status, 400);
@@ -70,6 +70,40 @@ r = await call("POST", "super/legacy", { leagueId: L.id, seasonId: S2.id }, boss
 r = await call("GET", `leagues/${L.id}/seasons/${S2.id}`, null, boss);
 const divs = Object.values(r.body.divisions).map(d => d.name).sort(); assert.deepEqual(divs, ["Division 1", "Division 2"]);
 assert.equal(r.body.divisions[r.body.teams.a.division].name, "Division 1"); assert.equal(r.body.teams.c.division, undefined); assert.equal(r.body.contacts.a.mobile, "07700");
+// automatic backups: a copy before changes, no more than one every 10 minutes; restore from a copy or a file
+const hist = async () => (await call("GET", `leagues/${L.id}/seasons/${S1.id}/history`, null, boss)).body.copies;
+const ver = async () => (await call("GET", `leagues/${L.id}/seasons/${S1.id}`, null, boss)).body.version;
+const n0 = (await hist()).length; assert.ok(n0 >= 1, "earlier saves kept copies");
+clock += 5 * 60e3; r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: { ...season, venues: {} }, contacts: {} }, boss);
+clock += 11 * 60e3; await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: season, contacts: {} }, boss);
+assert.equal((await hist()).length, n0 + 1, "a copy after 10 minutes");
+clock += 60e3; await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: { ...season, venues: { v2: { id: "v2" } } }, contacts: {} }, boss);
+assert.equal((await hist()).length, n0 + 1, "no new copy within 10 minutes");
+clock += 60e3; r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: { ...season, fixtures: {} }, contacts: {} }, boss);
+assert.equal((await hist()).length, n0 + 2, "removing something always keeps a copy first"); assert.equal((await hist())[0].fixtures, 1);
+clock += 11 * 60e3; r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: { ...season, teams: {} }, contacts: {} }, boss);
+let copies = await hist(); assert.equal(copies.length, n0 + 3); assert.equal(copies[0].teams, 1, "the copy is of the season before the change"); assert.equal(copies[0].by, "Neil");
+r = await call("POST", `leagues/${L.id}/seasons/${S1.id}/history/${copies[0].id}`, null, boss); assert.equal(Object.keys(r.body.teams).length, 1, "restored");
+copies = await hist(); assert.equal(copies.length, n0 + 4); assert.equal(copies[0].teams, 0, "the season before the restore was kept"); assert.match(copies[0].reason, /Before restoring/);
+r = await call("POST", `leagues/${L.id}/seasons/${S1.id}/restore`, { skittlersBackup: 1, data: { ...season, teams: { z: { id: "z", name: "From file" } } }, contacts: { z: { mobile: "1" } } }, boss);
+assert.equal(r.body.teams.z.name, "From file"); assert.equal(r.body.contacts.z.mobile, "1");
+r = await call("POST", `leagues/${L.id}/seasons/${S1.id}/restore`, { data: season }, boss); assert.equal(r.status, 400, "not a backup file");
+r = await call("GET", `leagues/${L.id}/seasons/${S1.id}/history`, null, other); assert.equal(r.status, 404, "other accounts can't see backups");
+// saving just the changed items, applied to the latest copy
+let v0 = await ver();
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: v0, changes: [{ in: "fixtures", id: "f9", value: { id: "f9", homePins: 300 } }, { in: "contacts", id: "z", value: { mobile: "2" } }] }, boss);
+assert.equal(r.body.version, v0 + 1); assert.equal(r.body.stale, false);
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: v0, changes: [{ in: "teams", id: "t2", value: { id: "t2", name: "Late" } }] }, boss);
+assert.equal(r.body.stale, true, "someone else saved in between");
+r = await call("GET", `leagues/${L.id}/seasons/${S1.id}`, null, boss); assert.equal(r.body.fixtures.f9.homePins, 300); assert.equal(r.body.teams.t2.name, "Late"); assert.equal(r.body.contacts.z.mobile, "2"); assert.equal(r.body.teams.z.name, "From file", "other items kept");
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "teams", id: "t2", value: null }] }, boss); assert.equal(r.status, 200);
+r = await call("GET", `leagues/${L.id}/seasons/${S1.id}`, null, boss); assert.equal(r.body.teams.t2, undefined);
+for (const bad of [[], [{ in: "users", id: "x", value: {} }], [{ in: "teams", id: "__proto__", value: { a: 1 } }], [{ in: "teams", id: "x", value: "str" }]]) {
+  r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: bad }, boss); assert.equal(r.status, 400);
+}
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "teams", id: "x", value: {} }] }, other); assert.equal(r.status, 404);
+for (let i = 0; i < 45; i++) { clock += 11 * 60e3; await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: await ver(), data: season, contacts: {} }, boss); }
+assert.equal((await hist()).length, 40, "only the newest 40 copies are kept"); assert.equal([...data.keys()].filter(k => k.startsWith(`history/${L.id}/${S1.id}/`)).length, 40);
 r = await call("DELETE", `leagues/${L.id}`, null, boss); r = await call("GET", "public/yeovil-league"); assert.equal(r.status, 404);
-assert.equal([...data.keys()].filter(k => k.startsWith("seasons/") || k.startsWith("contacts/")).length, 0);
+assert.equal([...data.keys()].filter(k => k.startsWith("seasons/") || k.startsWith("contacts/") || k.startsWith("history")).length, 0);
 console.log("all API checks passed");
