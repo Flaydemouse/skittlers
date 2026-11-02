@@ -1470,8 +1470,11 @@ VIEWS.stats = {
     if (st.pos && +st.pos > maxPos) st.pos = "";
     $("#st-pos").value = st.pos;
     const ours = g => (!st.team || g.teamId === st.team) && (!st.div || divOf(g.teamId) === st.div);
-    const players = statFilter(all.players, st.comp, st.where).filter(g => ours(g) && (!st.pos || g.pos === +st.pos)), teams = statFilter(all.teams, st.comp, st.where).filter(ours);
+    const players = statFilter(all.players, st.comp, st.where).filter(g => ours(g) && (!st.pos || (g.pos === +st.pos && (st.comp !== "all" || g.comp === "league")))), teams = statFilter(all.teams, st.comp, st.where).filter(ours);
     this.records(players, teams);
+    // A position keeps league and cup games apart: with "all" chosen it shows league games.
+    $("#st-records").insertAdjacentHTML("afterbegin", st.view === "players" && st.pos && st.comp === "all"
+      ? `<p class="lookup-note">Showing league games for players throwing ${ordinal(+st.pos)}. Position figures keep league and cup games apart: choose a cup under Competition to see cup games.</p>` : "");
     if (!all.players.length && !all.teams.length) { body.innerHTML = `<div class="empty"><strong>No stats yet</strong>They build up as results and scorecards are entered.</div>`; $("#st-detail").innerHTML = ""; return; }
     // One row per player or team.
     const group = (games, keyOf) => { const g = {}; for (const x of games) (g[keyOf(x)] ||= []).push(x); return g; };
@@ -1522,8 +1525,11 @@ VIEWS.stats = {
     if (!games.length) return box.innerHTML = "";
     const g0 = games.at(-1), sum = statSum(games), spares = games.flatMap(g => (g.hands || []).map((v, i) => g.spares[i] ? { g, v, n: i + 1 } : null).filter(Boolean));
     const n = Math.max(0, ...games.map(g => g.hands?.length || 0));
-    const byPos = [...new Set(games.map(g => g.pos).filter(Boolean))].sort((a, b) => a - b).map(p => [p, statSum(games.filter(g => g.pos === p))]);
-    const bestPos = byPos.length > 1 ? byPos.reduce((b, x) => x[1].avg > b[1].avg ? x : b)[0] : null;
+    // Position figures, kept separate for league and cup games.
+    const posGroups = [["League games", games.filter(g => g.comp === "league")], ["Cup games", games.filter(g => g.comp === "cup")]].map(([label, gs]) => {
+      const rows = [...new Set(gs.map(g => g.pos).filter(Boolean))].sort((a, b) => a - b).map(p => [p, statSum(gs.filter(g => g.pos === p))]);
+      return { label, rows, best: rows.length > 1 ? rows.reduce((b, x) => x[1].avg > b[1].avg ? x : b)[0] : null };
+    }).filter(g => g.rows.length);
     box.innerHTML = `<section class="panel st-player">
       <div class="card-head"><div><div class="eyebrow">Player</div><h3>${esc(g0.name)}${g0.nick ? ` <em class="nick">${esc(g0.nick)}</em>` : ""}</h3><div class="sub tn">${esc(teamName(g0.teamId))}</div></div>
         <button type="button" class="btn ghost sm" data-st-player="${esc(st.player)}">Close</button></div>
@@ -1531,10 +1537,10 @@ VIEWS.stats = {
       <div class="table-scroll"><table class="sc-table st-games"><thead><tr><th class="pl">Date</th><th class="pl">Game</th><th>H/A</th><th title="Position in the team's order">Pos</th>${upTo(n).map(h => `<th>${h + 1}</th>`).join("")}<th class="tot">Total</th></tr></thead>
         <tbody>${games.map(g => `<tr><td class="pl">${g.date ? dayMonth(g.date) : ""}</td><td class="pl">${g.comp === "league" ? "League" : esc(S.cups[g.cupId]?.name || "Cup")} v ${esc(g.opp)}</td><td>${g.side === "home" ? "H" : g.side === "away" ? "A" : "–"}</td><td>${g.pos ? ordinal(g.pos) : "–"}</td>
           ${upTo(n).map(h => `<td>${g.hands?.[h] == null ? "" : g.spares[h] ? `<span class="circ">${g.hands[h]}</span>` : g.hands[h]}</td>`).join("")}<td class="tot">${g.total}</td></tr>`).join("")}</tbody></table></div>
-      ${byPos.length ? `<h4>By position</h4>
+      ${posGroups.map(g => `<h4>By position: ${g.label.toLowerCase()}</h4>
       <div class="table-scroll"><table class="sc-table st-pos"><thead><tr><th class="pl">Position</th><th>P</th><th>Avg</th><th>Top</th><th>Hand avg</th><th>Spares</th></tr></thead>
-        <tbody>${byPos.map(([p, s]) => `<tr${p === bestPos ? ' class="best"' : ""}><td class="pl">${ordinal(p)}${p === 1 ? " (leading off)" : ""}</td><td>${s.games}</td><td>${avgText(s.avg)}</td><td>${s.best ?? "–"}</td><td>${avgText(s.handAvg)}</td><td>${s.spares ?? "–"}</td></tr>`).join("")}</tbody></table></div>
-      ${byPos.length > 1 ? `<p class="lookup-note">Best average when throwing ${ordinal(bestPos)}.</p>` : ""}` : ""}
+        <tbody>${g.rows.map(([p, s]) => `<tr${p === g.best ? ' class="best"' : ""}><td class="pl">${ordinal(p)}${p === 1 ? " (leading off)" : ""}</td><td>${s.games}</td><td>${avgText(s.avg)}</td><td>${s.best ?? "–"}</td><td>${avgText(s.handAvg)}</td><td>${s.spares ?? "–"}</td></tr>`).join("")}</tbody></table></div>
+      ${g.best ? `<p class="lookup-note">Best ${g.label.toLowerCase().replace(" games", "")} average when throwing ${ordinal(g.best)}.</p>` : ""}`).join("")}
       <h4>Spares${spares.length ? ` (${spares.length})` : ""}</h4>
       ${spares.length ? `<div class="tags">${spares.map(x => `<span class="tag"><span class="circ">${x.v}</span> hand ${x.n} v ${esc(x.g.opp)}${x.g.date ? `, ${dayMonth(x.g.date)}` : ""}</span>`).join("")}</div>` : `<p class="muted">No spares recorded${games.some(g => !g.hands) ? " (spares only show from hand-by-hand scorecards)" : ""}.</p>`}
     </section>`;
