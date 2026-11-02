@@ -137,6 +137,55 @@ table.league { width: 100%; border-collapse: collapse; font-variant-numeric: tab
 .round { margin-bottom: 26px; }
 .round > h3 { font-size: 1.3rem; margin-bottom: 10px; }
 
+/* Scorecards */
+.sc-dlg { width: min(860px, calc(100vw - 16px)); max-height: calc(100dvh - 16px); padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); }
+.sc-dlg::backdrop { background: rgb(0 0 0 / .45); }
+.sc-form { display: grid; gap: 14px; padding: 16px; }
+.sc-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.sc-head h3 { font-size: 1.25rem; }
+.sc-dlg.two { width: min(1260px, calc(100vw - 16px)); }
+.sc-sides { display: grid; gap: 14px; }
+@media (min-width: 1180px) { .sc-dlg.two .sc-sides { grid-template-columns: 1fr 1fr; gap: 20px; } .sc-dlg.two .sc-row { grid-template-columns: 150px minmax(0, 1fr); } .sc-dlg.two .hand-cell input { width: 40px; height: 40px; } }
+.sc-margins { font-size: .9rem; color: var(--muted); }
+.sc-margins:empty { display: none; }
+.sc-margins b { color: var(--ink); }
+.sc-side { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
+.sc-side-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 12px; align-items: center; }
+.sc-side-head h4 { font-size: 1.05rem; }
+.sc-rows { display: grid; gap: 10px; }
+.sc-row { display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); gap: 6px 12px; align-items: center; }
+.sc-hands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sc-rows[data-mode="hands"] .sc-total-in, .sc-rows[data-mode="totals"] .sc-hands { display: none; }
+.sc-dlg .sc-total-in input { width: 90px; text-align: center; }
+.hand-cell { position: relative; display: inline-grid; }
+.sc-dlg .hand-cell input { width: 44px; height: 44px; padding: 0; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; border-radius: 6px; }
+.sc-dlg .hand-cell[data-spare="1"] input { border-radius: 50%; border: 2px solid var(--ink); }
+.hand-cell .sp { position: absolute; right: -6px; top: -6px; width: 18px; height: 18px; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); font-size: .62rem; font-weight: 800; cursor: pointer; line-height: 1; }
+.hand-cell .sp[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.sc-row-total { min-width: 3ch; margin-left: 6px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sc-sum { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; color: var(--muted); font-size: .9rem; }
+.sc-sum strong { color: var(--ink); font-size: 1rem; }
+.sc-foot { display: grid; gap: 8px; position: sticky; bottom: 0; background: var(--surface); padding: 10px 0 0; border-top: 1px solid var(--line); }
+.sc-msg { margin: 0; color: var(--loss); font-weight: 600; }
+.sc-msg:empty { display: none; }
+@media (max-width: 560px) { .sc-row { grid-template-columns: minmax(0, 1fr); } .sc-dlg .hand-cell input { width: 40px; height: 40px; } }
+.sc-title { font-weight: 700; }
+.sc-table { width: 100%; border-collapse: collapse; font-size: .88rem; font-variant-numeric: tabular-nums; }
+.sc-table th, .sc-table td { padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--line); }
+.sc-table th { font-size: .74rem; color: var(--muted); font-weight: 700; }
+.sc-table .pl { text-align: left; }
+.sc-table .tot, .sc-table tfoot td { font-weight: 800; }
+.circ { display: inline-grid; place-items: center; min-width: 1.9em; height: 1.9em; border: 1.5px solid var(--ink); border-radius: 50%; }
+.board { grid-column: 1 / -1; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+.board .sc-table thead .pl { font-size: .85rem; }
+.board tfoot .hand-tot td { border-top: 2px solid var(--ink); }
+.board tfoot .tot.won { color: var(--win); }
+.board .margins td { font-weight: 600; color: var(--ink); border-bottom: 0; }
+.board .lost { color: var(--muted); }
+details.sc-details { grid-column: 1 / -1; }
+details.sc-details summary { cursor: pointer; font-size: .85rem; font-weight: 600; color: var(--muted); text-align: center; }
+details.sc-details[open] summary { margin-bottom: 8px; }
+.pins-locked { background: var(--sunk) !important; }
 /* Panels, forms, admin */
 .split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .split > * { min-width: 0; }
@@ -194,7 +243,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .steps strong { display: block; }
 .steps a > span:last-child span { display: block; font-size: .84rem; color: var(--muted); }
 .div-list { display: grid; gap: 8px; }
-.div-row { display: grid; grid-template-columns: minmax(0, 420px) auto auto; justify-content: start; gap: 10px; align-items: center; }
+.div-row { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; }
+.div-row input[data-div] { flex: 1 1 220px; max-width: 360px; }
+.div-row select { width: auto; }
 .dv-start { max-width: 460px; }
 .dv-summary { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .dv-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; font-size: .9rem; }
@@ -221,7 +272,7 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cup-detail h3 { font-size: 1.5rem; }
 .cup-settings { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 .cup-settings .field { flex: 1 1 200px; }
-.cup-settings .field:nth-child(2) { flex: 0 1 160px; }
+.cup-settings .field:not(:first-child) { flex: 0 1 170px; }
 .cup-step { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; font-size: 1.15rem; font-family: var(--font-display); border-top: 1px solid var(--line); padding-top: 14px; }
 .cup-step > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--baize); color: var(--on-baize); font-family: var(--font-body); font-size: .85rem; }
 .cup-step small { font-family: var(--font-body); font-size: .85rem; color: var(--muted); font-weight: 500; }
@@ -244,8 +295,10 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .home-tag { font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .cup-match { grid-template-columns: minmax(0, 1fr); }
 .final-rows { display: grid; gap: 6px; }
-.final-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px; gap: 10px; align-items: center; font-weight: 600; }
+.final-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; font-weight: 600; }
 .final-row input { text-align: center; }
+.final-in { display: flex; gap: 8px; align-items: center; }
+.final-in input { width: 100px; }
 .final-table { min-width: 0; }
 .final-table tr.winner td { font-weight: 800; }
 .cup-section { margin-bottom: 36px; }
@@ -378,7 +431,29 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = v => (v === "" || v == null || !Number.isFinite(+v)) ? null : Math.round(+v);
 
-const DEFAULT_POINTS = { win: 2, draw: 1, loss: 0 };
+const DEFAULT_POINTS = { win: 2, draw: 1, loss: 0, handWin: 0, handDraw: 0, players: 6, balls: 3, hands: 6, game: "rough" };
+const GAMES = { rough: "Rough skittles", nomination: "Nomination" };
+// A division or cup plays the league's game unless it's set to the other one.
+const gameOf = x => GAMES[x?.game] ? x.game : cfg().game;
+// The fields for how a league plays, used when creating a league and on League setup.
+function gameFields(p, c = DEFAULT_POINTS) {
+  return `<div class="row2">
+      <div class="field"><label for="${p}-players">Players a side</label><input type="number" id="${p}-players" min="1" max="16" value="${c.players}"></div>
+      <div class="field"><label for="${p}-balls">Balls in a hand</label><input type="number" id="${p}-balls" min="1" max="5" value="${c.balls}"></div>
+      <div class="field"><label for="${p}-hands">Hands each player throws</label><input type="number" id="${p}-hands" min="1" max="20" value="${c.hands}"></div>
+    </div>
+    <fieldset class="field"><legend class="lbl">Game</legend><div class="radios">
+      <label class="check"><input type="radio" name="${p}-game" value="rough"${c.game !== "nomination" ? " checked" : ""}> Rough skittles: every pin knocked down counts</label>
+      <label class="check"><input type="radio" name="${p}-game" value="nomination"${c.game === "nomination" ? " checked" : ""}> Nomination: the front pin must fall first, or the ball scores nothing</label></div>
+      <span class="hint">This is the league's usual game. Each division and cup can be set to the other one.</span></fieldset>
+    <p class="lookup-note" id="${p}-max"></p>`;
+}
+const readGameFields = p => ({ players: num($(`#${p}-players`).value) ?? 6, balls: num($(`#${p}-balls`).value) ?? 3, hands: num($(`#${p}-hands`).value) ?? 6,
+  game: document.querySelector(`[name=${p}-game]:checked`)?.value || "rough" });
+function showGameMax(p) {
+  const g = readGameFields(p), hand = 9 * g.balls, player = hand * g.hands;
+  $(`#${p}-max`).textContent = `${g.players} a side, ${plural(g.balls, "ball")} a hand, ${plural(g.hands, "hand")} each. Best possible: ${hand} a hand, ${player} for a player, ${player * g.players} for a team.`;
+}
 const S = {
   token: null, user: null, myLeagues: [],
   mode: "account", slug: null, league: null, seasonId: null,
@@ -558,7 +633,7 @@ function clashes() {
 // Returns [{division, rows}] in division order. Teams not yet in a division come last, for admins only.
 function standings() {
   const c = cfg(), rows = {};
-  for (const t of Object.values(S.teams)) rows[t.id] = { t, P: 0, W: 0, D: 0, L: 0, hp: 0, ap: 0, pf: 0, pa: 0, apd: 0 };
+  for (const t of Object.values(S.teams)) rows[t.id] = { t, P: 0, W: 0, D: 0, L: 0, hp: 0, ap: 0, pf: 0, pa: 0, apd: 0, hpts: 0 };
   for (const f of Object.values(S.fixtures)) {
     if (f.comp !== "league" || !played(f)) continue;
     const h = rows[f.home], a = rows[f.away];
@@ -569,8 +644,11 @@ function standings() {
     h.pf += hp; h.pa += ap; a.pf += ap; a.pa += hp;
     a.apd += ap - hp;
     if (hp > ap) { h.W++; a.L++; } else if (hp < ap) { a.W++; h.L++; } else { h.D++; a.D++; }
+    // Points for each hand, when the league gives them and both scorecards are hand by hand.
+    const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away);
+    if (H && A) H.forEach((x, i) => { if (x > A[i]) h.hpts += c.handWin; else if (x < A[i]) a.hpts += c.handWin; else { h.hpts += c.handDraw; a.hpts += c.handDraw; } });
   }
-  for (const r of Object.values(rows)) { r.pd = r.pf - r.pa; r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss; }
+  for (const r of Object.values(rows)) { r.pd = r.pf - r.pa; r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss + r.hpts; }
   const order = (a, b) => b.pts - a.pts || b.pd - a.pd || b.apd - a.apd || a.t.name.localeCompare(b.t.name);
   const all = Object.values(rows);
   const divs = sortedDivisions();
@@ -746,11 +824,13 @@ VIEWS.leagues = {
           <div class="field"><label for="lg-slug">Web address</label>
             <div class="slug-row"><span class="slug-pre" id="lg-pre"></span><input type="text" id="lg-slug" maxlength="40" spellcheck="false" autocapitalize="off"></div>
             <span class="lookup-note" id="lg-slug-note"></span></div>
+          ${gameFields("lg")}
           <div class="actions"><button class="btn" type="submit" id="lg-go">Create league</button></div>
         </form></div>
       </div>`;
     $("#lg-pre").textContent = `${SITE_HOST}/`;
     const name = $("#lg-name"), slug = $("#lg-slug");
+    $("#lg-form").addEventListener("input", () => showGameMax("lg")); showGameMax("lg");
     name.addEventListener("input", () => { if (!slug.dataset.edited) { slug.value = slugify(name.value); checkSlug(slug, $("#lg-slug-note")); } });
     slug.addEventListener("input", () => { slug.dataset.edited = "1"; slug.value = slug.value.toLowerCase(); checkSlug(slug, $("#lg-slug-note")); });
     $("#lg-form").addEventListener("submit", async e => {
@@ -758,7 +838,7 @@ VIEWS.leagues = {
       if (!name.value.trim()) return toast("Give the league a name.");
       $("#lg-go").disabled = true;
       try {
-        const { league } = await send("/api/leagues", "POST", { name: name.value, slug: slug.value });
+        const { league } = await send("/api/leagues", "POST", { name: name.value, slug: slug.value, settings: readGameFields("lg") });
         NAV.go(leaguePath(league.slug), "seasons");
       } catch (x) { saveError(x); }
       finally { if ($("#lg-go")) $("#lg-go").disabled = false; }
@@ -887,7 +967,7 @@ VIEWS.tables = {
   },
   refresh() {
     const c = cfg();
-    $("#pts-rule").textContent = `${c.win} points for a win, ${c.draw} for a draw, ${c.loss} for a loss. Ties on points are split by pin difference, then away pin difference.`;
+    $("#pts-rule").textContent = `${c.players} a side, ${plural(c.balls, "ball")} a hand, ${plural(c.hands, "hand")} each. ${c.win} points for a win, ${c.draw} for a draw, ${c.loss} for a loss${c.handWin || c.handDraw ? `, plus ${c.handWin} for each hand won and ${c.handDraw} for each hand drawn` : ""}. Ties on points are split by pin difference, then away pin difference.`;
     const body = $("#tables-body");
     const st = statusBlock(); if (st) return body.innerHTML = st;
     if (!Object.keys(S.teams).length) return body.innerHTML = noTeamsBlock();
@@ -895,7 +975,7 @@ VIEWS.tables = {
     if (!groups.length) return body.innerHTML = `<div class="empty"><strong>No divisions set up yet</strong>The tables appear once teams are put into divisions.</div>`;
     const named = groups.length > 1 || groups[0].division;
     body.innerHTML = groups.map(g => `
-      <section class="division${g.loose ? " loose" : ""}">${named ? `<h3>${esc(g.division.name)}</h3>` : ""}
+      <section class="division${g.loose ? " loose" : ""}">${named ? `<h3>${esc(g.division.name)} <span class="chip">${esc(GAMES[gameOf(g.division)])}</span></h3>` : ""}
       ${g.loose ? `<p class="lookup-note">Only admins see this. Put these teams into divisions on the <a href="#divisions">Divisions</a> page.</p>` : ""}
       <div class="table-scroll"><table class="league">
         <thead><tr>
@@ -924,6 +1004,7 @@ function fxCard(f, showComp) {
     <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
     <div class="away ${aw ? "won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></div>
     <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${where}</div>
+    ${p && f.cards ? `<details class="sc-details"><summary>Scorecard</summary>${boardHtml(f.cards.home, f.cards.away, teamName(f.home), teamName(f.away))}</details>` : ""}
   </div>`;
 }
 function groupByDate(list, desc) {
@@ -1068,7 +1149,7 @@ function cupBracket(cup) {
       }
       const res = cup.results?.[id];
       if (!m.bye && !m.empty && res && m.a && m.b && res.a === m.a && res.b === m.b) {
-        m.aPins = res.aPins; m.bPins = res.bPins;
+        m.aPins = res.aPins; m.bPins = res.bPins; m.cards = res.cards || null;
         m.tie = res.aPins === res.bPins;
         m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
       }
@@ -1133,7 +1214,7 @@ function cupStatus(cup) {
   if (b.champion) return { text: `Won by ${entrantLabel(cup, b.champion)}`, state: "done" };
   return { text: `${b.rounds.find(r => r.matches.some(m => !m.winner)).name} to play`, state: "live" };
 }
-const cupSummary = cup => `${CUP_TYPES[cup.type] || "Cup"} · ${CUP_FORMATS[cup.format]} · ${CUP_STRUCTURES[cup.structure]} · ${entriesText(cup.entries)}`;
+const cupSummary = cup => `${CUP_TYPES[cup.type] || "Cup"} · ${GAMES[gameOf(cup)]} · ${CUP_FORMATS[cup.format]} · ${CUP_STRUCTURES[cup.structure]} · ${entriesText(cup.entries)}`;
 const whenText = (date, time) => date ? `${fmtDate(date)}${time ? ` · ${time}` : ""}` : "Date to be set";
 
 /* ---------- cups: shared drawings ---------- */
@@ -1177,7 +1258,7 @@ VIEWS.cup = {
         ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
         : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
       shown = `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
-        <p class="lookup-note">${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
+        <p class="lookup-note">${esc(GAMES[gameOf(c)])} · ${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
     }
     body.innerHTML = `<nav class="cup-jump" aria-label="Cups">${items.map(([id, name]) => `<button type="button" data-cup-jump="${esc(id)}" aria-pressed="${id === pick}">${esc(name)}</button>`).join("")}</nav>${shown}`;
   }
@@ -1195,6 +1276,7 @@ VIEWS.cups = {
           <h3>Create a cup</h3>
           <div class="field"><label for="c-name">Cup name</label><input type="text" id="c-name" maxlength="60" placeholder="e.g. League Cup"></div>
           <div class="field"><label for="c-type">Type of cup</label><select id="c-type">${Object.entries(CUP_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><span class="hint">More types will be added later.</span></div>
+          <div class="field"><label for="c-game">Game</label><select id="c-game">${Object.entries(GAMES).map(([k, v]) => `<option value="${k}"${cfg().game === k ? " selected" : ""}>${v}</option>`).join("")}</select></div>
           <fieldset class="field"><legend class="lbl">Who plays</legend><div class="radios">
             ${Object.entries(CUP_FORMATS).map(([k, v], i) => `<label class="check"><input type="radio" name="c-format" value="${k}"${i ? "" : " checked"}> ${v}</label>`).join("")}</div></fieldset>
           <fieldset class="field"><legend class="lbl">Rounds</legend><div class="radios">
@@ -1266,13 +1348,13 @@ VIEWS.cups = {
     if (Object.values(S.cups).some(c => c.name.toLowerCase() === name.toLowerCase())) return toast(`There's already a cup called ${name} this season.`);
     if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
     const f = $("#cup-form"), id = newId();
-    const cup = { id, name, type: $("#c-type").value, format: f.querySelector("[name=c-format]:checked").value, structure: f.querySelector("[name=c-structure]:checked").value,
+    const cup = { id, name, type: $("#c-type").value, game: $("#c-game").value, format: f.querySelector("[name=c-format]:checked").value, structure: f.querySelector("[name=c-structure]:checked").value,
       pairs: f.querySelector("[name=c-format]:checked").value === "team" && $("#c-pairs").checked,
       captains: f.querySelector("[name=c-format]:checked").value === "individual" && $("#c-captains").checked,
       entries, entrants: [], draw: [], results: {}, schedule: {}, roundDates: {}, final: { scores: {} }, created: new Date().toISOString() };
     if (await commit(d => { (d.cups ||= {})[id] = cup; })) {
       toast(`${name} created. Now choose its entries.`);
-      f.reset(); delete $("#c-pairs").dataset.touched; delete $("#c-captains").dataset.touched; f.dispatchEvent(new Event("change"));
+      f.reset(); $("#c-game").value = cfg().game; delete $("#c-pairs").dataset.touched; delete $("#c-captains").dataset.touched; f.dispatchEvent(new Event("change"));
       this.open(id);
     }
   },
@@ -1305,6 +1387,7 @@ VIEWS.cups = {
         <div class="actions"><button class="btn ghost sm" data-act="cup-close">Close</button><button class="btn danger sm" data-act="cup-del" data-id="${esc(cup.id)}">Delete cup</button></div></div>
       <form class="cup-settings" id="cs-form" autocomplete="off">
         <div class="field"><label for="cs-name">Cup name</label><input type="text" id="cs-name" maxlength="60" value="${esc(cup.name)}"></div>
+        <div class="field"><label for="cs-game">Game</label><select id="cs-game">${Object.entries(GAMES).map(([k, v]) => `<option value="${k}"${gameOf(cup) === k ? " selected" : ""}>${v}</option>`).join("")}</select></div>
         <div class="field"><label for="cs-entries">Number of entries</label><input type="number" id="cs-entries" min="2" max="128" value="${cup.entries}"${drawn ? " disabled" : ""}></div>
         ${cup.format === "team" ? `<label class="check"><input type="checkbox" id="cs-pairs"${isPairsCup(cup) ? " checked" : ""}> Pairs cup: show each team's Pairs Cup players</label>`
           : `<label class="check"><input type="checkbox" id="cs-captains"${isCaptainsCup(cup) ? " checked" : ""}> Captains cup: only captains and vice captains can enter</label>`}
@@ -1360,9 +1443,9 @@ VIEWS.cups = {
     return `<div class="fx-admin cup-match" data-match="${esc(m.id)}">
       <div class="result-line">
         <span class="h">${entrantHtml(cup, m.a, true, m.a ? ` <small class="home-tag">home</small>` : "")}</span>
-        <input type="number" min="0" inputmode="numeric" id="cp-a-${esc(m.id)}" data-pins="a" value="${m.aPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.a))} pins"${ready ? "" : " disabled"}>
+        <input type="number" min="0" inputmode="numeric" id="cp-a-${esc(m.id)}" data-pins="a" value="${m.aPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.a))} pins"${ready ? "" : " disabled"}${this.cardsFor(m) ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
         <span class="dash">–</span>
-        <input type="number" min="0" inputmode="numeric" id="cp-b-${esc(m.id)}" data-pins="b" value="${m.bPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.b))} pins"${ready ? "" : " disabled"}>
+        <input type="number" min="0" inputmode="numeric" id="cp-b-${esc(m.id)}" data-pins="b" value="${m.bPins ?? ""}" aria-label="${esc(entrantLabel(cup, m.b))} pins"${ready ? "" : " disabled"}${this.cardsFor(m) ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
         <span class="a">${entrantHtml(cup, m.b, true)}</span>
       </div>
       <div class="cm-meta">
@@ -1371,9 +1454,11 @@ VIEWS.cups = {
         ${m.clash ? `<span class="chip warn" title="Another match this round is on the same venue and alley">Alley clash</span>` : ""}
         <label class="tie-pick"${m.tie ? "" : " hidden"}>Tied. Who goes through? <select data-tie><option value="">Choose</option>${[m.a, m.b].filter(Boolean).map(x => `<option value="${esc(x)}"${m.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>
         <button class="btn sm" data-act="cup-save-match" data-id="${esc(m.id)}"${ready ? "" : " disabled"}>Save</button>
+        ${ready ? `<button class="btn ghost sm" data-act="cup-card" data-id="${esc(m.id)}">${this.cardsFor(m) ? "Edit scorecard" : "Scorecard"}</button>` : ""}
         ${ready ? "" : `<span class="lookup-note">Waiting for the earlier round.</span>`}
       </div></div>`;
   },
+  finalCardOf(cup, eid) { const d = this.cardDrafts[`${cup.id}|final|${eid}`]; return d === undefined ? cup.final?.cards?.[eid] : d; },
   finalForm(cup) {
     const f = cupFinal(cup), fin = cup.final || {}, venues = sortedVenues();
     return `<div class="panel form final-form" id="final-form">
@@ -1383,8 +1468,9 @@ VIEWS.cups = {
         <div class="field"><label for="fn-venue">Venue</label><select id="fn-venue"><option value="">To be confirmed</option>${venues.map(v => `<option value="${esc(v.id)}"${fin.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></div>
         <div class="field" id="fn-alley-wrap"${S.venues[fin.venue]?.alleys > 1 ? "" : " hidden"}><label for="fn-alley">Alley</label><select id="fn-alley">${alleyOptions(S.venues[fin.venue]?.alleys || 1, fin.alley || 1)}</select></div>
       </div>
-      <div class="final-rows">${(cup.entrants || []).map(e => `<label class="final-row"><span>${entrantHtml(cup, e.id, true)}</span>
-        <input type="number" min="0" inputmode="numeric" data-final="${esc(e.id)}" value="${fin.scores?.[e.id] ?? ""}" aria-label="${esc(entrantLabel(cup, e.id))} pins"></label>`).join("")}</div>
+      <div class="final-rows">${(cup.entrants || []).map(e => `<div class="final-row"><span>${entrantHtml(cup, e.id, true)}</span>
+        <span class="final-in"><input type="number" min="0" inputmode="numeric" data-final="${esc(e.id)}" value="${fin.scores?.[e.id] ?? ""}" aria-label="${esc(entrantLabel(cup, e.id))} pins"${this.finalCardOf(cup, e.id) ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
+        <button type="button" class="btn ghost sm" data-act="cup-final-card" data-id="${esc(e.id)}">${this.finalCardOf(cup, e.id) ? "Edit scorecard" : "Scorecard"}</button></span></div>`).join("")}</div>
       ${f.tiedTop.length ? `<label class="tie-pick">Tied for first. Who wins? <select id="fn-tie"><option value="">Choose</option>${f.tiedTop.map(x => `<option value="${esc(x)}"${f.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>` : ""}
       <div class="actions"><button class="btn" data-act="cup-save-final">Save final</button></div>
       ${(cup.entrants || []).length ? finalTableHtml(cup, true) : ""}</div>`;
@@ -1453,8 +1539,8 @@ VIEWS.cups = {
     if (!name) return toast("Give the cup a name.");
     if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
     if (entries < (cup.entrants || []).length) return toast(`You've already chosen ${entriesText(cup.entrants.length)}. Untick some first.`);
-    const pairs = !!$("#cs-pairs")?.checked, captains = !!$("#cs-captains")?.checked;
-    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries, pairs, captains }); })) toast("Cup saved");
+    const pairs = !!$("#cs-pairs")?.checked, captains = !!$("#cs-captains")?.checked, game = $("#cs-game").value;
+    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries, pairs, captains, game }); })) toast("Cup saved");
   },
   async saveEntries() {
     const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
@@ -1484,6 +1570,29 @@ VIEWS.cups = {
     const date = $("[data-round-date]", row).value, time = $("[data-round-time]", row).value;
     if (await commit(d => { (d.cups[cup.id].roundDates ||= {})[r] = { date, time }; })) toast(`${roundName(r, cupRoundCount(cup.entries))} date saved`);
   },
+  // Scorecards typed in but not saved yet (a tie still needs its winner chosen), by match, and for final entries.
+  cardDrafts: {},
+  cardsFor(m) { const d = this.cardDrafts[`${this.cup()?.id}|${m.id}`]; return d === undefined ? m.cards : d; },
+  matchCard(id) {
+    const cup = this.cup(), m = cupBracket(cup).rounds.flatMap(r => r.matches).find(x => x.id === id); if (!m?.a || !m.b) return;
+    const cards = this.cardsFor(m), key = `${cup.id}|${id}`, row = $(`[data-match="${CSS.escape(id)}"]`);
+    openScorecard({ title: `${entrantLabel(cup, m.a)} v ${entrantLabel(cup, m.b)}`, sides: [cupSide(cup, m.a, cards?.a), cupSide(cup, m.b, cards?.b)],
+      onSave: cards => {
+        this.cardDrafts[key] = cards ? { a: cards[0], b: cards[1] } : null;
+        if (cards) { $("[data-pins=a]", row).value = cardTotal(cards[0]); $("[data-pins=b]", row).value = cardTotal(cards[1]); this.syncTie(row); }
+        this.saveMatch(id);
+      } });
+  },
+  finalCard(eid) {
+    const cup = this.cup(), key = `${cup.id}|final|${eid}`, saved = this.cardDrafts[key] === undefined ? cup.final?.cards?.[eid] : this.cardDrafts[key];
+    openScorecard({ title: `${cup.name} final`, sides: [cupSide(cup, eid, saved)],
+      onSave: cards => {
+        this.cardDrafts[key] = cards ? cards[0] : null;
+        const input = $(`input[data-final="${CSS.escape(eid)}"]`);
+        if (cards && input) input.value = cardTotal(cards[0]);
+        this.saveFinal();
+      } });
+  },
   async saveMatch(id) {
     const cup = this.cup(), row = $(`[data-match="${CSS.escape(id)}"]`), m = cupBracket(cup).rounds.flatMap(r => r.matches).find(x => x.id === id);
     const aPins = num($("[data-pins=a]", row).value), bPins = num($("[data-pins=b]", row).value), venue = $("[data-venue]", row)?.value || null;
@@ -1496,22 +1605,213 @@ VIEWS.cups = {
     const ok = await commit(d => {
       const c = d.cups[cup.id];
       (c.schedule ||= {})[id] = { venue, alley };
+      const cards = this.cardsFor(m);
       if (aPins == null) delete c.results[id];
-      else (c.results ||= {})[id] = { a: m.a, b: m.b, aPins, bPins, winner: aPins === bPins ? tieWinner : null };
+      else (c.results ||= {})[id] = { a: m.a, b: m.b, aPins, bPins, winner: aPins === bPins ? tieWinner : null, ...(cards ? { cards } : {}) };
     });
+    if (ok) delete this.cardDrafts[`${cup.id}|${id}`];
     if (ok) toast(aPins != null ? `Result saved: ${entrantLabel(cup, m.a)} ${aPins} – ${bPins} ${entrantLabel(cup, m.b)}` : m.aPins != null ? "Result cleared" : "Venue saved");
   },
   async saveFinal() {
     const cup = this.cup(), scores = {};
     for (const i of $$("input[data-final]")) { const v = num(i.value); if (v != null) { if (v < 0) return toast("Pins can't be negative."); scores[i.dataset.final] = v; } }
-    const tie = $("#fn-tie")?.value || null;
+    const tie = $("#fn-tie")?.value || null, cards = {};
+    for (const e of cup.entrants || []) { const c = this.finalCardOf(cup, e.id); if (c && scores[e.id] != null) cards[e.id] = c; }
     if (await commit(d => { d.cups[cup.id].final = { date: $("#fn-date").value, time: $("#fn-time").value, venue: $("#fn-venue").value || null,
-      alley: S.venues[$("#fn-venue").value]?.alleys > 1 ? +$("#fn-alley").value || 1 : null, scores, winner: tie }; })) {
+      alley: S.venues[$("#fn-venue").value]?.alleys > 1 ? +$("#fn-alley").value || 1 : null, scores, winner: tie, cards }; })) {
+      for (const k of Object.keys(this.cardDrafts)) if (k.startsWith(`${cup.id}|final|`)) delete this.cardDrafts[k];
       const f = cupFinal(this.cup());
       toast(f.winner ? `Final saved. ${entrantLabel(cup, f.winner)} won.` : f.tiedTop.length ? "Final saved. It's a tie for first, so choose the winner." : "Final saved");
     }
   },
 };
+
+/* ---------- scorecards ---------- */
+// A scorecard is one side's players and their scores, either hand by hand or each player's total only:
+// { mode: "hands" | "totals", rows: [{ key, name, nick, hands: [n], spares: [bool], total }] }.
+// A hand of 10 or more must include a spare; at 9 or under a spare is marked by hand. Spares are circled.
+const upTo = n => Array.from({ length: n }, (_, i) => i);
+const cardTotal = card => card.rows.reduce((n, r) => n + (r.total || 0), 0);
+// Each hand's total for the whole side, or null if the card isn't hand by hand.
+function handTotals(card) {
+  if (card?.mode !== "hands" || !card.rows?.length) return null;
+  return upTo(Math.max(...card.rows.map(r => r.hands.length))).map(h => card.rows.reduce((n, r) => n + (r.hands[h] || 0), 0));
+}
+const cardName = r => esc(r.name) + (r.nick ? ` <em class="nick">${esc(r.nick)}</em>` : "");
+// A team's players to choose from, with the ones in `first` (such as its Pairs Cup players) at the top.
+function cardPlayers(teamId, first = []) {
+  const ps = playersOf(S.teams[teamId] || {}).filter(p => p.first || p.last)
+    .map(p => ({ key: searchText(fullName(p)), name: fullName(p), nick: p.nick || "", label: playerLabel(p) }));
+  const top = new Set(first);
+  return [...ps.filter(p => top.has(p.key)), ...ps.filter(p => !top.has(p.key)).sort((a, b) => a.label.localeCompare(b.label))];
+}
+// A match's two cards side by side, like the board at the alley: home on the left, away on the right.
+// Under each hand's total, the side that won the hand shows its margin and the side that lost it a cross.
+function boardHtml(home, away, homeTitle, awayTitle) {
+  const H = handTotals(home), A = handTotals(away), both = H && A && H.length === A.length;
+  const ht = home ? cardTotal(home) : null, at = away ? cardTotal(away) : null;
+  const half = (card, title, theirs, won) => {
+    if (!card?.rows?.length) return `<div class="board-half"><div class="sc-title tn">${esc(title)}</div><p class="muted">No scorecard</p></div>`;
+    const T = handTotals(card), n = T ? T.length : 0;
+    return `<div class="board-half"><div class="table-scroll"><table class="sc-table">
+      <thead><tr><th class="pl"><span class="tn">${esc(title)}</span></th>${upTo(n).map(h => `<th>${h + 1}</th>`).join("")}<th class="tot">Total</th></tr></thead>
+      <tbody>${card.rows.map(r => `<tr><td class="pl">${cardName(r)}</td>${upTo(n).map(h => `<td>${r.spares?.[h] ? `<span class="circ" title="Spare">${r.hands[h]}</span>` : r.hands?.[h] ?? ""}</td>`).join("")}<td class="tot">${r.total}</td></tr>`).join("")}</tbody>
+      <tfoot><tr class="hand-tot"><td class="pl">Hands</td>${(T || []).map(x => `<td>${x}</td>`).join("")}<td class="tot${won ? " won" : ""}">${cardTotal(card)}</td></tr>
+      ${both ? `<tr class="margins"><td class="pl">Won by</td>${T.map((x, i) => `<td>${x > theirs[i] ? x - theirs[i] : x < theirs[i] ? `<span class="lost" title="Hand lost">✗</span>` : "–"}</td>`).join("")}<td></td></tr>` : ""}</tfoot></table></div></div>`;
+  };
+  return `<div class="board">${half(home, homeTitle, A, ht > at)}${half(away, awayTitle, H, at > ht)}</div>`;
+}
+
+// The scorecard editor. Each side: { title, rows, hands, balls, game, players, fixed, prefill, card }.
+// `fixed` is the one player of an individual cup entry; `prefill` lists player keys to start with.
+// onSave gets one card per side, or null when the scorecard is removed.
+const SC = { sides: [], onSave: null };
+function openScorecard({ title, sides, onSave }) {
+  let dlg = $("#sc-dlg");
+  if (!dlg) {
+    dlg = document.createElement("dialog"); dlg.id = "sc-dlg"; dlg.className = "sc-dlg"; dlg.setAttribute("aria-labelledby", "sc-title");
+    document.body.append(dlg);
+    dlg.addEventListener("input", e => {
+      if (e.target.matches("[data-hand]")) scCell(e.target, true);
+      if (e.target.matches("[data-hand], [data-total]")) scRecalc(+e.target.closest("[data-side]").dataset.side);
+    });
+    dlg.addEventListener("click", e => {
+      const b = e.target.closest("button"); if (!b) return;
+      if (b.matches("[data-sp]")) { const cell = b.closest(".hand-cell"); cell.dataset.manual = cell.dataset.manual === "1" ? "0" : "1"; scCell($("input", cell), false); }
+      if (b.dataset.mode) { const side = b.closest("[data-side]"); $(".sc-rows", side).dataset.mode = b.dataset.mode; $$("[data-mode]", side).forEach(x => x.setAttribute("aria-pressed", x === b)); scRecalc(+side.dataset.side); }
+      if (b.dataset.sc === "close") dlg.close();
+      if (b.dataset.sc === "remove") { if (!arm(b, "Confirm remove")) return; dlg.close(); SC.onSave(null); }
+    });
+    dlg.addEventListener("keydown", e => {
+      if (e.key !== "Enter" || !e.target.matches("[data-hand], [data-total]")) return;
+      e.preventDefault();
+      const all = $$("[data-hand], [data-total]", dlg).filter(i => i.offsetParent), next = all[all.indexOf(e.target) + 1];
+      if (next) { next.focus(); next.select(); }
+    });
+    dlg.addEventListener("submit", e => {
+      e.preventDefault();
+      const { cards, errs } = scRead();
+      $("#sc-msg").textContent = errs[0] || "";
+      if (errs.length) return;
+      dlg.close(); SC.onSave(cards);
+    });
+  }
+  SC.sides = sides; SC.onSave = onSave; SC.sums = [];
+  dlg.innerHTML = `<form class="sc-form" autocomplete="off" novalidate>
+    <div class="sc-head"><h3 id="sc-title">${esc(title)}</h3><button type="button" class="btn ghost sm" data-sc="close">Close</button></div>
+    <p class="lookup-note">Type each hand's score and press Enter to move on. For a spare of 9 or under, type S after the score or tap S. Anything 10 or over is always a spare. Spares are circled.</p>
+    <div class="sc-sides">${sides.map(scSideHtml).join("")}</div>
+    <div class="sc-foot"><p class="sc-msg" id="sc-msg" role="alert"></p>
+      <div class="actions"><button type="submit" class="btn">Save scorecard</button><button type="button" class="btn ghost" data-sc="close">Cancel</button>
+      ${sides.some(s => s.card) ? `<button type="button" class="btn danger" data-sc="remove">Remove scorecard</button>` : ""}</div></div></form>`;
+  $$(".hand-cell input", dlg).forEach(i => scCell(i, false));
+  dlg.classList.toggle("two", sides.length === 2);
+  sides.forEach((_, i) => scRecalc(i));
+  dlg.showModal();
+  $("select[data-player], [data-hand], [data-total]", dlg)?.focus();
+}
+function scSideHtml(s, i) {
+  const mode = s.card?.mode || "hands", max = 9 * s.balls;
+  return `<section class="sc-side" data-side="${i}">
+    <div class="sc-side-head"><div><h4 class="tn">${esc(s.title)}</h4><span class="lookup-note">${GAMES[s.game]} · ${plural(s.hands, "hand")} of ${plural(s.balls, "ball")} · up to ${max} a hand</span></div>
+      <div class="seg" role="group" aria-label="How to enter ${esc(s.title)}'s scores"><button type="button" data-mode="hands" aria-pressed="${mode === "hands"}">Hand by hand</button><button type="button" data-mode="totals" aria-pressed="${mode === "totals"}">Totals only</button></div></div>
+    <div class="sc-rows" data-mode="${mode}">${upTo(s.rows).map(r => scRowHtml(s, r)).join("")}</div>
+    <div class="sc-sum"><span class="sc-hand-tots"></span><strong>Total <output class="sc-team-total">0</output></strong></div>
+    <div class="sc-margins"></div></section>`;
+}
+function scRowHtml(s, r) {
+  const saved = s.card?.rows[r], key = saved?.key ?? s.prefill?.[r] ?? "", hands = s.card?.mode === "hands" ? saved : null;
+  const players = saved && !s.players.some(p => p.key === saved.key) ? [{ key: saved.key, label: playerLabel({ first: saved.name, nick: saved.nick }) }, ...s.players] : s.players;
+  const who = s.fixed ? `<span class="sc-fixed">${cardName(s.fixed)}</span>`
+    : `<select data-player aria-label="${esc(s.title)} player ${r + 1}"><option value="">Choose player ${r + 1}</option>${players.map(p => `<option value="${esc(p.key)}"${p.key === key ? " selected" : ""}>${esc(p.label)}</option>`).join("")}</select>`;
+  return `<div class="sc-row" data-row="${r}">
+    <div class="sc-player">${who}</div>
+    <div class="sc-hands">${upTo(s.hands).map(h => `<span class="hand-cell" data-manual="${hands?.spares?.[h] && hands.hands[h] < 10 ? 1 : 0}"><input type="text" inputmode="numeric" autocomplete="off" maxlength="3" data-hand="${h}" value="${hands?.hands?.[h] ?? ""}" aria-label="Player ${r + 1}, hand ${h + 1}"><button type="button" class="sp" data-sp tabindex="-1" aria-label="Spare, player ${r + 1} hand ${h + 1}">S</button></span>`).join("")}
+      <output class="sc-row-total" aria-label="Player ${r + 1} total">0</output></div>
+    <div class="sc-total-in"><input type="text" inputmode="numeric" autocomplete="off" maxlength="4" data-total value="${s.card?.mode === "totals" && saved ? saved.total : ""}" placeholder="Total" aria-label="Player ${r + 1} total"></div>
+  </div>`;
+}
+// Reads one hand box: an S (or /) typed with the score marks a spare; 10 or more is always one.
+function scCell(input, typed) {
+  const cell = input.closest(".hand-cell"), raw = input.value, digits = raw.replace(/[^0-9]/g, "");
+  if (typed) cell.dataset.manual = /[s\/]/i.test(raw) ? "1" : "0";
+  if (raw !== digits) input.value = digits;
+  const v = digits === "" ? null : +digits, spare = v != null && (v >= 10 || cell.dataset.manual === "1");
+  cell.dataset.spare = spare ? "1" : "0";
+  $("[data-sp]", cell).setAttribute("aria-pressed", spare);
+}
+function scRecalc(i) {
+  const side = $(`#sc-dlg [data-side="${i}"]`), s = SC.sides[i], hands = $(".sc-rows", side).dataset.mode === "hands";
+  const handSum = upTo(s.hands).map(() => 0); let total = 0;
+  for (const row of $$(".sc-row", side)) {
+    let t;
+    if (hands) { const vs = $$("[data-hand]", row).map(x => num(x.value) || 0); vs.forEach((v, h) => handSum[h] += v); t = vs.reduce((a, b) => a + b, 0); $(".sc-row-total", row).textContent = t; }
+    else t = num($("[data-total]", row).value) || 0;
+    total += t;
+  }
+  $(".sc-team-total", side).textContent = total;
+  $(".sc-hand-tots", side).textContent = hands ? `Hands: ${handSum.join(" · ")}` : "";
+  SC.sums = SC.sums || []; SC.sums[i] = hands ? handSum : null;
+  scMargins();
+}
+// With two sides hand by hand, each hand's winner shows its margin and the loser a cross, as on the board.
+function scMargins() {
+  const [a, b] = SC.sums || [];
+  $$("#sc-dlg .sc-margins").forEach((el, i) => {
+    const mine = i ? b : a, theirs = i ? a : b;
+    el.innerHTML = SC.sides.length === 2 && mine && theirs && [...mine, ...theirs].some(Boolean)
+      ? `Won by: ${mine.map((x, h) => x > theirs[h] ? `<b>${x - theirs[h]}</b>` : x < theirs[h] ? "✗" : "–").join(" · ")}` : "";
+  });
+}
+// Checks every side and builds its card, or lists what's wrong.
+function scRead() {
+  const cards = [], errs = [];
+  SC.sides.forEach((s, i) => {
+    const side = $(`#sc-dlg [data-side="${i}"]`), mode = $(".sc-rows", side).dataset.mode, max = 9 * s.balls, rows = [], seen = new Set();
+    $$(".sc-row", side).forEach((row, r) => {
+      const pick = $("[data-player]", row)?.value, who = s.fixed || s.players.find(p => p.key === pick) || (pick && s.card?.rows.find(x => x.key === pick));
+      const cells = $$(".hand-cell", row), hands = cells.map(c => num($("input", c).value)), total = num($("[data-total]", row).value);
+      const any = mode === "hands" ? hands.some(v => v != null) : total != null;
+      if (!who && !any) return;
+      const label = who ? playerLabel({ first: who.name, nick: who.nick }) : `player ${r + 1}`;
+      if (!who) return errs.push(`${s.title}: choose who scored on row ${r + 1}.`);
+      if (seen.has(who.key)) errs.push(`${s.title}: ${label} is on the card twice.`);
+      seen.add(who.key);
+      const base = { key: who.key, name: who.name, nick: who.nick || "" };
+      if (mode === "hands") {
+        if (hands.some(v => v == null)) return errs.push(`${s.title}: fill in every hand for ${label}.`);
+        const spares = cells.map(c => c.dataset.spare === "1");
+        hands.forEach((v, h) => {
+          if (v > max) errs.push(`${s.title}: ${label}'s hand ${h + 1} is ${v}, but the most a hand can score is ${max}.`);
+          else if (s.game === "rough" && spares[h] && v < 9) errs.push(`${s.title}: ${label}'s hand ${h + 1} is marked as a spare, but in rough skittles a spare scores at least 9.`);
+        });
+        rows.push({ ...base, hands, spares, total: hands.reduce((a, b) => a + b, 0) });
+      } else {
+        if (total == null) return errs.push(`${s.title}: enter ${label}'s total.`);
+        if (total > max * s.hands) errs.push(`${s.title}: ${label}'s total is ${total}, but the most a player can score is ${max * s.hands}.`);
+        rows.push({ ...base, total });
+      }
+    });
+    if (!rows.length) errs.push(`${s.title}: enter at least one player's score.`);
+    cards.push({ mode, rows });
+  });
+  return { cards, errs };
+}
+// Sides for a league fixture or a cup match between teams or players.
+function teamSide(teamId, title, game, card, { rows, prefill } = {}) {
+  const c = cfg();
+  return { title, rows: rows || c.players, hands: c.hands, balls: c.balls, game, players: cardPlayers(teamId, prefill), prefill, card };
+}
+function cupSide(cup, id, card) {
+  const c = cfg(), game = gameOf(cup), title = entrantLabel(cup, id);
+  if (cup.format === "team") {
+    const pairs = isPairsCup(cup) ? pairsOf(S.teams[id] || {}).map(p => searchText(fullName(p))) : undefined;
+    return teamSide(id, title, game, card, pairs ? { rows: 2, prefill: pairs.slice(0, 2) } : {});
+  }
+  const [, tid, key] = String(id).split(":"), p = playersOf(S.teams[tid] || {}).find(x => searchText(fullName(x)) === key);
+  const fixed = { key, name: p ? fullName(p) : entrantParts(cup, id)?.player || title, nick: p?.nick || "" };
+  return { title: entrantParts(cup, id)?.team || title, rows: 1, hands: c.hands, balls: c.balls, game, players: [fixed], fixed, card };
+}
 
 /* ---------- form helpers ---------- */
 // Start times: an hour list and a minutes list (00, 15, 30, 45), kept in a hidden "HH:MM" field
@@ -2440,6 +2740,24 @@ VIEWS["manage-fixtures"] = {
     $("#ff-save").disabled = false;
     if (ok) { toast(editing ? "Fixture saved" : "Fixture added"); this.reset(); }
   },
+  // The scorecard sets the result: each side's total becomes its pins.
+  scorecard(id) {
+    const f = S.fixtures[id]; if (!f) return;
+    const game = f.comp === "league" ? gameOf(S.divisions[S.teams[f.home]?.division]) : cfg().game;
+    openScorecard({ title: `${teamName(f.home)} v ${teamName(f.away)}`,
+      sides: [teamSide(f.home, teamName(f.home), game, f.cards?.home), teamSide(f.away, teamName(f.away), game, f.cards?.away)],
+      onSave: async cards => {
+        const ok = await commit(d => {
+          const fx = d.fixtures[id]; if (!fx) return;
+          if (!cards) delete fx.cards;
+          else Object.assign(fx, { cards: { home: cards[0], away: cards[1] }, homePins: cardTotal(cards[0]), awayPins: cardTotal(cards[1]) });
+        });
+        if (!ok) return;
+        if (!cards) return toast("Scorecard removed. The pins are kept, and you can change them now.");
+        const c = cfg(), handPts = c.handWin || c.handDraw;
+        toast(`Result saved: ${teamName(f.home)} ${cardTotal(cards[0])} – ${cardTotal(cards[1])} ${teamName(f.away)}${handPts && cards.some(x => x.mode !== "hands") ? ". Hand points need both cards hand by hand." : ""}`);
+      } });
+  },
   async saveResult(id, row) {
     const hp = num($(`input[data-pins="h"]`, row).value), ap = num($(`input[data-pins="a"]`, row).value);
     if ((hp == null) !== (ap == null)) return toast("Enter both teams' pins, or clear both.");
@@ -2495,12 +2813,12 @@ VIEWS["manage-fixtures"] = {
           ${clash.has(f.id) ? `<span class="chip warn" title="Another fixture uses this venue and alley on the same date">Alley clash</span>` : ""}</div>
         <div class="result-line">
           <span class="h tn">${esc(teamName(f.home))}</span>
-          <input type="number" min="0" inputmode="numeric" id="hp-${esc(f.id)}" data-pins="h" value="${f.homePins ?? ""}" aria-label="${esc(teamName(f.home))} pins">
+          <input type="number" min="0" inputmode="numeric" id="hp-${esc(f.id)}" data-pins="h" value="${f.homePins ?? ""}" aria-label="${esc(teamName(f.home))} pins"${f.cards ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
           <span class="dash">–</span>
-          <input type="number" min="0" inputmode="numeric" id="ap-${esc(f.id)}" data-pins="a" value="${f.awayPins ?? ""}" aria-label="${esc(teamName(f.away))} pins">
+          <input type="number" min="0" inputmode="numeric" id="ap-${esc(f.id)}" data-pins="a" value="${f.awayPins ?? ""}" aria-label="${esc(teamName(f.away))} pins"${f.cards ? ' readonly class="pins-locked" title="From the scorecard"' : ""}>
           <span class="a tn">${esc(teamName(f.away))}</span>
         </div>
-        <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}">Save</button><button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
+        <div class="actions"><button class="btn sm" data-act="save-result" data-id="${esc(f.id)}"${f.cards ? " hidden" : ""}>Save</button><button class="btn ghost sm" data-act="fx-card" data-id="${esc(f.id)}">${f.cards ? "Edit scorecard" : "Scorecard"}</button><button class="btn ghost sm" data-act="edit-fx" data-id="${esc(f.id)}">Edit</button><button class="btn danger sm" data-act="del-fx" data-id="${esc(f.id)}">Delete</button></div>
       </div>`;
     }).join("")}</div>`;
     for (const [id, val] of Object.entries(kept)) { const i = document.getElementById(id); if (i) { i.value = val; i.dataset.dirty = "1"; } }
@@ -2666,6 +2984,12 @@ VIEWS.divisions = {
       }
     });
     el.addEventListener("input", e => { if (e.target.matches("input[data-div]")) { e.target.dataset.dirty = "1"; this.updateCounts(); } });
+    // A division's game saves straight away.
+    el.addEventListener("change", async e => {
+      if (!e.target.matches("select[data-div-game]")) return;
+      const id = e.target.dataset.divGame, game = e.target.value;
+      if (await commit(d => { if (d.divisions[id]) d.divisions[id].game = game; })) toast(`${divisionName(id)} plays ${GAMES[game].toLowerCase()}`);
+    });
   },
   divisionOf(t) { return t.id in this.pending ? this.pending[t.id] : (S.divisions[t.division] ? t.division : ""); },
   refresh() {
@@ -2688,6 +3012,7 @@ VIEWS.divisions = {
         <h3>Divisions this season</h3>
         <div class="div-list">${divs.map(d => `<div class="div-row">
           <label class="visually-hidden" for="dv-n-${esc(d.id)}">Name</label><input type="text" id="dv-n-${esc(d.id)}" data-div="${esc(d.id)}" value="${esc(d.name)}" maxlength="40">
+          <select data-div-game="${esc(d.id)}" aria-label="Game played in ${esc(d.name)}">${Object.entries(GAMES).map(([k, v]) => `<option value="${k}"${gameOf(d) === k ? " selected" : ""}>${v}</option>`).join("")}</select>
           <span class="list-count" data-count="${esc(d.id)}"></span>
           <button class="btn danger sm" data-act="dv-del" data-id="${esc(d.id)}">Delete</button></div>`).join("")}</div>
         <div class="actions"><button class="btn ghost sm" data-act="dv-add">Add another division</button></div></div>`;
@@ -2775,7 +3100,7 @@ VIEWS.divisions = {
 VIEWS["league-setup"] = {
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>League setup</h2>
-      <p>The league's name, web address and how many points each result is worth.</p></div></div>
+      <p>The league's name, web address, how many points each result is worth, and how the game is played.</p></div></div>
       <div class="split">
         <form class="panel form" id="set-form" autocomplete="off">
           <h3>League details</h3>
@@ -2784,10 +3109,16 @@ VIEWS["league-setup"] = {
             <div class="slug-row"><span class="slug-pre" id="s-pre"></span><input type="text" id="s-slug" maxlength="40" spellcheck="false" autocapitalize="off"></div>
             <span class="lookup-note" id="s-slug-note"></span></div>
           <div class="row2">
-            <div class="field"><label for="s-win">Points for a win</label><input type="number" id="s-win" min="0" max="20"></div>
-            <div class="field"><label for="s-draw">Points for a draw</label><input type="number" id="s-draw" min="0" max="20"></div>
-            <div class="field"><label for="s-loss">Points for a loss</label><input type="number" id="s-loss" min="0" max="20"></div>
+            <div class="field"><label for="s-win">Points for winning the match</label><input type="number" id="s-win" min="0" max="20"></div>
+            <div class="field"><label for="s-draw">Points for a drawn match</label><input type="number" id="s-draw" min="0" max="20"></div>
+            <div class="field"><label for="s-loss">Points for losing the match</label><input type="number" id="s-loss" min="0" max="20"></div>
           </div>
+          <div class="row2">
+            <div class="field"><label for="s-hwin">Points for each hand won</label><input type="number" id="s-hwin" min="0" max="20"></div>
+            <div class="field"><label for="s-hdraw">Points for each hand drawn</label><input type="number" id="s-hdraw" min="0" max="20"></div>
+          </div>
+          <p class="hint" style="margin:0">A hand is won by the team whose players score more in it between them. Leave both at 0 if your league only scores the match result. Hand points need the scores entered hand by hand.</p>
+          <div id="s-game"></div>
           <div class="actions"><button class="btn" type="submit">Save league details</button></div>
         </form>
         <div class="form-col">
@@ -2805,13 +3136,15 @@ VIEWS["league-setup"] = {
       </div>`;
     $("#s-pre").textContent = `${SITE_HOST}/`;
     const f = $("#set-form");
-    f.addEventListener("input", () => f.dataset.dirty = "1");
+    f.addEventListener("input", () => { f.dataset.dirty = "1"; showGameMax("s"); });
+    f.addEventListener("change", () => { f.dataset.dirty = "1"; showGameMax("s"); });
     $("#s-slug").addEventListener("input", e => { e.target.value = e.target.value.toLowerCase(); checkSlug(e.target, $("#s-slug-note"), S.league.id); });
     f.addEventListener("submit", async e => {
       e.preventDefault();
       const oldSlug = S.league.slug;
       const r = await leagueRequest("", "PATCH", { name: $("#s-name").value, slug: $("#s-slug").value.trim(),
-        settings: { win: num($("#s-win").value) ?? 2, draw: num($("#s-draw").value) ?? 1, loss: num($("#s-loss").value) ?? 0 } });
+        settings: { win: num($("#s-win").value) ?? 2, draw: num($("#s-draw").value) ?? 1, loss: num($("#s-loss").value) ?? 0,
+        handWin: num($("#s-hwin").value) ?? 0, handDraw: num($("#s-hdraw").value) ?? 0, ...readGameFields("s") } });
       if (!r) return;
       delete f.dataset.dirty; toast("League details saved");
       if (r.league.slug !== oldSlug) NAV.go(leaguePath(r.league.slug), "league-setup"); else refresh();
@@ -2821,7 +3154,8 @@ VIEWS["league-setup"] = {
     const f = $("#set-form"); if (f.dataset.dirty) return;
     const c = cfg();
     $("#s-name").value = S.league.name; $("#s-slug").value = S.league.slug; $("#s-slug-note").textContent = `Later this will also be ${S.league.slug}.skittlers.co.uk`;
-    $("#s-win").value = c.win; $("#s-draw").value = c.draw; $("#s-loss").value = c.loss;
+    $("#s-win").value = c.win; $("#s-draw").value = c.draw; $("#s-loss").value = c.loss; $("#s-hwin").value = c.handWin; $("#s-hdraw").value = c.handDraw;
+    $("#s-game").innerHTML = gameFields("s", c); showGameMax("s");
   }
 };
 
@@ -2982,6 +3316,9 @@ document.addEventListener("click", async e => {
     }
   }
   if (act === "save-result") VIEWS["manage-fixtures"].saveResult(id, b.closest(".fx-admin"));
+  if (act === "fx-card") VIEWS["manage-fixtures"].scorecard(id);
+  if (act === "cup-card") VIEWS.cups.matchCard(id);
+  if (act === "cup-final-card") VIEWS.cups.finalCard(id);
   if (act === "edit-fx") VIEWS["manage-fixtures"].edit(id);
   if (act === "cancel-fx") VIEWS["manage-fixtures"].reset();
   if (act === "del-fx") {

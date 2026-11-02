@@ -7,5 +7,6 @@
 - Data model: accounts (`users/`, `emails/`), leagues (`leagues/`, `slugs/`), and per season `seasons/<league>/<season>` (teams, venues, fixtures, divisions, cups) plus `contacts/<league>/<season>`.
 - Secrets (`SESSION_SECRET`, `SUPERADMIN_EMAIL`) live in Netlify environment variables. Never commit a `.env` file.
 - Captains' addresses and mobiles are stored separately ("contacts") and must only be returned to the league's secretary or the overall admin.
+- League settings (`leagues/<id>.settings`): points for win/draw/loss, players a side, balls a hand, hands each player throws, and the game (rough skittles or nomination). Each division and cup can set its own `game`; otherwise it plays the league's.
 - Only league secretaries for now; other roles (results secretary, captains) come later. Subscriptions are yearly, set by the overall admin until payments are added.
 - Cups (Manage cups page): knockout tournaments, team or individual player, full tournament or straight final. Rounds and byes are worked out from the number of entries; only the draw and results are stored, and later rounds are derived from them.
