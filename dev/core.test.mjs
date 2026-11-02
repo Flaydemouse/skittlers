@@ -59,6 +59,9 @@ r = await call("GET", "my/leagues", null, boss); assert.equal(r.body.leagues.len
 r = await call("GET", "super/users", null, boss); const secUser = r.body.users.find(u => u.email === "sec@x.com"); assert.equal(secUser.leagues[0].slug, "yeovil"); assert.equal(secUser.canEdit, false);
 r = await call("PATCH", `super/users/${secUser.id}`, { subscription: { status: "paid", until: "2027-12-01" } }, boss); assert.equal(r.body.user.canEdit, true);
 r = await call("PATCH", `leagues/${L.id}`, { name: "New name", slug: "yeovil-league", settings: { win: 3 } }, sec2); assert.equal(r.status, 200);
+assert.deepEqual(r.body.league.settings.tiebreak, ["pd", "apd"], "pin difference, then away pin difference, by default");
+r = await call("PATCH", `leagues/${L.id}`, { settings: { tiebreak: ["h2h", "bogus", "h2h", "pd"] } }, sec2); assert.deepEqual(r.body.league.settings.tiebreak, ["h2h", "pd"]);
+r = await call("PATCH", `leagues/${L.id}`, { settings: { tiebreak: [] } }, sec2); assert.deepEqual(r.body.league.settings.tiebreak, ["h2h", "pd"], "an empty choice keeps the last one");
 r = await call("GET", "public/yeovil"); assert.equal(r.status, 404); r = await call("GET", "public/yeovil-league"); assert.equal(r.body.league.settings.win, 3);
 r = await call("PATCH", `super/users/${secUser.id}`, { resetPassword: true }, boss); const temp = r.body.temporaryPassword; assert.match(temp, /^\w{4}-\w{4}-\w{4}$/);
 r = await call("GET", "auth/me", null, sec2); assert.equal(r.status, 401);

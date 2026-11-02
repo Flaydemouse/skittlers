@@ -381,6 +381,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .addon-set { display: grid; gap: 8px; padding: 10px 0; border-top: 1px dashed var(--line); }
 .addon-set .seg { display: flex; flex-wrap: wrap; gap: 6px 16px; }
 .addon-set .seg label { display: flex; gap: 6px; align-items: center; font-weight: 500; }
+fieldset.tiebreak { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px 12px; margin: 0; display: grid; gap: 8px; }
+fieldset.tiebreak legend { font-weight: 700; padding: 0 6px; }
+.row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .row3 { grid-template-columns: minmax(0, 1fr); } }
 .addon-set .addon-fields { display: flex; flex-wrap: wrap; gap: 10px 20px; }
 .addon-set .field { max-width: 260px; }
 .money { display: flex; align-items: center; gap: 6px; }
@@ -560,7 +564,10 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const num = v => (v === "" || v == null || !Number.isFinite(+v)) ? null : Math.round(+v);
 
-const DEFAULT_POINTS = { win: 2, draw: 1, loss: 0, handWin: 0, handDraw: 0, players: 6, balls: 3, hands: 6, game: "rough" };
+const DEFAULT_POINTS = { win: 2, draw: 1, loss: 0, handWin: 0, handDraw: 0, players: 6, balls: 3, hands: 6, game: "rough", tiebreak: ["pd", "apd"] };
+// How teams level on points are split, in the order the league chooses.
+const TIEBREAKS = { pd: "overall pin difference", apd: "away pin difference", h2h: "head to head" };
+const tiebreakText = list => list.map(k => TIEBREAKS[k]).join(", then ");
 const GAMES = { rough: "Rough skittles", nomination: "Nomination" };
 // A division or cup plays the league's game unless it's set to the other one.
 const gameOf = x => GAMES[x?.game] ? x.game : cfg().game;
@@ -809,13 +816,35 @@ function standings(keep = () => true) {
     if (H && A) H.forEach((x, i) => { if (x > A[i]) h.hpts += c.handWin; else if (x < A[i]) a.hpts += c.handWin; else { h.hpts += c.handDraw; a.hpts += c.handDraw; } });
   }
   for (const r of Object.values(rows)) { r.pd = r.pf - r.pa; r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss + r.hpts; }
-  const order = (a, b) => b.pts - a.pts || b.pd - a.pd || b.apd - a.apd || a.t.name.localeCompare(b.t.name);
+  // Head to head: the points the tied teams took off each other in league games (hand points included).
+  const games = Object.values(S.fixtures).filter(f => f.comp === "league" && played(f) && keep(f));
+  const h2h = group => {
+    const ids = new Set(group.map(r => r.t.id)), pts = {};
+    for (const f of games) {
+      if (!ids.has(f.home) || !ids.has(f.away)) continue;
+      const hw = f.homePins > f.awayPins, aw = f.awayPins > f.homePins;
+      pts[f.home] = (pts[f.home] || 0) + (hw ? c.win : aw ? c.loss : c.draw);
+      pts[f.away] = (pts[f.away] || 0) + (aw ? c.win : hw ? c.loss : c.draw);
+      const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away);
+      if (H && A) H.forEach((x, i) => { if (x > A[i]) pts[f.home] += c.handWin; else if (x < A[i]) pts[f.away] += c.handWin; else { pts[f.home] += c.handDraw; pts[f.away] += c.handDraw; } });
+    }
+    return r => pts[r.t.id] || 0;
+  };
+  // Sort by points, then split each group still level by the next tie-break, and so on; name order last.
+  const rank = (list, keys) => {
+    if (list.length < 2) return list;
+    if (!keys.length) return list.sort((a, b) => a.t.name.localeCompare(b.t.name));
+    const [k, ...rest] = keys, val = k === "h2h" ? h2h(list) : r => r[k], sorted = [...list].sort((a, b) => val(b) - val(a)), out = [];
+    for (let i = 0; i < sorted.length;) { let j = i; while (j < sorted.length && val(sorted[j]) === val(sorted[i])) j++; out.push(...rank(sorted.slice(i, j), rest)); i = j; }
+    return out;
+  };
+  const tb = (c.tiebreak || []).filter(k => TIEBREAKS[k]), order = list => rank(list, ["pts", ...(tb.length ? tb : ["pd", "apd"])]);
   const all = Object.values(rows);
   const divs = sortedDivisions();
-  if (!divs.length) return all.length ? [{ division: null, rows: all.sort(order) }] : [];
-  const groups = divs.map(d => ({ division: d, rows: all.filter(r => r.t.division === d.id).sort(order) })).filter(g => g.rows.length);
+  if (!divs.length) return all.length ? [{ division: null, rows: order(all) }] : [];
+  const groups = divs.map(d => ({ division: d, rows: order(all.filter(r => r.t.division === d.id)) })).filter(g => g.rows.length);
   const loose = all.filter(r => !S.divisions[r.t.division]);
-  if (loose.length && S.admin) groups.push({ division: { name: "Not in a division yet" }, loose: true, rows: loose.sort(order) });
+  if (loose.length && S.admin) groups.push({ division: { name: "Not in a division yet" }, loose: true, rows: order(loose) });
   return groups;
 }
 
@@ -1176,7 +1205,7 @@ VIEWS.tables = {
   },
   refresh() {
     const c = cfg();
-    $("#pts-rule").textContent = `${c.players} a side, ${plural(c.balls, "ball")} a hand, ${plural(c.hands, "hand")} each. ${c.win} points for a win, ${c.draw} for a draw, ${c.loss} for a loss${c.handWin || c.handDraw ? `, plus ${c.handWin} for each hand won and ${c.handDraw} for each hand drawn` : ""}. Ties on points are split by pin difference, then away pin difference.`;
+    $("#pts-rule").textContent = `${c.players} a side, ${plural(c.balls, "ball")} a hand, ${plural(c.hands, "hand")} each. ${c.win} points for a win, ${c.draw} for a draw, ${c.loss} for a loss${c.handWin || c.handDraw ? `, plus ${c.handWin} for each hand won and ${c.handDraw} for each hand drawn` : ""}. Teams level on points are split by ${tiebreakText(c.tiebreak?.length ? c.tiebreak : ["pd", "apd"])}.`;
     const body = $("#tables-body");
     const st = statusBlock(); if (st) return body.innerHTML = st;
     if (!Object.keys(S.teams).length) return body.innerHTML = noTeamsBlock();
@@ -4352,6 +4381,11 @@ VIEWS["league-setup"] = {
             <div class="field"><label for="s-hdraw">Points for each hand drawn</label><input type="number" id="s-hdraw" min="0" max="20"></div>
           </div>
           <p class="hint" style="margin:0">A hand is won by the team whose players score more in it between them. Leave both at 0 if your league only scores the match result. Hand points need the scores entered hand by hand.</p>
+          <fieldset class="tiebreak"><legend>Teams level on points</legend>
+            <p class="hint" style="margin:0">Choose what puts one team above another when they have the same points. If they're still level, the next choice decides, and so on.</p>
+            <div class="row3">${[["s-tb1", "First"], ["s-tb2", "Then"], ["s-tb3", "Then"]].map(([id, label], i) => `<div class="field"><label for="${id}">${label}</label><select id="${id}">${i ? `<option value="">Nothing more</option>` : ""}${Object.entries(TIEBREAKS).map(([k, t]) => `<option value="${k}">${t[0].toUpperCase() + t.slice(1)}</option>`).join("")}</select></div>`).join("")}</div>
+            <p class="hint" style="margin:0">Head to head compares the points the level teams took off each other in league games. Teams still level after your choices are listed in name order.</p>
+          </fieldset>
           <div id="s-game"></div>
           <div class="actions"><button class="btn" type="submit">Save league details</button></div>
         </form>
@@ -4382,17 +4416,29 @@ VIEWS["league-setup"] = {
     $("#bk-file").addEventListener("change", e => this.readBackup(e.target.files[0]));
     const f = $("#set-form");
     f.addEventListener("input", () => { f.dataset.dirty = "1"; showGameMax("s"); });
-    f.addEventListener("change", () => { f.dataset.dirty = "1"; showGameMax("s"); });
+    f.addEventListener("change", e => { f.dataset.dirty = "1"; showGameMax("s"); if (/^s-tb/.test(e.target.id)) this.syncTiebreak(); });
     $("#s-slug").addEventListener("input", e => { e.target.value = e.target.value.toLowerCase(); checkSlug(e.target, $("#s-slug-note"), S.league.id); });
     f.addEventListener("submit", async e => {
       e.preventDefault();
       const oldSlug = S.league.slug;
       const r = await leagueRequest("", "PATCH", { name: $("#s-name").value, slug: $("#s-slug").value.trim(),
         settings: { win: num($("#s-win").value) ?? 2, draw: num($("#s-draw").value) ?? 1, loss: num($("#s-loss").value) ?? 0,
-        handWin: num($("#s-hwin").value) ?? 0, handDraw: num($("#s-hdraw").value) ?? 0, ...readGameFields("s") } });
+        handWin: num($("#s-hwin").value) ?? 0, handDraw: num($("#s-hdraw").value) ?? 0, ...readGameFields("s"),
+        tiebreak: [...new Set(["#s-tb1", "#s-tb2", "#s-tb3"].map(id => $(id).value).filter(Boolean))] } });
       if (!r) return;
       delete f.dataset.dirty; toast("League details saved");
       if (r.league.slug !== oldSlug) NAV.go(leaguePath(r.league.slug), "league-setup"); else refresh();
+    });
+  },
+  // Each tie-break can only be used once; a box after an empty one is empty too.
+  syncTiebreak() {
+    const ids = ["#s-tb1", "#s-tb2", "#s-tb3"], used = [];
+    ids.forEach((id, i) => {
+      const sel = $(id), prevEmpty = i > 0 && !$(ids[i - 1]).value;
+      for (const o of sel.options) o.disabled = !!o.value && used.includes(o.value);
+      if (prevEmpty || (sel.value && used.includes(sel.value))) sel.value = i ? "" : sel.value;
+      sel.disabled = prevEmpty;
+      if (sel.value) used.push(sel.value);
     });
   },
   refresh() {
@@ -4400,6 +4446,8 @@ VIEWS["league-setup"] = {
     const c = cfg();
     $("#s-name").value = S.league.name; $("#s-slug").value = S.league.slug; $("#s-slug-note").textContent = `Later this will also be ${S.league.slug}.skittlers.co.uk`;
     $("#s-win").value = c.win; $("#s-draw").value = c.draw; $("#s-loss").value = c.loss; $("#s-hwin").value = c.handWin; $("#s-hdraw").value = c.handDraw;
+    const tb = c.tiebreak?.length ? c.tiebreak : ["pd", "apd"]; ["#s-tb1", "#s-tb2", "#s-tb3"].forEach((id, i) => $(id).value = tb[i] || "");
+    this.syncTiebreak();
     $("#s-game").innerHTML = gameFields("s", c); showGameMax("s");
     this.loadCopies();
   },
