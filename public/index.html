@@ -252,6 +252,58 @@ details.sc-details[open] summary { margin-bottom: 8px; }
 .mv-dlg { width: min(560px, calc(100vw - 16px)); }
 .mv-dlg #mv-date { width: auto; margin-left: 6px; }
 /* Panels, forms, admin */
+.home-sec { margin-top: 28px; }
+.home-sec:first-of-type { margin-top: 8px; }
+.home-head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.home-head h2 { font-size: 1.35rem; }
+.home-head .actions { display: flex; gap: 6px; align-items: center; }
+.strip-btn { min-width: 34px; font-size: 1.1rem; line-height: 1; }
+.div-strip { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 10px; overscroll-behavior-x: contain; }
+.div-strip:focus-visible { outline: 2px solid var(--brass); outline-offset: 4px; }
+.div-card { flex: 0 0 min(340px, 86%); scroll-snap-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 14px 8px; }
+.div-card h3 { font-size: 1.05rem; margin-bottom: 8px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+table.league.mini { font-size: .88rem; }
+table.league.mini td, table.league.mini th { padding: 6px 6px; }
+table.league.mini td.team { max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-date { font-size: 1rem; margin-bottom: 8px; }
+.home-pinned { display: grid; gap: 10px; margin: 8px 0 4px; }
+.news-list { display: grid; gap: 12px; margin-bottom: 10px; }
+.news-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.news-item.pinned { border-color: var(--brass); background: color-mix(in srgb, var(--warn-bg) 55%, var(--surface)); }
+.news-item h3 { font-size: 1.1rem; margin: 4px 0 6px; }
+.news-item p { margin: 0 0 8px; max-width: 70ch; }
+.news-item p:last-child { margin-bottom: 0; }
+.news-item summary { cursor: pointer; color: var(--brass-ink); font-weight: 600; }
+.news-meta { font-size: .82rem; color: var(--muted); }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.photo-tile { position: relative; padding: 0; border: 0; border-radius: 10px; overflow: hidden; background: var(--sunk); cursor: zoom-in; aspect-ratio: 4 / 3; }
+.photo-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.photo-tile:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.photo-cap { position: absolute; inset: auto 0 0 0; padding: 18px 8px 6px; font-size: .78rem; text-align: left; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.7)); }
+.photo-dlg { max-width: min(1100px, 96vw); width: auto; padding: 12px; border: 0; border-radius: 12px; background: var(--surface); }
+.photo-dlg::backdrop { background: rgba(0,0,0,.75); }
+.photo-dlg figure { margin: 0; }
+.photo-dlg img { display: block; max-width: 100%; max-height: 78vh; width: auto; height: auto; margin: 0 auto; border-radius: 8px; }
+.photo-dlg figcaption { margin-top: 8px; font-size: .92rem; }
+.photo-nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; }
+.photo-nav .muted { margin-right: auto; }
+.cup-pics { margin-top: 18px; }
+.mn-sec { margin-bottom: 24px; }
+.mn-post.draft { border-color: var(--brass); }
+.nf-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 260px; overflow-y: auto; }
+.nf-photo { position: relative; display: grid; gap: 2px; font-size: .72rem; color: var(--muted); cursor: pointer; }
+.nf-photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 6px; background: var(--sunk); border: 2px solid transparent; }
+.nf-photo input { position: absolute; top: 4px; left: 4px; width: 18px; height: 18px; }
+.nf-photo:has(input:checked) img { border-color: var(--brass); }
+.nf-photo span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.news-photos { margin-top: 10px; }
+.news-photos .photo-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.mn-sec > h3 { margin-bottom: 10px; }
+.mn-list { display: grid; gap: 10px; }
+.mn-excerpt { margin: 6px 0 0; white-space: pre-line; }
+.mn-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.mn-photo { display: grid; gap: 6px; padding: 8px; }
+.mn-photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: var(--sunk); }
 .split { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .split > * { min-width: 0; }
 @media (max-width: 880px) { .split { grid-template-columns: minmax(0, 1fr); } .split .form-col { order: -1; } }
@@ -325,6 +377,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--brass); outline:
 .save-bar .btn.ghost:hover { background: color-mix(in srgb, var(--paper) 12%, transparent); }
 .sub-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
 .sub-row .field { flex: 0 1 160px; }
+.su-addons { margin-bottom: 20px; }
+.addon-set { display: grid; gap: 8px; padding: 10px 0; border-top: 1px dashed var(--line); }
+.addon-set .seg { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.addon-set .seg label { display: flex; gap: 6px; align-items: center; font-weight: 500; }
+.addon-set .field { max-width: 260px; }
 .addon-row { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .addon-row .addon-head { flex: 1 0 100%; }
 .addon-row .field:nth-of-type(2) { flex-basis: 190px; }
@@ -526,7 +583,7 @@ const S = {
   token: null, user: null, myLeagues: [],
   mode: "account", slug: null, league: null, seasonId: null,
   admin: false, status: "connecting", version: 0, loadedAt: 0,
-  teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {},
+  teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {}, news: [], adminNews: [], media: [], addons: null,
   loaded: { teams: false, venues: false, fixtures: false },
   ui: { fxTeam: "", fxShow: "upcoming", adminComp: "all", adminShow: "open" },
   busy: false,
@@ -622,7 +679,7 @@ async function loadMe() {
 function signedOut(msg) {
   setToken(null); S.user = null; S.myLeagues = []; S.admin = false; S.contacts = {};
   if (msg) toast(msg);
-  if (S.mode === "league") { if (ADMIN_VIEWS.some(([id]) => id === location.hash.slice(1))) location.hash = "tables"; route(); loadSeason(); }
+  if (S.mode === "league") { if (ADMIN_VIEWS.some(([id]) => id === location.hash.slice(1))) location.hash = "home"; route(); loadSeason(); }
   else { location.hash = "login"; route(); }
 }
 function apply(d) {
@@ -641,8 +698,24 @@ async function openLeague() {
   const remembered = S.admin && store.get(seasonPref());
   S.seasonId = S.league.seasons.some(s => s.id === remembered) ? remembered : S.league.currentSeasonId || S.league.seasons.at(-1)?.id || null;
   route();
+  loadExtras();
   await loadSeason();
 }
+// News posts and photos belong to the league, not a season, so they load alongside it.
+async function loadExtras() {
+  const slug = encodeURIComponent(S.league.slug);
+  const [news, media] = await Promise.all([api(`/api/public/${slug}/news`).catch(() => null), api(`/api/public/${slug}/media`).catch(() => null)]);
+  if (news) S.news = news.items; if (media) S.media = media.items;
+  if (S.admin) await loadAdminNews();
+  refresh();
+}
+// Admins also see drafts, including match night reports waiting to be checked, and which add-ons the league has.
+async function loadAdminNews() {
+  const [news, addons] = await Promise.all([api(`/api/leagues/${S.league.id}/news`).catch(() => null), api(`/api/leagues/${S.league.id}/addons`).catch(() => null)]);
+  if (news) setNews(news.items);
+  if (addons) S.addons = addons;
+}
+function setNews(items) { S.adminNews = items; S.news = items.filter(n => !n.status); }
 async function loadSeason() {
   if (!S.league) return;
   if (!S.seasonId) return apply({});
@@ -679,7 +752,11 @@ async function commit(mutate) {
   if (!changes.length) return true;
   try {
     const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: S.version, changes });
+    // Nights that this save finished off: a result entered for a game that didn't have one. Bulk changes
+    // (loading an example season, importing or generating fixtures) never start a report.
+    const newlyPlayed = changes.length > 20 ? [] : changes.filter(c => c.in === "fixtures" && c.value?.date && played(c.value) && S.fixtures[c.id] && !played(S.fixtures[c.id])).map(c => c.value.date);
     apply({ ...draft, version: r.version });
+    reportCheck(newlyPlayed);
     if (r.stale) loadSeason().then(() => setTimeout(() => toast("Someone else also saved changes just now. They're shown here too."), 1500));
     return true;
   } catch (e) {
@@ -708,11 +785,11 @@ function clashes() {
 
 /* ---------- standings ---------- */
 // Returns [{division, rows}] in division order. Teams not yet in a division come last, for admins only.
-function standings() {
+function standings(keep = () => true) {
   const c = cfg(), rows = {};
   for (const t of Object.values(S.teams)) rows[t.id] = { t, P: 0, W: 0, D: 0, L: 0, hp: 0, ap: 0, pf: 0, pa: 0, apd: 0, hpts: 0 };
   for (const f of Object.values(S.fixtures)) {
-    if (f.comp !== "league" || !played(f)) continue;
+    if (f.comp !== "league" || !played(f) || !keep(f)) continue;
     const h = rows[f.home], a = rows[f.away];
     if (!h || !a) continue;
     const hp = f.homePins, ap = f.awayPins;
@@ -737,8 +814,8 @@ function standings() {
 }
 
 /* ---------- shell & routing ---------- */
-const PUBLIC_VIEWS = [["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"], ["league-teams", "Teams"], ["league-venues", "Venues"]];
-const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Manage venues"], ["teams", "Manage teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["league-setup", "League setup"]];
+const PUBLIC_VIEWS = [["home", "Home"], ["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"], ["league-teams", "Teams"], ["league-venues", "Venues"]];
+const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Manage venues"], ["teams", "Manage teams"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["manage-news", "News & photos"], ["league-setup", "League setup"]];
 const ACCOUNT_VIEWS = [["leagues", "My leagues"], ["account", "Account"]];
 let current = null;
 
@@ -793,7 +870,7 @@ function currentView() {
   if (PUBLIC_VIEWS.some(([id]) => id === h)) return h;
   if (S.admin && ADMIN_VIEWS.some(([id]) => id === h)) return h;
   if (S.admin && !S.league.seasons.length) return "seasons";
-  return "tables";
+  return "home";
 }
 function route() {
   const v = currentView();
@@ -812,13 +889,16 @@ function refresh() {
   renderBrand();
   current?.refresh();
 }
-// The photo reading add-on: an extra yearly subscription that reads scores from a photo of the board.
-const photoActive = u => !!u.photos?.until && u.photos.until >= today();
-function photoNote(u) {
+// Add-ons: reading scores from a photo of the board, and match night reports written by Claude. The overall
+// admin decides whether each is included in the basic subscription or an extra given to chosen accounts.
+const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" } };
+const addonActive = (u, k) => !!u[k]?.until && u[k].until >= today();
+function addonNote(u, k, mode) {
   if (u.isSuper) return "Always on for the overall admin";
-  if (!u.photos?.until) return "Not added";
-  const limit = u.photos.monthlyLimit ? `, up to ${u.photos.monthlyLimit} photos a month per league` : "";
-  return photoActive(u) ? `Until ${dayMonthYear(u.photos.until)}${limit}` : `Ended ${dayMonthYear(u.photos.until)}`;
+  if (mode === "included") return "Included in the subscription";
+  if (!u[k]?.until) return "Not added";
+  const limit = u[k].monthlyLimit ? `, up to ${u[k].monthlyLimit} ${ADDON_INFO[k].unit} a month per league` : "";
+  return addonActive(u, k) ? `Until ${dayMonthYear(u[k].until)}${limit}` : `Ended ${dayMonthYear(u[k].until)}`;
 }
 function subscriptionNote(u) {
   const s = u.subscription || {}, when = dayMonthYear(s.until);
@@ -940,7 +1020,7 @@ VIEWS.leagues = {
       const cur = l.seasons.find(s => s.id === l.currentSeasonId);
       return `<article class="card">
         <div class="card-head"><div><h3>${esc(l.name)}</h3><div class="sub">${esc(leagueAddress(l.slug))}</div></div>
-          <div class="actions">${leagueLink(l.slug, "seasons", "Manage", ' class="btn sm"')}${leagueLink(l.slug, "tables", "View site", ' class="btn ghost sm"')}</div></div>
+          <div class="actions">${leagueLink(l.slug, "seasons", "Manage", ' class="btn sm"')}${leagueLink(l.slug, "home", "View site", ' class="btn ghost sm"')}</div></div>
         <dl class="kv"><dt>Season</dt><dd>${cur ? `${esc(cur.name)} (${dayMonthYear(cur.start)} to ${dayMonthYear(cur.end)})` : "Not set up yet"}</dd>
           <dt>Seasons</dt><dd>${l.seasons.length}</dd>
           ${l.owner ? `<dt>Secretary</dt><dd>${esc(l.owner.name)} · ${esc(l.owner.email)}</dd>` : ""}</dl>
@@ -980,12 +1060,13 @@ VIEWS.account = {
       try { const r = await send("/api/auth/password", "POST", { current: $("#pw-cur").value, next: $("#pw-new").value }); setToken(r.token); S.user = r.user; e.target.reset(); toast("Password changed"); }
       catch (x) { saveError(x); }
     });
+    api("/api/auth/addons").then(a => { S.siteAddons = a; if (current === this) this.refresh(); }).catch(() => {});
   },
   refresh() {
     const u = S.user;
     $("#ac-details").innerHTML = `<dt>Name</dt><dd>${esc(u.name)}</dd><dt>Email</dt><dd>${esc(u.email)}</dd><dt>Joined</dt><dd>${dayMonthYear(u.created)}</dd>
       <dt>Subscription</dt><dd>${esc(subscriptionNote(u))}</dd>
-      <dt>Photo reading</dt><dd>${esc(u.isSuper ? photoNote(u) : u.photos?.until ? photoNote(u) : "Not added. Reading scores from a photo of the board is an extra subscription; contact the site owner to add it.")}</dd>`;
+      ${Object.entries(ADDON_INFO).map(([k, a]) => `<dt>${a.name}</dt><dd>${esc(addonNote(u, k, S.siteAddons?.[k]?.mode))}${!u.isSuper && S.siteAddons?.[k]?.mode !== "included" && !u[k]?.until ? ". Contact the site owner to add it." : ""}</dd>`).join("")}`;
   }
 };
 
@@ -997,6 +1078,7 @@ VIEWS.super = {
       <p>Every secretary's account, their leagues and subscription. Payments aren't connected yet, so set each account's paid-until date here.</p></div>
       <div class="list-tools" style="margin:0"><input type="search" id="su-search" placeholder="Search names, emails or leagues" aria-label="Search accounts"><span class="list-count" id="su-count"></span></div></div>
       <div id="su-photo-note"></div>
+      <div id="su-addons"></div>
       <div id="su-list"><div class="empty"><strong>Loading accounts…</strong></div></div>
       <div id="su-legacy"></div>`;
     $("#su-search").addEventListener("input", () => this.filter());
@@ -1004,30 +1086,39 @@ VIEWS.super = {
   },
   async load() {
     try {
-      const [{ users, photoReading, month }, legacy] = await Promise.all([api("/api/super/users"), api("/api/super/legacy")]);
-      this.users = users; this.legacy = legacy; this.photoReading = photoReading; this.month = month; this.render();
+      const [{ users, photoReading, month, addons }, legacy] = await Promise.all([api("/api/super/users"), api("/api/super/legacy")]);
+      this.users = users; this.legacy = legacy; this.photoReading = photoReading; this.month = month; this.addons = addons; this.render();
     } catch (x) { saveError(x); }
   },
   render() {
     const list = $("#su-list"); if (!list || !this.users) return;
     const users = [...this.users].sort((a, b) => a.name.localeCompare(b.name));
-    $("#su-photo-note").innerHTML = this.photoReading ? "" : `<div class="notice" role="note">Photo reading isn't switched on for the site yet. Add an <code>ANTHROPIC_API_KEY</code> in Netlify's environment variables, then redeploy. You can still set who has the add-on.</div>`;
+    $("#su-photo-note").innerHTML = this.photoReading ? "" : `<div class="notice" role="note">Photo reading and match night reports aren't switched on for the site yet. Add an <code>ANTHROPIC_API_KEY</code> in Netlify's environment variables, then redeploy. You can still choose how the add-ons are sold and who has them.</div>`;
+    $("#su-addons").innerHTML = `<section class="panel form su-addons"><h3>Add-ons</h3>
+      <p class="muted" style="margin:0">Choose for each whether it comes with every subscription or is an extra you give to chosen accounts below. You can change this at any time.</p>
+      ${Object.entries(ADDON_INFO).map(([k, a]) => { const cur = this.addons?.[k] || { mode: "extra", monthlyLimit: 0 }; return `<div class="addon-set">
+        <strong>${a.name}</strong>
+        <div class="seg" role="radiogroup" aria-label="${a.name}"><label><input type="radio" name="am-${k}" value="included"${cur.mode === "included" ? " checked" : ""}> Included in the basic subscription</label><label><input type="radio" name="am-${k}" value="extra"${cur.mode !== "included" ? " checked" : ""}> Extra add-on</label></div>
+        <div class="field"><label for="al-${k}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month when included</label><input type="number" id="al-${k}" min="0" max="10000" step="1" value="${cur.monthlyLimit || 0}"><span class="hint">Per league. 0 for no limit</span></div>
+      </div>`; }).join("")}
+      <div class="actions"><button class="btn sm" data-act="su-addons-save">Save add-on settings</button></div></section>`;
     list.innerHTML = `<div class="cards">${users.map(u => `<article class="card" data-id="${esc(u.id)}" data-search="${esc(searchText([u.name, u.email, ...u.leagues.map(l => l.name)].join(" ")))}">
       <div class="card-head"><div><h3>${esc(u.name)}${u.isSuper ? ` <span class="chip">Overall admin</span>` : ""}</h3><div class="sub">${esc(u.email)} · joined ${dayMonthYear(u.created)}</div></div>
         <span class="chip ${u.canEdit ? "" : "warn"}">${u.isSuper ? "No subscription" : u.canEdit ? (u.subscription?.status === "paid" ? "Paid" : "Trial") + " until " + dayMonthYear(u.subscription?.until) : "Ended " + dayMonthYear(u.subscription?.until)}</span></div>
       <dl class="kv"><dt>Leagues</dt><dd>${u.leagues.map(l => leagueLink(l.slug, "seasons", esc(l.name))).join(", ") || "None yet"}</dd>
-        ${u.leagues.some(l => l.photosThisMonth) ? `<dt>Photos read</dt><dd>${u.leagues.filter(l => l.photosThisMonth).map(l => `${esc(l.name)}: ${l.photosThisMonth}`).join(", ")} this month</dd>` : ""}</dl>
+        ${u.leagues.some(l => l.photosThisMonth) ? `<dt>Photos read</dt><dd>${u.leagues.filter(l => l.photosThisMonth).map(l => `${esc(l.name)}: ${l.photosThisMonth}`).join(", ")} this month</dd>` : ""}
+        ${u.leagues.some(l => l.reportsThisMonth) ? `<dt>Reports written</dt><dd>${u.leagues.filter(l => l.reportsThisMonth).map(l => `${esc(l.name)}: ${l.reportsThisMonth}`).join(", ")} this month</dd>` : ""}</dl>
       ${u.isSuper ? "" : `<div class="sub-row">
         <div class="field"><label for="su-st-${esc(u.id)}">Status</label><select id="su-st-${esc(u.id)}"><option value="trial"${u.subscription?.status === "trial" ? " selected" : ""}>Trial</option><option value="paid"${u.subscription?.status === "paid" ? " selected" : ""}>Paid</option></select></div>
         <div class="field"><label for="su-until-${esc(u.id)}">Until</label><input type="date" id="su-until-${esc(u.id)}" value="${esc(u.subscription?.until || "")}"></div>
         <div class="actions"><button class="btn sm" data-act="su-save" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-year" data-id="${esc(u.id)}">Paid for a year</button><button class="btn danger sm" data-act="su-reset" data-id="${esc(u.id)}">Reset password</button></div>
       </div>
-      <div class="sub-row addon-row">
-        <div class="addon-head"><strong>Photo reading add-on</strong> <span class="chip ${photoActive(u) ? "ok" : ""}">${esc(photoNote(u))}</span></div>
-        <div class="field"><label for="su-ph-until-${esc(u.id)}">Until</label><input type="date" id="su-ph-until-${esc(u.id)}" value="${esc(u.photos?.until || "")}"></div>
-        <div class="field"><label for="su-ph-limit-${esc(u.id)}">Photos a month</label><input type="number" min="0" max="10000" step="1" id="su-ph-limit-${esc(u.id)}" value="${u.photos?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>
-        <div class="actions"><button class="btn sm" data-act="su-ph-save" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-ph-year" data-id="${esc(u.id)}">Add for a year</button>${u.photos ? `<button class="btn ghost sm" data-act="su-ph-remove" data-id="${esc(u.id)}">Remove</button>` : ""}</div>
-      </div>`}
+      ${Object.entries(ADDON_INFO).map(([k, a]) => this.addons?.[k]?.mode === "included" ? `<div class="sub-row addon-row"><div class="addon-head"><strong>${a.name}</strong> <span class="chip ok">Included in the subscription</span></div></div>` : `<div class="sub-row addon-row">
+        <div class="addon-head"><strong>${a.name} add-on</strong> <span class="chip ${addonActive(u, k) ? "ok" : ""}">${esc(addonNote(u, k))}</span></div>
+        <div class="field"><label for="su-${k}-until-${esc(u.id)}">Until</label><input type="date" id="su-${k}-until-${esc(u.id)}" value="${esc(u[k]?.until || "")}"></div>
+        <div class="field"><label for="su-${k}-limit-${esc(u.id)}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month</label><input type="number" min="0" max="10000" step="1" id="su-${k}-limit-${esc(u.id)}" value="${u[k]?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>
+        <div class="actions"><button class="btn sm" data-act="su-addon-save" data-kind="${k}" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-addon-year" data-kind="${k}" data-id="${esc(u.id)}">Add for a year</button>${u[k] ? `<button class="btn ghost sm" data-act="su-addon-remove" data-kind="${k}" data-id="${esc(u.id)}">Remove</button>` : ""}</div>
+      </div>`).join("")}`}
       <p class="temp-pass" id="su-temp-${esc(u.id)}" hidden></p>
     </article>`).join("")}</div>`;
     this.filter();
@@ -1049,8 +1140,13 @@ VIEWS.super = {
     const sync = () => { const l = leagues.find(x => x.id === $("#lgc-league").value); $("#lgc-season").innerHTML = l.seasons.map(s => `<option value="${esc(s.id)}"${s.id === l.currentSeasonId ? " selected" : ""}>${esc(s.name)}</option>`).join(""); };
     if (leagues.length) { $("#lgc-league").addEventListener("change", sync); sync(); }
   },
-  async savePhotos(id, photos) {
-    try { const r = await send(`/api/super/users/${id}`, "PATCH", { photos }); Object.assign(this.users.find(u => u.id === id), r.user); this.render(); toast(`Saved: ${photoNote(r.user)}`); }
+  async saveAddon(id, kind, value) {
+    try { const r = await send(`/api/super/users/${id}`, "PATCH", { [kind]: value }); Object.assign(this.users.find(u => u.id === id), r.user); this.render(); toast(`Saved: ${addonNote(r.user, kind)}`); }
+    catch (x) { saveError(x); }
+  },
+  async saveAddonModes() {
+    const addons = Object.fromEntries(Object.keys(ADDON_INFO).map(k => [k, { mode: $(`[name=am-${k}]:checked`).value, monthlyLimit: Math.max(0, num($(`#al-${k}`).value) || 0) }]));
+    try { const r = await send("/api/super/settings", "PATCH", { addons }); this.addons = r.addons; this.render(); toast("Add-on settings saved"); }
     catch (x) { saveError(x); }
   },
   async saveSub(id, sub) {
@@ -1158,6 +1254,351 @@ VIEWS.fixtures = {
     const rest = list.filter(f => !late.includes(f));
     body.innerHTML = (late.length ? `<details class="late"><summary>${plural(late.length, "earlier game")} still waiting for a result</summary>${groupByDate(late, false, true)}</details>` : "") +
       (rest.length ? groupByDate(rest, S.ui.fxShow === "results", true) : `<div class="empty"><strong>No more fixtures to come</strong>Every fixture date has passed.</div>`);
+  }
+};
+
+/* ---------- photos ---------- */
+// Photos are served by the API as images. The preview can't load images from its own API directly,
+// so there they're fetched and shown from memory.
+const photoSrc = (id, thumb) => `/api/public/${encodeURIComponent(S.league.slug)}/media/${id}${thumb ? "?size=thumb" : ""}`;
+const photoBlobs = new Map();
+function loadPhotos(root) {
+  for (const img of $$("img[data-photo]:not([src])", root)) {
+    const url = photoSrc(img.dataset.photo, img.dataset.thumb === "1");
+    if (!window.SKITTLERS_NAV) { img.src = url; continue; }
+    if (!photoBlobs.has(url)) photoBlobs.set(url, fetch(url).then(r => r.ok ? r.blob() : null).then(b => b && URL.createObjectURL(b)).catch(() => null));
+    photoBlobs.get(url).then(src => { if (src) img.src = src; });
+  }
+}
+const photoTile = (m, i, set) => `<button type="button" class="photo-tile" data-photo-open="${i}" data-photo-set="${esc(set)}" aria-label="Open photo${m.caption ? `: ${esc(m.caption)}` : ""}">
+  <img data-photo="${esc(m.id)}" data-thumb="1" alt="${esc(m.caption || "Photo")}" loading="lazy"${m.width && m.height ? ` width="${m.width}" height="${m.height}"` : ""}>
+  ${m.caption || m.cupName ? `<span class="photo-cap">${m.cupName ? `<span class="chip cup">${esc(m.cupName)}</span> ` : ""}${esc(m.caption || "")}</span>` : ""}</button>`;
+const PHOTO_SETS = {};
+function photoGrid(list, set) { PHOTO_SETS[set] = list; return `<div class="photo-grid">${list.map((m, i) => photoTile(m, i, set)).join("")}</div>`; }
+// A larger view of one photo, with previous and next.
+function openPhoto(set, i) {
+  const list = PHOTO_SETS[set] || []; if (!list[i]) return;
+  let dlg = $("#photo-dlg");
+  if (!dlg) {
+    dlg = document.createElement("dialog"); dlg.id = "photo-dlg"; dlg.className = "photo-dlg"; dlg.setAttribute("aria-label", "Photo"); document.body.append(dlg);
+    dlg.addEventListener("click", e => {
+      if (e.target === dlg) return dlg.close();
+      const b = e.target.closest("[data-pd]"); if (!b) return;
+      if (b.dataset.pd === "close") dlg.close(); else openPhoto(dlg.dataset.set, +dlg.dataset.i + +b.dataset.pd);
+    });
+    dlg.addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "ArrowLeft") openPhoto(dlg.dataset.set, +dlg.dataset.i + (e.key === "ArrowRight" ? 1 : -1)); });
+  }
+  const m = list[i]; dlg.dataset.set = set; dlg.dataset.i = i;
+  dlg.innerHTML = `<figure><img data-photo="${esc(m.id)}" alt="${esc(m.caption || "Photo")}"${m.width && m.height ? ` width="${m.width}" height="${m.height}"` : ""}>
+    <figcaption>${m.cupName ? `<span class="chip cup">${esc(m.cupName)}</span> ` : ""}${esc(m.caption || "")} <span class="muted">${esc(fmtDate(m.created.slice(0, 10)))}</span></figcaption></figure>
+    <div class="photo-nav"><button type="button" class="btn ghost sm" data-pd="-1"${i ? "" : " disabled"}>Previous</button><span class="muted">${i + 1} of ${list.length}</span>
+      <button type="button" class="btn ghost sm" data-pd="1"${i < list.length - 1 ? "" : " disabled"}>Next</button><button type="button" class="btn sm" data-pd="close">Close</button></div>`;
+  loadPhotos(dlg);
+  if (!dlg.open) dlg.showModal();
+}
+document.addEventListener("click", e => { const t = e.target.closest("[data-photo-open]"); if (t) openPhoto(t.dataset.photoSet, +t.dataset.photoOpen); });
+// News text: paragraphs from blank lines, line breaks kept, web addresses made into links.
+const newsBody = text => text.split(/\n\n+/).map(p => `<p>${esc(p).replace(/\n/g, "<br>").replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)]/g, u => `<a href="${u}" target="_blank" rel="noopener noreferrer">${u}</a>`)}</p>`).join("");
+const newsItem = (n, open) => `<article class="news-item${n.pinned ? " pinned" : ""}">
+  <div class="news-meta">${n.pinned ? `<span class="chip warn">Important</span> ` : ""}<time datetime="${esc(n.created)}">${esc(fmtDate(n.created.slice(0, 10), true))}</time></div>
+  <h3>${esc(n.title)}</h3>${open ? newsBody(n.body) + newsPhotos(n) : `<details><summary>Read more</summary>${newsBody(n.body)}${newsPhotos(n)}</details>`}</article>`;
+const newsPhotos = n => { const pics = (n.photos || []).map(id => S.media.find(m => m.id === id)).filter(Boolean); return pics.length ? `<div class="news-photos">${photoGrid(pics, "news-" + n.id)}</div>` : ""; };
+
+/* ---------- public: home ---------- */
+// The league's front page: every division's table side by side, the next match night, news and photos.
+VIEWS.home = {
+  mount(el) {
+    el.innerHTML = `<div id="home-pinned"></div>
+      <section class="home-sec"><div class="home-head"><h2>League tables</h2><div class="actions"><button type="button" class="btn ghost sm strip-btn" data-strip="-1" aria-label="Previous division">‹</button><button type="button" class="btn ghost sm strip-btn" data-strip="1" aria-label="Next division">›</button><a class="btn ghost sm" href="#tables">Full tables</a></div></div><div id="home-tables"></div></section>
+      <section class="home-sec"><div class="home-head"><h2 id="home-fx-title">Next match night</h2><a class="btn ghost sm" href="#fixtures">All fixtures</a></div><div id="home-fx"></div></section>
+      <section class="home-sec"><div class="home-head"><h2>News</h2></div><div id="home-news"></div></section>
+      <section class="home-sec"><div class="home-head"><h2>Photos</h2></div><div id="home-photos"></div></section>`;
+    el.addEventListener("click", e => {
+      const b = e.target.closest("[data-strip], [data-home-more]"); if (!b) return;
+      if (b.dataset.strip) { const strip = $(".div-strip", el), card = strip?.firstElementChild; strip?.scrollBy({ left: +b.dataset.strip * ((card?.offsetWidth || 300) + 16), behavior: "smooth" }); }
+      if (b.dataset.homeMore) { S.ui["homeAll" + b.dataset.homeMore] = true; this.refresh(); }
+    });
+  },
+  refresh() {
+    const pinned = S.news.filter(n => n.pinned), rest = S.news.filter(n => !n.pinned);
+    $("#home-pinned").innerHTML = pinned.length ? `<div class="home-pinned">${pinned.map(n => newsItem(n, true)).join("")}</div>` : "";
+    // Tables: one card per division, scrolling sideways.
+    const tables = $("#home-tables"), st = statusBlock();
+    const groups = st ? [] : standings().filter(g => !g.loose);
+    $$("[data-strip]").forEach(b => b.hidden = groups.length < 2);
+    if (st) tables.innerHTML = st;
+    else tables.innerHTML = !groups.length ? `<div class="empty"><strong>No tables yet</strong>They appear once teams are in divisions.</div>`
+      : `<div class="div-strip" tabindex="0" aria-label="Division tables, scroll sideways for more">${groups.map(g => `<div class="div-card">
+        <h3>${esc(g.division?.name || "League table")} <span class="chip">${esc(GAMES[gameOf(g.division)])}</span></h3>
+        <table class="league mini"><thead><tr><th class="pos">#</th><th class="team">Team</th><th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th><th class="pts"><abbr title="Points">Pts</abbr></th></tr></thead>
+        <tbody>${g.rows.map((r, i) => `<tr><td class="pos">${i + 1}</td><td class="team"><span class="tn">${esc(r.t.name)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td class="pts">${r.pts}</td></tr>`).join("")}</tbody></table></div>`).join("")}</div>`;
+    // The next night with games still to play (league and cup), or the latest results once the season's done.
+    const fx = $("#home-fx");
+    if (st) fx.innerHTML = "";
+    else {
+      const all = Object.values(S.fixtures).filter(f => f.date);
+      const next = all.filter(f => !played(f) && f.date >= today()).map(f => f.date).sort()[0];
+      const last = all.filter(played).map(f => f.date).sort().at(-1);
+      const night = next || last, list = night ? all.filter(f => f.date === night).sort(fxSort) : [];
+      $("#home-fx-title").textContent = next ? "Next match night" : last ? "Latest results" : "Fixtures";
+      fx.innerHTML = list.length ? `<h3 class="home-date">${esc(fmtDate(night, true))}</h3>${groupByDivisionHtml(list)}`
+        : `<div class="empty"><strong>No fixtures yet</strong>The fixture list appears here once it's published.</div>`;
+    }
+    // News: the latest few, with the rest a click away.
+    const shown = S.ui.homeAllNews ? rest : rest.slice(0, 3);
+    $("#home-news").innerHTML = rest.length ? `<div class="news-list">${shown.map((n, i) => newsItem(n, i === 0)).join("")}</div>${rest.length > shown.length ? `<button type="button" class="btn ghost sm" data-home-more="News">Show all news (${rest.length})</button>` : ""}`
+      : `<p class="muted">${pinned.length ? "No other news just now." : "No news yet."}</p>`;
+    const photos = S.ui.homeAllPhotos ? S.media : S.media.slice(0, 12);
+    $("#home-photos").innerHTML = S.media.length ? photoGrid(photos, "home") + (S.media.length > photos.length ? `<button type="button" class="btn ghost sm" data-home-more="Photos">Show all photos (${S.media.length})</button>` : "")
+      : `<p class="muted">No photos yet.</p>`;
+    loadPhotos($("#home-photos")); loadPhotos($("#home-news")); loadPhotos($("#home-pinned"));
+    $$("#home-news details").forEach(d => d.addEventListener("toggle", () => loadPhotos(d), { once: true }));
+  }
+};
+// Fixtures split by division (from the home team), with cup games after.
+function groupByDivisionHtml(list) {
+  const divs = sortedDivisions(), divOf = f => f.comp === "league" && S.divisions[S.teams[f.home]?.division] ? S.teams[f.home].division : "";
+  const groups = [...divs.map(d => [d.name, list.filter(f => divOf(f) === d.id)]), [divs.length ? "Cup and other games" : "Games", list.filter(f => !divOf(f))]].filter(([, x]) => x.length);
+  if (groups.length === 1) return `<div class="fx-list">${groups[0][1].map(f => fxCard(f, true)).join("")}</div>`;
+  return groups.map(([name, x]) => `<div class="div-group"><h4>${esc(name)}</h4><div class="fx-list">${x.map(f => fxCard(f, true)).join("")}</div></div>`).join("");
+}
+
+/* ---------- match night reports ---------- */
+// A night is complete when every fixture and cup match dated that night has a result.
+function nightGames(date) {
+  const fx = Object.values(S.fixtures).filter(f => f.date === date);
+  const cupMatches = [];
+  for (const cup of Object.values(S.cups)) if (cup.structure === "full") for (const r of cupBracket(cup).rounds)
+    for (const m of r.matches) if (m.date === date && !m.bye && !m.empty && m.a && m.b) cupMatches.push({ cup, round: r.name, m });
+  return { fx, cupMatches, complete: fx.length + cupMatches.length > 0 && fx.every(played) && cupMatches.every(x => x.m.aPins != null) };
+}
+const completeNights = () => [...new Set([...Object.values(S.fixtures).map(f => f.date).filter(Boolean)])].filter(d => d <= today() && nightGames(d).complete).sort().reverse();
+// Everything worth writing about one night, worked out here from the results, so the report only uses real figures.
+function nightFacts(date) {
+  const c = cfg(), { fx, cupMatches } = nightGames(date), season = currentSeason();
+  const posMap = groups => { const m = {}; for (const g of groups) g.rows.forEach((r, i) => m[r.t.id] = { pos: i + 1, pts: r.pts, P: r.P, div: g.division?.name || null }); return m; };
+  const beforeG = standings(f => f.date < date), afterG = standings(f => f.date <= date), pb = posMap(beforeG), pa = posMap(afterG);
+  const results = fx.filter(played).sort(fxSort).map(f => {
+    const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away), hw = f.homePins > f.awayPins, aw = f.awayPins > f.homePins;
+    const r = { competition: f.comp === "league" ? "League" : `${f.round || "Cup"}`, division: f.comp === "league" ? pa[f.home]?.div : null,
+      home: teamName(f.home), away: teamName(f.away), homePins: f.homePins, awayPins: f.awayPins, winner: hw ? teamName(f.home) : aw ? teamName(f.away) : "Draw", margin: Math.abs(f.homePins - f.awayPins), venue: fxVenue(f).v?.name || null };
+    if (H && A) r.handsWon = { [teamName(f.home)]: H.filter((x, i) => x > A[i]).length, [teamName(f.away)]: A.filter((x, i) => x > H[i]).length };
+    if (f.comp === "league" && pb[f.home]?.P && pb[f.away]?.P) {
+      r.tablePlacesBefore = { [teamName(f.home)]: pb[f.home].pos, [teamName(f.away)]: pb[f.away].pos };
+      const [wi, li] = hw ? [f.home, f.away] : aw ? [f.away, f.home] : [];
+      if (wi && pb[wi].pos >= pb[li].pos + 3) r.upset = `${teamName(wi)} were ${ordinal(pb[wi].pos)} and beat ${ordinal(pb[li].pos)}-placed ${teamName(li)}`;
+    }
+    return r;
+  });
+  for (const { cup, round, m } of cupMatches) results.push({ competition: `${cup.name}, ${round}`, home: entrantLabel(cup, m.a), away: entrantLabel(cup, m.b), homePins: m.aPins, awayPins: m.bPins,
+    winner: m.winner ? entrantLabel(cup, m.winner) : "Draw", margin: Math.abs(m.aPins - m.bPins) });
+  // Players: top scores, best hands, spares, personal bests and season records.
+  const games = statGames(), tonight = games.players.filter(g => g.date === date), earlier = games.players.filter(g => g.date && g.date < date);
+  const who = g => ({ name: g.name, ...(g.nick ? { nickname: g.nick } : {}), team: teamName(g.teamId) });
+  const topScores = [...tonight].sort((a, b) => b.total - a.total).slice(0, 6).map(g => ({ ...who(g), score: g.total, against: g.opp, competition: g.comp === "league" ? "League" : "Cup" }));
+  const hands = tonight.flatMap(g => (g.hands || []).map((v, i) => ({ g, v, n: i + 1, spare: !!g.spares?.[i] })));
+  const bestHand = hands.reduce((b, h) => !b || h.v > b.v ? h : b, null);
+  const spares = hands.filter(h => h.spare).sort((a, b) => b.v - a.v);
+  const personalBests = tonight.filter(g => { const prev = earlier.filter(e => e.key === g.key); return prev.length >= 2 && g.total > Math.max(...prev.map(e => e.total)); })
+    .map(g => ({ ...who(g), score: g.total, previousBest: Math.max(...earlier.filter(e => e.key === g.key).map(e => e.total)) }));
+  const records = [];
+  const bestEarlier = Math.max(0, ...earlier.map(g => g.total));
+  if (topScores[0] && earlier.length && topScores[0].score > bestEarlier) records.push(`${topScores[0].name}'s ${topScores[0].score} is the highest individual score of the season so far (the previous best was ${bestEarlier}).`);
+  const teamTonight = games.teams.filter(g => g.date === date), teamEarlier = games.teams.filter(g => g.date && g.date < date && g.total != null);
+  const topTeam = teamTonight.reduce((b, g) => !b || g.total > b.total ? g : b, null), teamBest = Math.max(0, ...teamEarlier.map(g => g.total));
+  if (topTeam && teamEarlier.length && topTeam.total > teamBest) records.push(`${teamName(topTeam.teamId)}'s ${topTeam.total} is the highest team score of the season so far (the previous best was ${teamBest}).`);
+  // Tables: who's top, who moved, and form.
+  const tables = afterG.filter(g => !g.loose).map(g => {
+    const name = g.division?.name || "League", ids = g.rows.map(r => r.t.id);
+    const leaderBefore = beforeG.find(x => (x.division?.name || "League") === name)?.rows.find(r => r.P)?.t;
+    const moves = ids.map(id => ({ team: teamName(id), from: pb[id]?.P ? pb[id].pos : null, to: pa[id].pos })).filter(x => x.from && x.from !== x.to);
+    return { division: name, game: GAMES[gameOf(g.division)], top: g.rows.slice(0, 3).map((r, i) => ({ position: i + 1, team: r.t.name, played: r.P, points: r.pts })),
+      bottom: g.rows.length > 3 ? { team: g.rows.at(-1).t.name, played: g.rows.at(-1).P, points: g.rows.at(-1).pts } : null,
+      newLeader: leaderBefore && leaderBefore.id !== g.rows[0].t.id ? `${g.rows[0].t.name} went top, above ${leaderBefore.name}` : null, movements: moves };
+  });
+  const form = [];
+  for (const id of new Set(fx.filter(f => f.comp === "league" && played(f)).flatMap(f => [f.home, f.away]))) {
+    const res = Object.values(S.fixtures).filter(f => f.comp === "league" && played(f) && f.date <= date && (f.home === id || f.away === id)).sort(fxSort)
+      .map(f => { const mine = f.home === id ? f.homePins : f.awayPins, theirs = f.home === id ? f.awayPins : f.homePins; return mine > theirs ? "W" : mine < theirs ? "L" : "D"; });
+    let run = 0; while (run < res.length && res[res.length - 1 - run] === res.at(-1)) run++;
+    if (run >= 3) form.push(`${teamName(id)}: ${run} ${res.at(-1) === "W" ? "wins" : res.at(-1) === "L" ? "defeats" : "draws"} in a row`);
+  }
+  // The next match night, with games between teams near the top of the same division picked out.
+  const nextDate = Object.values(S.fixtures).map(f => f.date).filter(d => d && d > date).sort()[0];
+  const nextNight = nextDate ? { date: fmtDate(nextDate, true), games: Object.values(S.fixtures).filter(f => f.date === nextDate).sort(fxSort).map(f => {
+    const g = { competition: f.comp === "league" ? pa[f.home]?.div || "League" : f.round || "Cup", home: teamName(f.home), away: teamName(f.away) };
+    if (f.comp === "league" && pa[f.home] && pa[f.away] && pa[f.home].div === pa[f.away].div && pa[f.home].pos <= 3 && pa[f.away].pos <= 3) g.bigGame = `${ordinal(pa[f.home].pos)} v ${ordinal(pa[f.away].pos)}`;
+    return g;
+  }).slice(0, 40) } : null;
+  return {
+    league: c.name, season: season?.name || "", matchNight: fmtDate(date, true),
+    howTheGameIsPlayed: `${c.players} a side, ${c.hands} hands of ${c.balls} balls each`, points: `${c.win} for a win, ${c.draw} for a draw`,
+    results, topScores, bestHand: bestHand ? { ...who(bestHand.g), score: bestHand.v, hand: bestHand.n, spare: bestHand.spare } : null,
+    spares: { total: spares.length, best: spares.slice(0, 5).map(h => ({ ...who(h.g), score: h.v, hand: h.n })) },
+    personalBests: personalBests.slice(0, 6), seasonRecords: records, tables, form, nextNight,
+  };
+}
+// After a result is saved, if it was the last one of a recent match night, ask for a report to be drafted.
+async function reportCheck(dates) {
+  if (!S.admin || !S.addons?.reports?.available || !dates.length) return;
+  for (const d of new Set(dates)) if (d <= today() && d >= addDays(today(), -21) && nightGames(d).complete && !S.adminNews.some(n => n.report?.date === d && n.report?.season === S.seasonId)) {
+    try {
+      const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/report`, "POST", { date: d, facts: nightFacts(d), auto: true });
+      setNews(r.items); refresh();
+      if (!r.skipped) toast(`All results are in for ${fmtDate(d)}. A match report is being written. Check it on the News & photos page.`);
+    } catch (e) { if (e.status !== 403) console.warn(e); }
+  }
+}
+async function writeReport(date) {
+  try { const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/report`, "POST", { date, facts: nightFacts(date) }); setNews(r.items); refresh(); toast("Writing the report. It'll appear here as a draft in a minute."); }
+  catch (e) { saveError(e); }
+}
+
+/* ---------- admin: news and photos ---------- */
+VIEWS["manage-news"] = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>News &amp; photos</h2>
+      <p>Published posts and photos show on the league's Home page for everyone to see. Drafts, including match night reports, stay here until you publish them. Photos linked to a cup also show on that cup's page.</p></div></div>
+      <div class="split">
+        <div>
+          <section class="mn-sec" id="mn-drafts-sec"><h3>Drafts to check</h3><div id="mn-drafts"></div></section>
+          <section class="mn-sec"><h3>Published posts</h3><div id="mn-news"></div></section>
+          <section class="mn-sec"><h3>Photos</h3><div id="mn-photos"></div></section>
+        </div>
+        <div class="form-col">
+          <div class="panel form" id="report-panel">
+            <h3>Match night reports</h3>
+            <p class="muted" style="margin:0" id="rp-note"></p>
+            <div class="field" id="rp-pick-wrap"><label for="rp-date">Match night</label><select id="rp-date"></select></div>
+            <div class="actions"><button class="btn ghost" type="button" data-mn="report" id="rp-go">Write a report</button></div>
+          </div>
+          <form class="panel form" id="news-form" autocomplete="off">
+            <h3 id="nf-title">Write a post</h3>
+            <div class="field"><label for="nf-head">Title</label><input type="text" id="nf-head" maxlength="120" required></div>
+            <div class="field"><label for="nf-body">Post</label><textarea id="nf-body" rows="10" maxlength="5000" required></textarea>
+              <span class="hint">Leave a blank line between paragraphs. Web addresses become links.</span></div>
+            <div class="field"><span class="lbl">Photos with this post</span><div class="nf-photos" id="nf-photos"></div>
+              <span class="hint">Tick up to 6 from your photos. Add new ones with the form below first.</span></div>
+            <label class="check"><input type="checkbox" id="nf-pin"> Important: keep it at the top of the Home page</label>
+            <div class="actions" id="nf-actions"></div>
+          </form>
+          <form class="panel form" id="photo-form" autocomplete="off">
+            <h3>Add photos</h3>
+            <div class="field"><label for="pf-file">Photos</label><input type="file" id="pf-file" accept="image/jpeg,image/png,image/webp" multiple required>
+              <span class="hint">Choose one or more. They're resized for the web before they're sent.</span></div>
+            <div class="field"><label for="pf-cap">Caption</label><input type="text" id="pf-cap" maxlength="200" placeholder="e.g. Crown Jewels, Knockout Cup winners"></div>
+            <div class="field"><label for="pf-cup">Cup (optional)</label><select id="pf-cup"></select></div>
+            <p class="lookup-note" id="pf-status" aria-live="polite"></p>
+            <div class="actions"><button class="btn" type="submit" id="pf-go">Add photos</button></div>
+          </form>
+        </div>
+      </div>`;
+    $("#news-form").addEventListener("submit", e => { e.preventDefault(); this.savePost(e.submitter?.dataset.how || "save"); });
+    $("#photo-form").addEventListener("submit", e => { e.preventDefault(); this.upload(); });
+    $("#nf-photos").addEventListener("change", e => {
+      if (e.target.checked && $$("#nf-photos input:checked").length > 6) { e.target.checked = false; toast("Up to 6 photos can go with a post."); }
+    });
+    el.addEventListener("click", e => {
+      const b = e.target.closest("[data-mn]"); if (!b) return;
+      const id = b.dataset.id, act = b.dataset.mn;
+      if (act === "clear") this.clearPost();
+      if (act === "edit") this.editPost(id);
+      if (act === "publish") this.post(`/news/${id}`, "PATCH", { publish: true }, "Published on the Home page").then(ok => ok && $("#news-form").dataset.id === id && this.clearPost());
+      if (act === "pin") this.post(`/news/${id}`, "PATCH", { pinned: !S.adminNews.find(n => n.id === id)?.pinned }, "Saved");
+      if (act === "del") { if (!arm(b, "Confirm delete")) return; this.post(`/news/${id}`, "DELETE", null, "Post deleted"); if ($("#news-form").dataset.id === id) this.clearPost(); }
+      if (act === "report") { const d = $("#rp-date").value; if (d) writeReport(d); }
+      if (act === "retry") { const n = S.adminNews.find(x => x.id === id); if (n?.report) writeReport(n.report.date); }
+      if (act === "photo-save") { const card = b.closest("[data-photo-id]"), cup = $("select", card).value; this.media(`/media/${id}`, "PATCH", { caption: $("input", card).value, cupId: cup, cupName: cup ? S.cups[cup]?.name || "" : "" }, "Photo saved"); }
+      if (act === "photo-del") { if (!arm(b, "Confirm delete")) return; this.media(`/media/${id}`, "DELETE", null, "Photo deleted"); }
+    });
+  },
+  cupOptions(sel) { return `<option value="">No cup</option>` + sortedCups().map(c => `<option value="${esc(c.id)}"${c.id === sel ? " selected" : ""}>${esc(c.name)}</option>`).join(""); },
+  postCard(n) {
+    const st = n.status, pics = (n.photos || []).filter(id => S.media.some(m => m.id === id)).length;
+    const chip = st === "drafting" ? `<span class="chip"><span class="spin" aria-hidden="true"></span> Writing…</span>` : st === "failed" ? `<span class="chip warn">Couldn't be written</span>` : st === "draft" ? `<span class="chip warn">Draft</span>` : n.pinned ? `<span class="chip warn">Important</span>` : "";
+    const btns = st === "drafting" ? "" : st === "failed"
+      ? `${n.report ? `<button class="btn ghost sm" data-mn="retry" data-id="${esc(n.id)}">Try again</button>` : ""}<button class="btn danger sm" data-mn="del" data-id="${esc(n.id)}">Delete</button>`
+      : `${st === "draft" ? `<button class="btn sm" data-mn="publish" data-id="${esc(n.id)}">Publish</button>` : ""}<button class="btn ghost sm" data-mn="edit" data-id="${esc(n.id)}">${st === "draft" ? "Check and edit" : "Edit"}</button>${st ? "" : `<button class="btn ghost sm" data-mn="pin" data-id="${esc(n.id)}">${n.pinned ? "Unpin" : "Pin to top"}</button>`}<button class="btn danger sm" data-mn="del" data-id="${esc(n.id)}">Delete</button>`;
+    const text = st === "drafting" ? "Claude is writing the report from this match night's results. It takes about a minute." : st === "failed" ? n.error || "" : n.body;
+    return `<article class="card mn-post${st ? " draft" : ""}">
+      <div class="card-head"><div><h3>${esc(n.title)}</h3><div class="sub">${chip} ${n.report ? `Match night ${esc(fmtDate(n.report.date))} · ` : ""}${esc(fmtDate(n.created.slice(0, 10), true))}${n.by ? ` · ${esc(n.by)}` : ""}${pics ? ` · ${plural(pics, "photo")}` : ""}</div></div>
+        <div class="actions">${btns}</div></div>
+      <p class="muted mn-excerpt">${esc(text.length > 260 ? text.slice(0, 260) + "…" : text)}</p></article>`;
+  },
+  refresh() {
+    const keep = $("#pf-cup").value; $("#pf-cup").innerHTML = this.cupOptions(keep);
+    const drafts = S.adminNews.filter(n => n.status), live = S.adminNews.filter(n => !n.status);
+    $("#mn-drafts-sec").hidden = !drafts.length;
+    $("#mn-drafts").innerHTML = `<div class="mn-list">${drafts.map(n => this.postCard(n)).join("")}</div>`;
+    $("#mn-news").innerHTML = live.length ? `<div class="mn-list">${live.map(n => this.postCard(n)).join("")}</div>`
+      : `<div class="empty"><strong>No posts yet</strong>Use the form to write the first one.</div>`;
+    // While a report is being written, check back every few seconds.
+    clearTimeout(this.poll);
+    if (drafts.some(n => n.status === "drafting")) this.poll = setTimeout(async () => { if (current === this) { await loadAdminNews(); refresh(); } }, 4000);
+    // Reports panel.
+    const rs = S.addons?.reports, nights = S.seasonId ? completeNights() : [];
+    $("#rp-note").textContent = !rs ? "Checking…" : !rs.available ? rs.reason
+      : `When the last result of a match night is saved, a report is written automatically and waits here as a draft for you to check and publish. You can also ask for one for any night that's complete.${rs.limit ? ` ${rs.used} of ${rs.limit} used this month.` : ""}`;
+    const keepD = $("#rp-date").value;
+    $("#rp-date").innerHTML = nights.length ? nights.map(d => `<option value="${d}">${esc(fmtDate(d, true))}</option>`).join("") : `<option value="">No complete match nights yet</option>`;
+    if (nights.includes(keepD)) $("#rp-date").value = keepD;
+    $("#rp-pick-wrap").hidden = $("#rp-go").hidden = !rs?.available;
+    $("#rp-go").disabled = !nights.length;
+    // Post form: photo picker and the right buttons for a new post, a draft or a published post.
+    const f = $("#news-form"), editing = S.adminNews.find(n => n.id === f.dataset.id);
+    const ticked = new Set(f.dataset.photos ? f.dataset.photos.split(",") : $$("#nf-photos input:checked").map(x => x.value)); delete f.dataset.photos;
+    $("#nf-photos").innerHTML = S.media.length ? S.media.map(m => `<label class="nf-photo"><input type="checkbox" value="${esc(m.id)}"${ticked.has(m.id) ? " checked" : ""}><img data-photo="${esc(m.id)}" data-thumb="1" alt="${esc(m.caption || "Photo")}" loading="lazy"><span>${esc(m.caption || "No caption")}</span></label>`).join("")
+      : `<p class="muted" style="margin:0">No photos yet.</p>`;
+    $("#nf-actions").innerHTML = editing && !editing.status
+      ? `<button class="btn" type="submit" data-how="save">Save post</button><button class="btn ghost" type="button" data-mn="clear">Clear</button>`
+      : `<button class="btn" type="submit" data-how="publish">Publish</button><button class="btn ghost" type="submit" data-how="draft">Save as draft</button><button class="btn ghost" type="button" data-mn="clear">Clear</button>`;
+    $("#mn-photos").innerHTML = S.media.length ? `<div class="mn-photos">${S.media.map(m => `<div class="card mn-photo" data-photo-id="${esc(m.id)}">
+        <img data-photo="${esc(m.id)}" data-thumb="1" alt="${esc(m.caption || "Photo")}" loading="lazy">
+        <label class="visually-hidden" for="mc-${esc(m.id)}">Caption</label><input type="text" id="mc-${esc(m.id)}" value="${esc(m.caption || "")}" maxlength="200" placeholder="Caption">
+        <label class="visually-hidden" for="mk-${esc(m.id)}">Cup</label><select id="mk-${esc(m.id)}">${this.cupOptions(m.cupId)}${m.cupId && !S.cups[m.cupId] ? `<option value="${esc(m.cupId)}" selected>${esc(m.cupName || "Earlier cup")}</option>` : ""}</select>
+        <div class="actions"><button class="btn ghost sm" data-mn="photo-save" data-id="${esc(m.id)}">Save</button><button class="btn danger sm" data-mn="photo-del" data-id="${esc(m.id)}">Delete</button></div></div>`).join("")}</div>`
+      : `<div class="empty"><strong>No photos yet</strong>Add some with the form, such as the cup winners.</div>`;
+    loadPhotos($("#mn-photos")); loadPhotos($("#nf-photos"));
+  },
+  clearPost() { const f = $("#news-form"); f.reset(); delete f.dataset.id; $("#nf-title").textContent = "Write a post"; refresh(); },
+  editPost(id) {
+    const n = S.adminNews.find(x => x.id === id); if (!n) return;
+    const f = $("#news-form"); f.dataset.id = id; f.dataset.photos = (n.photos || []).join(",");
+    $("#nf-title").textContent = n.status ? "Check the draft" : "Edit post";
+    $("#nf-head").value = n.title; $("#nf-body").value = n.body; $("#nf-pin").checked = !!n.pinned;
+    refresh(); f.scrollIntoView({ behavior: "smooth", block: "start" }); $("#nf-head").focus({ preventScroll: true });
+  },
+  async post(path, method, body, msg) {
+    try { const r = await send(`/api/leagues/${S.league.id}${path}`, method, body); setNews(r.items); refresh(); toast(msg); return true; }
+    catch (e) { saveError(e); return false; }
+  },
+  async savePost(how) {
+    const f = $("#news-form"), id = f.dataset.id;
+    const body = { title: $("#nf-head").value, body: $("#nf-body").value, pinned: $("#nf-pin").checked, photos: $$("#nf-photos input:checked").map(x => x.value) };
+    if (how === "publish") body.publish = true;
+    if (!id && how === "draft") body.draft = true;
+    const msg = how === "publish" ? "Published on the Home page" : how === "draft" ? "Draft saved" : "Post saved";
+    if (await this.post(id ? `/news/${id}` : "/news", id ? "PATCH" : "POST", body, msg)) this.clearPost();
+  },
+  async media(path, method, body, msg) {
+    try { const r = await send(`/api/leagues/${S.league.id}${path}`, method, body); S.media = r.items; if (method === "DELETE") await loadAdminNews(); refresh(); toast(msg); }
+    catch (e) { saveError(e); }
+  },
+  async upload() {
+    const files = [...$("#pf-file").files], status = $("#pf-status"), go = $("#pf-go");
+    if (!files.length) return toast("Choose a photo first.");
+    const cup = $("#pf-cup").value, base = { caption: $("#pf-cap").value, cupId: cup, cupName: cup ? S.cups[cup]?.name || "" : "", seasonId: S.seasonId };
+    go.disabled = true; let added = 0;
+    try {
+      for (const [n, file] of files.entries()) {
+        status.textContent = `Adding photo ${n + 1} of ${files.length}…`;
+        const image = await shrinkImage(file, 1600, 0.85, 850_000), thumb = await shrinkImage(file, 480, 0.8, 180_000);
+        const r = await send(`/api/leagues/${S.league.id}/media`, "POST", { image: { mediaType: image.mediaType, data: image.data }, thumb: { mediaType: thumb.mediaType, data: thumb.data }, width: image.width, height: image.height, ...base });
+        S.media = r.items; added++;
+      }
+      $("#photo-form").reset(); status.textContent = ""; toast(`${plural(added, "photo")} added`);
+    } catch (e) { status.textContent = added ? `${plural(added, "photo")} added before a problem.` : ""; e.status ? saveError(e) : toast(e.message || "That photo couldn't be added."); }
+    finally { go.disabled = false; refresh(); }
   }
 };
 
@@ -1576,10 +2017,13 @@ VIEWS.cup = {
       const inner = c.structure === "final"
         ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
         : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
+      const pics = S.media.filter(m => m.cupId === c.id);
       shown = `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
-        <p class="lookup-note">${esc(GAMES[gameOf(c)])} · ${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}</section>`;
+        <p class="lookup-note">${esc(GAMES[gameOf(c)])} · ${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}
+        ${pics.length ? `<h4 class="cup-pics">Photos</h4>${photoGrid(pics, "cup-" + c.id)}` : ""}</section>`;
     }
     body.innerHTML = `<nav class="cup-jump" aria-label="Cups">${items.map(([id, name]) => `<button type="button" data-cup-jump="${esc(id)}" aria-pressed="${id === pick}">${esc(name)}</button>`).join("")}</nav>${shown}`;
+    loadPhotos(body);
   }
 };
 
@@ -2155,7 +2599,8 @@ function scRowHtml(s, r) {
 const PHOTO = { job: null, timer: null, status: null, statusFor: null };
 async function photoStatus() {
   if (PHOTO.statusFor === S.league.id && PHOTO.status) return PHOTO.status;
-  PHOTO.status = await api(`/api/leagues/${S.league.id}/photo-reading`); PHOTO.statusFor = S.league.id;
+  S.addons = await api(`/api/leagues/${S.league.id}/addons`);
+  PHOTO.status = S.addons.photos; PHOTO.statusFor = S.league.id;
   return PHOTO.status;
 }
 const photoUse = st => st.limit ? `${st.used} of ${st.limit} photo readings used this month` : st.used ? `${plural(st.used, "photo reading")} this month` : "";
@@ -2169,16 +2614,23 @@ async function scPhotoOffer() {
   $("[data-sc=photo]", box).disabled = !st.available;
   $("#sc-photo-use").textContent = st.available ? photoUse(st) : st.reason;
 }
-// Shrinks a photo to a size Claude reads well (about 1,600 pixels on the long side) and returns it as base64 JPEG.
-async function photoData(file) {
+// Shrinks a photo to fit within max pixels on its long side and returns it as base64 JPEG, with its size.
+// A photo still too big to send is made smaller again.
+async function shrinkImage(file, max = 1600, quality = 0.85, limit = 850_000) {
   if (!/^image\//.test(file.type)) throw new Error(`${file.name} isn't a photo.`);
   const img = await createImageBitmap(file, { imageOrientation: "from-image" }).catch(() => { throw new Error(`${file.name} couldn't be opened. Try a JPEG or PNG photo.`); });
-  const scale = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement("canvas");
-  c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
-  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); img.close?.();
-  const url = c.toDataURL("image/jpeg", 0.85);
-  return { mediaType: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
+  try {
+    for (let size = max, q = quality; ; size = Math.round(size * 0.8), q = Math.max(0.6, q - 0.1)) {
+      const scale = Math.min(1, size / Math.max(img.width, img.height)), c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      const url = c.toDataURL("image/jpeg", q), data = url.slice(url.indexOf(",") + 1);
+      if (data.length <= limit || size < 400) return { mediaType: "image/jpeg", data, width: c.width, height: c.height };
+    }
+  } finally { img.close?.(); }
 }
+// The photo of the board, sized for Claude to read.
+const photoData = async file => { const { mediaType, data } = await shrinkImage(file, 1600, 0.85, 3_000_000); return { mediaType, data }; };
 // What Claude is told about the match: each side's name, its players, and how the game is played.
 function scMatch() {
   const s0 = SC.sides[0];
@@ -4080,12 +4532,13 @@ document.addEventListener("click", async e => {
     if (!until) return toast("Choose the date the subscription runs until.");
     VIEWS.super.saveSub(id, { status: act === "su-year" ? "paid" : $(`#su-st-${CSS.escape(id)}`).value, until });
   }
-  if (act === "su-ph-save" || act === "su-ph-year") {
-    const until = act === "su-ph-year" ? addDays(today(), 365) : $(`#su-ph-until-${CSS.escape(id)}`).value;
-    if (!until) return toast("Choose the date the photo reading add-on runs until.");
-    VIEWS.super.savePhotos(id, { until, monthlyLimit: Math.max(0, Math.round(num($(`#su-ph-limit-${CSS.escape(id)}`).value) || 0)) });
+  if (act === "su-addon-save" || act === "su-addon-year") {
+    const k = b.dataset.kind, until = act === "su-addon-year" ? addDays(today(), 365) : $(`#su-${k}-until-${CSS.escape(id)}`).value;
+    if (!until) return toast(`Choose the date the ${ADDON_INFO[k].name.toLowerCase()} add-on runs until.`);
+    VIEWS.super.saveAddon(id, k, { until, monthlyLimit: Math.max(0, Math.round(num($(`#su-${k}-limit-${CSS.escape(id)}`).value) || 0)) });
   }
-  if (act === "su-ph-remove") { if (!arm(b, "Click again to remove")) return; VIEWS.super.savePhotos(id, null); }
+  if (act === "su-addon-remove") { if (!arm(b, "Click again to remove")) return; VIEWS.super.saveAddon(id, b.dataset.kind, null); }
+  if (act === "su-addons-save") VIEWS.super.saveAddonModes();
   if (act === "su-reset") {
     if (!arm(b, "Click again to reset")) return;
     try {
@@ -4156,7 +4609,7 @@ document.addEventListener("visibilitychange", () => {
 /* ---------- boot ---------- */
 async function boot() {
   Object.assign(S, { user: null, myLeagues: [], league: null, seasonId: null, admin: false, status: "connecting", version: 0,
-    teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {}, loaded: { teams: false, venues: false, fixtures: false } });
+    teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, contacts: {}, news: [], adminNews: [], media: [], addons: null, loaded: { teams: false, venues: false, fixtures: false } });
   S.token = store.get(TOKEN_KEY);
   S.slug = slugFromLocation();
   S.mode = S.slug ? "league" : "account";

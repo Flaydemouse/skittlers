@@ -25,7 +25,7 @@ http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);
     const r = new Request("http://localhost:8899" + req.url, { method: req.method, headers: req.headers, body: ["GET", "HEAD"].includes(req.method) ? undefined : Buffer.concat(chunks) });
     const out = await fn.default(r);
-    res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(await out.text()); return;
+    res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(Buffer.from(await out.arrayBuffer())); return;
   }
   const file = normalize(pub + (path === "/" ? "/index.html" : path));
   if (!file.startsWith(pub)) { res.writeHead(403); res.end(); return; }

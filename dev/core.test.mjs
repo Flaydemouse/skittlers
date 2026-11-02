@@ -124,7 +124,7 @@ r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2026-1
 r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.match(r.body.reason, /ended on 30 November 2026/);
 r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2027-12-01", monthlyLimit: "lots" } }, boss); assert.equal(r.status, 400);
 r = await call2("PATCH", `super/users/${secUser.id}`, { photos: { until: "2027-12-01", monthlyLimit: 2 } }, boss);
-r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.deepEqual(r.body, { available: true, reason: null, used: 0, limit: 2, until: "2027-12-01" });
+r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.deepEqual(r.body, { available: true, reason: null, used: 0, limit: 2, until: "2027-12-01", mode: "extra" });
 for (const bad of [{ images: [], match }, { images: [{ ...photo, mediaType: "image/gif" }], match }, { images: [{ ...photo, data: "not base64!" + "A".repeat(200) }], match }, { images: [photo, photo, photo], match }, { images: [photo], match: { ...match, hands: 0 } }, { images: [photo], match: { ...match, teams: [] } }]) {
   r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/read-board`, bad, sec3); assert.equal(r.status, 400);
 }
@@ -153,9 +153,66 @@ clock += 6 * 60e3; r = await call2("GET", `leagues/${L.id}/seasons/${S1.id}/read
 r = await call2("GET", "super/users", null, boss); assert.equal(r.body.users.find(u => u.email === "sec@x.com").leagues[0].photosThisMonth, 3); assert.equal(r.body.photoReading, true);
 day = "2027-01-02"; r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.used, 0, "a new month starts again"); day = "2026-12-01";
 r = await call2("PATCH", `super/users/${secUser.id}`, { photos: null }, boss); assert.equal(r.body.user.photos, null);
+// add-ons can be included in the basic subscription instead, with a site-wide monthly limit
+r = await call2("GET", `leagues/${L.id}/photo-reading`, null, sec3); assert.equal(r.body.available, false);
+r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "free" } } }, boss); assert.equal(r.status, 400);
+r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "included", monthlyLimit: 5 } } }, sec3); assert.equal(r.status, 404);
+r = await call2("PATCH", "super/settings", { addons: { photos: { mode: "included", monthlyLimit: 5 } } }, boss); assert.deepEqual(r.body.addons.photos, { mode: "included", monthlyLimit: 5 }); assert.equal(r.body.addons.reports.mode, "extra");
+r = await call2("GET", `leagues/${L.id}/addons`, null, sec3); assert.equal(r.body.photos.available, true); assert.equal(r.body.photos.limit, 5); assert.equal(r.body.reports.available, false); assert.match(r.body.reports.reason, /Match night reports is an add-on/);
+// match night reports: drafted by Claude from the night's facts, published by the secretary
+const facts = { league: "Yeovil", date: "2026-11-26", results: [{ home: "Red Devils", away: "Rollers", homePins: 240, awayPins: 231 }] };
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts }, sec3); assert.equal(r.status, 403);
+r = await call2("PATCH", `super/users/${secUser.id}`, { reports: { until: "2027-12-01" } }, boss); assert.equal(r.body.user.reports.until, "2027-12-01");
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "nope", facts }, sec3); assert.equal(r.status, 400);
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts, auto: true }, sec3); assert.equal(r.status, 200);
+const rid = r.body.id; assert.equal(r.body.items.find(n => n.id === rid).status, "drafting");
+let reportRead = null; const reportRunner = createBoardRunner({ store, webcrypto, env: { SESSION_SECRET: "s" }, read: async input => { reportRead = input; return { title: "Devils edge Rollers", body: "Red Devils won 240 to 231.\n\n\n\nRollers next." }; } });
+r = await call2("GET", "public/yeovil-league/news"); assert.equal(r.body.items.some(n => n.id === rid), false, "drafts aren't public");
+await reportRunner.run(started.at(-1));
+assert.match(reportRead.prompt, /"homePins":240/); assert.equal(reportRead.images.length, 0); assert.deepEqual(reportRead.schema.required, ["title", "body"]);
+assert.equal(data.has(started.at(-1)), false, "the job is removed once written");
+r = await call2("GET", `leagues/${L.id}/news`, null, sec3); let rep = r.body.items.find(n => n.id === rid);
+assert.equal(rep.status, "draft"); assert.equal(rep.title, "Devils edge Rollers"); assert.equal(rep.body, "Red Devils won 240 to 231.\n\nRollers next."); assert.deepEqual(rep.report, { date: "2026-11-26", season: S1.id });
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts, auto: true }, sec3); assert.equal(r.body.skipped, true, "only one automatic report a night");
+r = await call2("GET", `leagues/${L.id}/news`, null, other); assert.equal(r.status, 404);
+r = await call2("PATCH", `leagues/${L.id}/news/${rid}`, { body: "Edited by the secretary.", photos: ["abc", "abc", "BAD!"] }, sec3); rep = r.body.items.find(n => n.id === rid);
+assert.equal(rep.status, "draft", "editing keeps it a draft"); assert.deepEqual(rep.photos, ["abc"]);
+clock += 60e3; r = await call2("PATCH", `leagues/${L.id}/news/${rid}`, { publish: true }, sec3); rep = r.body.items.find(n => n.id === rid); assert.equal(rep.status, undefined);
+r = await call2("GET", "public/yeovil-league/news"); assert.equal(r.body.items.find(n => n.id === rid).body, "Edited by the secretary.");
+// asking again for a published night starts a new draft; a failed draft says why and can be retried
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts }, sec3); const rid2 = r.body.id; assert.notEqual(rid2, rid);
+await createBoardRunner({ store, webcrypto, env: { SESSION_SECRET: "s" }, read: async () => { throw new Error("Busy"); } }).run(started.at(-1));
+r = await call2("GET", `leagues/${L.id}/news`, null, sec3); assert.deepEqual([r.body.items.find(n => n.id === rid2).status, r.body.items.find(n => n.id === rid2).error], ["failed", "Busy"]);
+r = await call2("POST", `leagues/${L.id}/seasons/${S1.id}/report`, { date: "2026-11-26", facts }, sec3); assert.equal(r.body.id, rid2, "a retry reuses the draft");
+clock += 6 * 60e3; r = await call2("GET", `leagues/${L.id}/news`, null, sec3); assert.equal(r.body.items.find(n => n.id === rid2).status, "failed", "a report that never finishes shows as failed");
+r = await call2("POST", `leagues/${L.id}/news`, { title: "Draft note", body: "Not yet", draft: true }, sec3); assert.equal(r.body.item.status, "draft");
+r = await call2("GET", "public/yeovil-league/news"); assert.equal(r.body.items.some(n => n.title === "Draft note"), false);
+r = await call2("GET", "super/users", null, boss); assert.equal(r.body.users.find(u => u.email === "sec@x.com").leagues[0].reportsThisMonth, 3); assert.equal(r.body.addons.photos.mode, "included");
 assert.equal(boardMatch({ ...match, teams: [{ title: "", players: [] }] }), null);
 assert.match(boardPrompt(boardMatch({ ...match, game: "nomination", balls: 2 })), /nomination skittles.*up to 18/s);
 assert.deepEqual(parseBoard(null, boardMatch(match)), { teams: [], notes: "" });
+// news posts and photos: secretary posts, everyone reads
+r = await call("POST", `leagues/${L.id}/news`, { title: "", body: "x" }, sec3); assert.equal(r.status, 400);
+r = await call("POST", `leagues/${L.id}/news`, { title: "Cup draw", body: "Drawn tonight.\r\n\r\n\r\n\r\nGood luck!" }, sec3); assert.equal(r.status, 200); assert.equal(r.body.item.body, "Drawn tonight.\n\nGood luck!");
+clock += 1000; r = await call("POST", `leagues/${L.id}/news`, { title: "AGM", body: "Monday 8pm." }, sec3); const agm = r.body.item.id;
+clock += 1000; r = await call("POST", `leagues/${L.id}/news`, { title: "Pinned", body: "Read me", pinned: true }, sec3);
+const mine = items => items.filter(x => ["Pinned", "AGM", "AGM moved", "Cup draw"].includes(x.title));
+r = await call("GET", "public/yeovil-league/news"); assert.deepEqual(mine(r.body.items).map(x => x.title), ["Pinned", "AGM", "Cup draw"]);
+r = await call("PATCH", `leagues/${L.id}/news/${agm}`, { title: "AGM moved", pinned: true }, sec3); assert.deepEqual(mine(r.body.items).map(x => x.title), ["Pinned", "AGM moved", "Cup draw"], "pinned first, newest first"); assert.equal(mine(r.body.items)[1].body, "Monday 8pm.");
+r = await call("DELETE", `leagues/${L.id}/news/${agm}`, null, sec3); assert.equal(mine(r.body.items).length, 2);
+r = await call("POST", `leagues/${L.id}/news`, { title: "Hack", body: "x" }, other); assert.equal(r.status, 404);
+const img = { mediaType: "image/jpeg", data: Buffer.from("fake jpeg bytes ".repeat(20)).toString("base64") };
+r = await call("POST", `leagues/${L.id}/media`, { image: { ...img, mediaType: "text/html" } }, sec3); assert.equal(r.status, 400);
+r = await call("POST", `leagues/${L.id}/media`, { image: img, thumb: { ...img, data: Buffer.from("small".repeat(20)).toString("base64") }, caption: "Cup winners", cupId: "c1", cupName: "KO Cup", seasonId: S1.id, width: 1600, height: 1200 }, sec3);
+const mid = r.body.item.id; assert.equal(r.body.item.cupName, "KO Cup"); assert.equal(r.body.item.width, 1600);
+r = await call("GET", "public/yeovil-league/media"); assert.equal(r.body.items[0].caption, "Cup winners"); assert.equal(r.body.items[0].data, undefined, "the index doesn't carry the photo itself");
+let res = await api(new Request(`http://x/api/public/yeovil-league/media/${mid}`)); assert.equal(res.headers.get("content-type"), "image/jpeg"); assert.equal(Buffer.from(await res.arrayBuffer()).toString(), "fake jpeg bytes ".repeat(20));
+res = await api(new Request(`http://x/api/public/yeovil-league/media/${mid}?size=thumb`)); assert.equal(Buffer.from(await res.arrayBuffer()).toString(), "small".repeat(20));
+r = await call("PATCH", `leagues/${L.id}/media/${mid}`, { caption: "Winners 2026", cupId: "" }, sec3); assert.equal(r.body.items[0].cupId, null); assert.equal(r.body.items[0].caption, "Winners 2026");
+r = await call("DELETE", `leagues/${L.id}/media/${mid}`, null, other); assert.equal(r.status, 404);
+r = await call("POST", `leagues/${L.id}/media`, { image: img }, sec3); assert.equal(r.status, 200);
+r = await call("DELETE", `leagues/${L.id}/media/${mid}`, null, sec3); assert.equal(r.body.items.length, 1); assert.equal(data.has(`media/${L.id}/${mid}`), false); assert.equal(data.has(`media/${L.id}/${mid}/thumb`), false);
+r = await call("GET", "public/yeovil-league/media/nope"); assert.equal(r.status, 404);
 r = await call("DELETE", `leagues/${L.id}`, null, boss); r = await call("GET", "public/yeovil-league"); assert.equal(r.status, 404);
-assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "board-jobs/", "usage/"].some(p => k.startsWith(p))).length, 0);
+assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "board-jobs/", "usage/", "news/", "media"].some(p => k.startsWith(p))).length, 0);
 console.log("all API checks passed");

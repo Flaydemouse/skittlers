@@ -109,9 +109,9 @@ ${core}
   };
   const boardRunner = createBoardRunner({ store, webcrypto: window.crypto, env: { SESSION_SECRET: "preview-only-secret" }, read: async ({ images, prompt }) => {
     const sample = window.claude ? await window.claude.use("sample") : null;
-    if (!sample) throw new Error("Reading photos in the preview only works when it's open in Claude.");
+    if (!sample) throw new Error(images.length ? "Reading photos in the preview only works when it's open in Claude." : "Writing reports in the preview only works when it's open in Claude.");
     const blobs = images.map(i => new Blob([Uint8Array.from(atob(i.data), c => c.charCodeAt(0))], { type: i.mediaType }));
-    try { return await sample.json(prompt, { images: blobs, modelTier: "complex", cache: false }); }
+    try { return await sample.json(prompt, { ...(blobs.length ? { images: blobs } : {}), modelTier: "complex", cache: false }); }
     catch (e) { throw new Error(SAMPLE_ERRORS[e?.code] || "Photo reading didn't work just now. Try again in a minute."); }
   } });
   const handle = createApi({ store, webcrypto: window.crypto, env: { SESSION_SECRET: "preview-only-secret", SUPERADMIN_EMAIL: "owner@skittlers.test" },
