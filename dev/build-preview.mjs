@@ -13,8 +13,8 @@ for (const tag of [/<!doctype html>\n/i, /<html[^>]*>\n/, /<head>\n/, /<meta cha
   html = html.replace(tag, "");
 // Artifacts can't load the site's own vendor files: inline Leaflet's CSS and load its script from cdnjs.
 const leafletCss = await readFile(new URL("../public/vendor/leaflet/leaflet.css", import.meta.url), "utf8");
-html = html.replace('<link rel="stylesheet" href="vendor/leaflet/leaflet.css">', () => `<style>\n${leafletCss}\n</style>`);
-html = html.replace('<script src="vendor/leaflet/leaflet.js"></script>', '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>');
+html = html.replace('<link rel="stylesheet" href="/vendor/leaflet/leaflet.css">', () => `<style>\n${leafletCss}\n</style>`);
+html = html.replace('<script src="/vendor/leaflet/leaflet.js"></script>', '<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>');
 html = html.replace(/<title>[^<]*<\/title>/, `<title>Skittlers Preview</title>\n<meta name="claude:viewport-fit-sides" content="cover">`);
 
 // The preview can't offer file downloads, so point to the live site for the template.
@@ -124,6 +124,8 @@ ${core}
   };
   const PATH = "skittlers-preview-path";
   window.SKITTLERS_HOST = "skittlers.co.uk";
+  // Links meant for other people (shared posts, calendars) point at the live site.
+  window.SKITTLERS_LIVE = "https://skittlers.netlify.app";
   window.SKITTLERS_NAV = {
     path: () => { try { return sessionStorage.getItem(PATH) || "/"; } catch { return "/"; } },
     go: (path, hash) => {
@@ -136,7 +138,8 @@ ${core}
 })();
 </script>
 `;
-const i = html.indexOf("<script>\nconst $");
+// The page's main script is the one after Leaflet; the preview's API goes in just before it.
+const i = html.indexOf("<script>\n", html.indexOf("leaflet.js"));
 if (i < 0) throw new Error("Couldn't find the main script in public/index.html");
 html = html.slice(0, i) + previewApi + html.slice(i);
 

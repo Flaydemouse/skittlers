@@ -1,12 +1,13 @@
 // Checks the API in lib/core.mjs: accounts, leagues, seasons, permissions, subscriptions and the overall admin.
 import { webcrypto } from "node:crypto";
 import assert from "node:assert/strict";
-import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt } from "../lib/core.mjs";
+import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt, newsSharePage } from "../lib/core.mjs";
 const data = new Map();
 const store = { get: async k => data.has(k) ? JSON.parse(data.get(k)) : null, set: async (k, v) => data.set(k, JSON.stringify(v)), del: async k => data.delete(k), list: async p => [...data.keys()].filter(k => k.startsWith(p)) };
 let day = "2026-10-29", clock = Date.parse("2026-10-29T19:00:00Z");
 const legacyData = { league: { teams: { a: { id: "a", name: "Red Devils", division: "Division 1" }, b: { id: "b", name: "Rollers", division: "Division 2" }, c: { id: "c", name: "Poachers" } }, venues: { v: { id: "v", name: "The Bell" } }, fixtures: {}, settings: { win: 3, draw: 1, loss: 0 } }, contacts: { a: { mobile: "07700" } } };
-const api = createApi({ store, webcrypto, env: { SESSION_SECRET: "s", SUPERADMIN_EMAIL: "Owner@Test.com" }, legacy: async () => legacyData, today: () => day, pause: async () => {}, now: () => clock });
+const mails = [];
+const api = createApi({ store, webcrypto, env: { SESSION_SECRET: "s", SUPERADMIN_EMAIL: "Owner@Test.com" }, legacy: async () => legacyData, today: () => day, pause: async () => {}, now: () => clock, sendEmail: async m => { mails.push(m); } });
 const call = async (method, path, body, token) => { const r = await api(new Request("http://x/api/" + path, { method, headers: token ? { authorization: "Bearer " + token } : {}, body: body ? JSON.stringify(body) : undefined })); return { status: r.status, body: await r.json() }; };
 let r;
 r = await call("POST", "auth/signup", { name: "Sec", email: "sec@x.com", password: "short" }); assert.equal(r.status, 400);
@@ -27,6 +28,107 @@ const season = { teams: { t1: { id: "t1", name: "Red Devils", venue: "v1", alley
 r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: 0, data: season, contacts: { t1: { mobile: "0770" } } }, sec); assert.equal(r.body.version, 1);
 r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: 0, data: season, contacts: {} }, sec); assert.equal(r.status, 409); assert.equal(r.body.version, 1);
 r = await call("GET", `public/yeovil/seasons/${S1.id}`); assert.equal(r.body.contacts, undefined); assert.equal(r.body.teams.t1.name, "Red Devils");
+// results and notes only reach the public once published
+{
+  const fx = { old: { id: "old", homePins: 200, awayPins: 190 },
+    fresh: { id: "fresh", homePins: 210, awayPins: 205, cards: { home: { rows: [] } }, note: "Checked by phone", notePublic: false, ready: true, pub: null },
+    changed: { id: "changed", homePins: 230, awayPins: 220, note: "Corrected after the match", notePublic: true, ready: false, pub: { homePins: 229, awayPins: 220, note: "Result under review" } },
+    noteOnly: { id: "noteOnly", homePins: null, awayPins: null, note: "Postponed: frozen alley", notePublic: true, pub: { homePins: null, awayPins: null, note: "Postponed: frozen alley" } } };
+  r = await call("POST", `leagues/${L.id}/seasons`, { name: "Publishing test", start: "2030-09-01", end: "2031-05-01" }, sec); const SP = r.body.season;
+  r = await call("PUT", `leagues/${L.id}/seasons/${SP.id}`, { version: 0, data: { ...season, fixtures: fx }, contacts: {} }, sec); assert.equal(r.status, 200);
+  assert.equal(r.body.fixtures.fresh.note, "Checked by phone", "admins see everything");
+  r = await call("GET", `public/yeovil/seasons/${SP.id}`); const pf = r.body.fixtures;
+  assert.deepEqual(pf.old, { id: "old", homePins: 200, awayPins: 190 }, "fixtures from before publishing are unchanged");
+  assert.deepEqual(pf.fresh, { id: "fresh" }, "unpublished result, scorecard, note and ticks are hidden");
+  assert.deepEqual(pf.changed, { id: "changed", homePins: 229, awayPins: 220, note: "Result under review" }, "the last published version shows");
+  assert.deepEqual(pf.noteOnly, { id: "noteOnly", note: "Postponed: frozen alley" });
+  // cups: published match results, final and notes only
+  const cups = { legacy: { id: "legacy", results: { "1-0": { aPins: 1, bPins: 0 } }, check: { "1-0": { note: "private" } } },
+    drawn: { id: "drawn", results: { "1-0": { a: "x", b: "y", aPins: 300, bPins: 290 }, "1-1": { a: "p", b: "q", aPins: 250, bPins: 240 } },
+      check: { "1-0": { note: "Rang the captain", notePublic: false, ready: true } },
+      pub: { results: { "1-1": { a: "p", b: "q", aPins: 249, bPins: 240 } }, notes: { "1-1": "Score corrected" } } },
+    final: { id: "final", structure: "final", final: { date: "2031-01-01", scores: { x: 200, y: 190 }, cards: {}, winner: null }, pub: { results: {}, final: { scores: {}, cards: {}, winner: null }, notes: {} } } };
+  r = await call("PUT", `leagues/${L.id}/seasons/${SP.id}`, { version: 1, data: { ...season, fixtures: fx, cups }, contacts: {} }, sec); assert.equal(r.status, 200);
+  r = await call("GET", `public/yeovil/seasons/${SP.id}`); const pc = r.body.cups;
+  assert.deepEqual(pc.legacy, { id: "legacy", results: { "1-0": { aPins: 1, bPins: 0 } } }, "cups from before publishing are unchanged, notes hidden");
+  assert.deepEqual(pc.drawn.results, { "1-1": { a: "p", b: "q", aPins: 249, bPins: 240 } }); assert.deepEqual(pc.drawn.publicNotes, { "1-1": "Score corrected" });
+  assert.equal(pc.drawn.check, undefined); assert.equal(pc.drawn.pub, undefined);
+  assert.deepEqual(pc.final.final, { date: "2031-01-01", scores: {}, cards: {}, winner: null }, "an unpublished final shows no scores, but keeps its date");
+  // the calendar feed: dated games only, published results only, one team's games with ?team=
+  const ical = async q => { const res = await api(new Request(`http://x/api/public/yeovil/calendar.ics?season=${SP.id}${q}`)); return { status: res.status, type: res.headers.get("content-type"), text: await res.text() }; };
+  const teams2 = { ...season.teams, t2: { id: "t2", name: "Pin Pals; Bristol, Avon", venue: null, players: [] }, t3: { id: "t3", name: "Third", players: [] } };
+  const venues2 = { v1: { id: "v1", name: "The Bell", alleys: 2, address1: "1 High St", postcode: "BA1 1AA" } };
+  const calFx = { a: { id: "a", comp: "league", date: "2031-01-08", time: "20:45", home: "t1", away: "t2", homePins: 250, awayPins: 240, pub: { homePins: 249, awayPins: 240 } },
+    b: { id: "b", comp: "league", date: "2031-07-02", time: "19:30", home: "t2", away: "t1", homePins: null, awayPins: null },
+    c: { id: "c", comp: "league", date: "2031-01-15", time: "", home: "t3", away: "t2", homePins: null, awayPins: null },
+    tba: { id: "tba", comp: "league", date: null, home: "t1", away: "t3" } };
+  r = await call("PUT", `leagues/${L.id}/seasons/${SP.id}`, { version: 2, data: { teams: teams2, venues: venues2, divisions: season.divisions, fixtures: calFx,
+    cups: { k: { id: "k", name: "Charity Shield", format: "team", structure: "final", entrants: [{ id: "t1" }, { id: "t3" }], final: { date: "2031-04-01", time: "20:00", venue: "v1" } } } }, contacts: {} }, sec); assert.equal(r.status, 200);
+  let cal = await ical("");
+  assert.equal(cal.status, 200); assert.match(cal.type, /^text\/calendar/);
+  assert.match(cal.text, /^BEGIN:VCALENDAR\r\n/); assert.match(cal.text, /END:VCALENDAR\r\n$/);
+  assert.equal((cal.text.match(/BEGIN:VEVENT/g) || []).length, 4, "three dated games and the cup final; the undated game is left out");
+  assert.match(cal.text, /SUMMARY:Red Devils 249–240 Pin Pals\\; Bristol\\, Avon/, "the published score, with commas and semicolons escaped");
+  assert.match(cal.text, /DTSTART;TZID=Europe\/London:20310108T204500\r\nDTEND;TZID=Europe\/London:20310108T234500/);
+  assert.match(cal.text, /DTSTART;VALUE=DATE:20310115\r\nDTEND;VALUE=DATE:20310116/, "a game with no time is all day");
+  assert.match(cal.text, /LOCATION:The Bell \(alley 2\)\\, 1 High St\\, BA1 1AA/);
+  assert.match(cal.text, /DESCRIPTION:Yeovil Skittles: Premier/);
+  assert.ok(cal.text.split("\r\n").every(l => new TextEncoder().encode(l).length <= 75), "long lines are folded");
+  cal = await ical("&team=t3");
+  assert.equal((cal.text.match(/BEGIN:VEVENT/g) || []).length, 2, "the team's game and the final it's in");
+  assert.match(cal.text, /X-WR-CALNAME:Yeovil Skittles: Third/);
+  assert.equal((await ical("&team=nobody")).status, 404);
+  // a knockout cup: matches follow the draw, winners go through, and later rounds show once their date is set
+  r = await call("GET", `leagues/${L.id}/seasons/${SP.id}`, null, sec);
+  const ko = { id: "ko", name: "KO Cup", format: "team", structure: "full", entries: 3, draw: ["t1", "t2", "t3"], entrants: [{ id: "t1" }, { id: "t2" }, { id: "t3" }],
+    roundDates: { 1: { date: "2031-02-05", time: "20:45" }, 2: { date: "2031-03-05", time: "20:45" } }, results: {}, schedule: {} };
+  r = await call("PUT", `leagues/${L.id}/seasons/${SP.id}`, { version: r.body.version, data: { ...r.body, cups: { ...r.body.cups, ko } }, contacts: {} }, sec); assert.equal(r.status, 200);
+  cal = await ical("&team=t3");
+  assert.match(cal.text, /SUMMARY:KO Cup semi-finals: Pin Pals\\; Bristol\\, Avon v Third/, "a first-round match with its teams");
+  assert.match(cal.text, /SUMMARY:KO Cup final: Red Devils v To be decided/, "the final, waiting on the other semi");
+  cal = await ical("&team=t2"); assert.match(cal.text, /KO Cup final: Red Devils v To be decided/, "a team still in with a chance sees the final");
+  r = await call("GET", `leagues/${L.id}/seasons/${SP.id}`, null, sec);
+  r = await call("PUT", `leagues/${L.id}/seasons/${SP.id}`, { version: r.body.version, data: { ...r.body, cups: { ...r.body.cups, ko: { ...ko, results: { "1-1": { a: "t2", b: "t3", aPins: 200, bPins: 210 } }, pub: { results: { "1-1": { a: "t2", b: "t3", aPins: 200, bPins: 210 } }, final: {}, notes: {} } } } }, contacts: {} }, sec);
+  cal = await ical("&team=t3"); assert.match(cal.text, /KO Cup final: Red Devils v Third/, "once the result is published, the winner goes through");
+  cal = await ical("&team=t2"); assert.doesNotMatch(cal.text, /KO Cup final/, "the losers' calendar drops the final");
+  // a division: its league games and its teams' cup games
+  cal = await ical("&division=d1"); assert.match(cal.text, /X-WR-CALNAME:Yeovil Skittles: Premier/);
+  assert.doesNotMatch(cal.text, /SUMMARY:Third v Pin Pals/, "league games of teams outside the division are left out");
+  assert.match(cal.text, /SUMMARY:Red Devils 249–240/);
+  assert.equal((await ical("&division=nope")).status, 404);
+  // captains send in results with the league's code; the secretary approves them
+  const send = b => call("POST", `public/yeovil/seasons/${SP.id}/submissions`, b);
+  const card = (key, total) => ({ mode: "totals", rows: [{ key, name: key, total, spareScores: [12] }] });
+  const good = { code: "pins-2031", fixtureId: "c", team: "t3", name: "Cap Tain", note: "Good game", contact: "cap@x.com", cards: { home: card("amy", 41), away: card("bob", 39) } };
+  r = await send(good); assert.equal(r.status, 403, "no code set: not taking results");
+  r = await call("GET", "public/yeovil"); assert.equal(r.body.league.takesResults, false); assert.equal(r.body.league.captainCode, undefined);
+  r = await call("PATCH", `leagues/${L.id}`, { captainCode: "no" }, sec); assert.equal(r.status, 400);
+  r = await call("PATCH", `leagues/${L.id}`, { captainCode: "Pins-2031" }, sec); assert.equal(r.body.league.takesResults, true); assert.equal(r.body.league.captainCode, undefined, "the code stays private");
+  r = await send({ ...good, code: "wrong" }); assert.equal(r.status, 403);
+  r = await send({ ...good, fixtureId: "b", team: "t2" }); assert.equal(r.status, 400, "the game is in the future"); assert.match(r.body.error, /hasn't been played/);
+  r = await call("GET", `leagues/${L.id}/seasons/${SP.id}`, null, sec);
+  r = await call("PATCH", `leagues/${L.id}/seasons/${SP.id}/data`, { base: r.body.version, changes: [{ in: "fixtures", id: "c", value: { ...calFx.c, date: "2026-10-28" } }, { in: "fixtures", id: "a", value: { ...calFx.a, date: "2026-10-21" } }] }, sec); assert.equal(r.status, 200);
+  r = await send({ ...good, team: "t1" }); assert.equal(r.status, 400, "not one of the teams playing");
+  r = await send({ ...good, fixtureId: "a", team: "t1" }); assert.equal(r.status, 409, "already published");
+  r = await send({ ...good, cards: { home: card("amy", 41) } }); assert.equal(r.status, 400);
+  r = await send({ ...good, cards: { home: { mode: "hands", rows: [{ key: "amy", name: "Amy", total: 9, hands: [4, 4], spares: [false, false] }] }, away: card("bob", 39) } }); assert.equal(r.status, 400, "hands that don't add up");
+  r = await send({ ...good, name: "" }); assert.equal(r.status, 400);
+  mails.length = 0;
+  r = await send(good); assert.equal(r.status, 200); assert.equal(r.body.emailed, true);
+  assert.equal(mails.length, 1); assert.equal(mails[0].to, "sec@x.com"); assert.equal(mails[0].replyTo, "cap@x.com");
+  assert.match(mails[0].subject, /Third 41–39 Pin Pals/); assert.match(mails[0].text, /amy: 41 \(spares 12\)/); assert.match(mails[0].text, /Note: Good game/);
+  r = await call("GET", `public/yeovil/seasons/${SP.id}`); assert.equal(r.body.fixtures.c.homePins, null, "nothing goes live until it's approved");
+  r = await call("GET", `leagues/${L.id}/seasons/${SP.id}/submissions`, null, sec);
+  assert.equal(r.body.code, "Pins-2031"); assert.equal(r.body.items.length, 1); const sub = r.body.items[0];
+  assert.equal(sub.status, "pending"); assert.equal(sub.homePins, 41); assert.equal(sub.cards.home.rows[0].spareScores[0], 12);
+  r = await call("GET", `leagues/${L.id}/seasons/${SP.id}/submissions`); assert.equal(r.status, 401, "only admins see them");
+  r = await call("POST", `leagues/${L.id}/seasons/${SP.id}/submissions/${sub.id}`, { status: "maybe" }, sec); assert.equal(r.status, 400);
+  r = await call("POST", `leagues/${L.id}/seasons/${SP.id}/submissions/${sub.id}`, { status: "approved" }, sec); assert.equal(r.body.items[0].status, "approved"); assert.equal(r.body.items[0].by, "Sec");
+  for (let i = 0; i < 3; i++) await send(good);
+  r = await send(good); assert.equal(r.status, 429, "at most three waiting for one game");
+  r = await call("PATCH", `leagues/${L.id}`, { captainCode: "" }, sec); assert.equal(r.body.league.takesResults, false);
+  r = await call("DELETE", `leagues/${L.id}/seasons/${SP.id}`, null, sec); assert.equal(r.body.league.currentSeasonId, S1.id);
+}
 // cups are saved with the season and start empty in a copied season
 r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: 1, data: { ...season, cups: { c1: { id: "c1", name: "Cup" } } }, contacts: {} }, sec); assert.equal(r.body.cups.c1.name, "Cup");
 r = await call("PUT", `leagues/${L.id}/seasons/${S1.id}`, { version: 2, data: { ...season, cups: "nope" }, contacts: {} }, sec); assert.equal(r.status, 400);
@@ -54,6 +156,29 @@ r = await call("PATCH", `leagues/${L.id}`, { name: "New name" }, sec2); assert.e
 r = await call("POST", "leagues", { name: "Another", slug: "another" }, sec2); assert.equal(r.status, 402);
 // overall admin
 r = await call("POST", "auth/signup", { name: "Neil", email: "owner@test.com", password: "superpass1" }); const boss = r.body.token; assert.equal(r.body.user.isSuper, true);
+// help & requests: a secretary writes, the overall admin sees it in the inbox and replies
+{
+  mails.length = 0;
+  r = await call("POST", "auth/support", { text: "   " }, sec2); assert.equal(r.status, 400);
+  r = await call("POST", "auth/support", { text: "How do I set up a cup?\r\n\n\n\nThanks" }, sec2); assert.equal(r.status, 200);
+  assert.equal(r.body.messages.length, 1); assert.equal(r.body.messages[0].text, "How do I set up a cup?\n\nThanks", "line breaks kept, blank runs squeezed");
+  assert.equal(mails.length, 1); assert.equal(mails[0].to, "Owner@Test.com"); assert.equal(mails[0].replyTo, "sec@x.com"); assert.match(mails[0].text, /Yeovil Skittles wrote/);
+  r = await call("GET", "auth/support/unread", null, boss); assert.equal(r.body.inbox, 1);
+  r = await call("GET", "auth/support/unread", null, sec2); assert.deepEqual(r.body, { mine: 0, inbox: 0 }, "a secretary has no inbox");
+  r = await call("GET", "super/support", null, sec2); assert.equal(r.status, 404, "only the overall admin sees the inbox");
+  r = await call("GET", "super/support", null, boss); const th = r.body.threads[0];
+  assert.equal(th.name, "Sec"); assert.equal(th.unread, 1); assert.equal(th.last.text.slice(0, 6), "How do");
+  r = await call("GET", `super/support/${th.userId}`, null, boss); assert.equal(r.body.thread.messages.length, 1);
+  r = await call("GET", "auth/support/unread", null, boss); assert.equal(r.body.inbox, 0, "reading it clears the count");
+  r = await call("POST", `super/support/${th.userId}`, { text: "Manage cups, then New cup." }, boss); assert.equal(r.body.thread.messages[1].from, "admin");
+  assert.equal(mails.at(-1).to, "sec@x.com"); assert.match(mails.at(-1).text, /Manage cups/);
+  r = await call("GET", "auth/support/unread", null, sec2); assert.equal(r.body.mine, 1);
+  r = await call("GET", "auth/support", null, sec2); assert.equal(r.body.messages[1].by, "Neil");
+  r = await call("GET", "auth/support/unread", null, sec2); assert.equal(r.body.mine, 0);
+  r = await call("GET", "auth/support"); assert.equal(r.status, 401);
+  for (let i = 0; i < 19; i++) await call("POST", "auth/support", { text: "again " + i }, sec2);
+  r = await call("POST", "auth/support", { text: "one too many" }, sec2); assert.equal(r.status, 429);
+}
 r = await call("GET", "super/users", null, sec2); assert.equal(r.status, 404);
 r = await call("GET", "my/leagues", null, boss); assert.equal(r.body.leagues.length, 1); assert.equal(r.body.leagues[0].owner.email, "sec@x.com");
 r = await call("GET", "super/users", null, boss); const secUser = r.body.users.find(u => u.email === "sec@x.com"); assert.equal(secUser.leagues[0].slug, "yeovil"); assert.equal(secUser.canEdit, false);
@@ -62,6 +187,9 @@ r = await call("PATCH", `leagues/${L.id}`, { name: "New name", slug: "yeovil-lea
 assert.deepEqual(r.body.league.settings.tiebreak, ["pd", "apd"], "pin difference, then away pin difference, by default");
 r = await call("PATCH", `leagues/${L.id}`, { settings: { tiebreak: ["h2h", "bogus", "h2h", "pd"] } }, sec2); assert.deepEqual(r.body.league.settings.tiebreak, ["h2h", "pd"]);
 r = await call("PATCH", `leagues/${L.id}`, { settings: { tiebreak: [] } }, sec2); assert.deepEqual(r.body.league.settings.tiebreak, ["h2h", "pd"], "an empty choice keeps the last one");
+assert.equal(r.body.league.settings.startTime, "19:45", "league games start at 19:45 by default");
+r = await call("PATCH", `leagues/${L.id}`, { settings: { startTime: "20:45" } }, sec2); assert.equal(r.body.league.settings.startTime, "20:45");
+r = await call("PATCH", `leagues/${L.id}`, { settings: { startTime: "25:00" } }, sec2); assert.equal(r.body.league.settings.startTime, "20:45", "a time that isn't real is ignored");
 r = await call("GET", "public/yeovil"); assert.equal(r.status, 404); r = await call("GET", "public/yeovil-league"); assert.equal(r.body.league.settings.win, 3);
 r = await call("PATCH", `super/users/${secUser.id}`, { resetPassword: true }, boss); const temp = r.body.temporaryPassword; assert.match(temp, /^\w{4}-\w{4}-\w{4}$/);
 r = await call("GET", "auth/me", null, sec2); assert.equal(r.status, 401);
@@ -101,6 +229,34 @@ assert.equal(r.body.stale, true, "someone else saved in between");
 r = await call("GET", `leagues/${L.id}/seasons/${S1.id}`, null, boss); assert.equal(r.body.fixtures.f9.homePins, 300); assert.equal(r.body.teams.t2.name, "Late"); assert.equal(r.body.contacts.z.mobile, "2"); assert.equal(r.body.teams.z.name, "From file", "other items kept");
 r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "teams", id: "t2", value: null }] }, boss); assert.equal(r.status, 200);
 r = await call("GET", `leagues/${L.id}/seasons/${S1.id}`, null, boss); assert.equal(r.body.teams.t2, undefined);
+// player transfers are saved with the season and shown publicly
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "transfers", id: "x1", value: { id: "x1", date: "2026-11-05", first: "Sue", last: "Ashby", key: "sue ashby", from: "t1", to: "z" } }] }, boss); assert.equal(r.status, 200);
+r = await call("GET", `public/yeovil-league/seasons/${S1.id}`); assert.equal(r.body.transfers.x1.to, "z");
+r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "committee", id: "president", value: { id: "president", role: "president", team: "z", key: "sue ashby", first: "Sue", last: "Ashby" } }] }, boss); assert.equal(r.status, 200);
+r = await call("GET", `public/yeovil-league/seasons/${S1.id}`); assert.equal(r.body.committee.president.first, "Sue", "the committee is public");
+// downloads: files a league puts up for anyone
+{
+  const b64 = str => Buffer.from(str, "binary").toString("base64");
+  const up = body => call("POST", `leagues/${L.id}/docs`, body, boss);
+  r = await up({ name: "evil.html", data: b64("<script>") }); assert.equal(r.status, 400, "only listed kinds of file");
+  r = await up({ name: "book.pdf", data: b64("not a pdf") }); assert.equal(r.status, 400, "the first bytes must match");
+  r = await up({ name: "notes.txt", data: b64("ok\x01\x02binary") }); assert.equal(r.status, 400);
+  r = await up({ name: "empty.pdf", data: "" }); assert.equal(r.status, 400);
+  r = await up({ name: "../Fixture Book 2026.pdf", title: "", category: "Fixture books", data: b64("%PDF-1.4 hello") });
+  assert.equal(r.status, 200); const d = r.body.item;
+  assert.equal(d.name, "Fixture Book 2026.pdf"); assert.equal(d.title, "Fixture Book 2026", "the title defaults to the file name"); assert.equal(d.size, 14); assert.equal(d.category, "Fixture books");
+  r = await call("GET", "public/yeovil-league/docs"); assert.equal(r.body.items[0].id, d.id);
+  let res = await api(new Request(`http://x/api/public/yeovil-league/docs/${d.id}`));
+  assert.equal(res.headers.get("content-type"), "application/pdf"); assert.match(res.headers.get("content-disposition"), /^inline; filename="Fixture Book 2026.pdf"/);
+  assert.equal(await res.text(), "%PDF-1.4 hello");
+  res = await api(new Request(`http://x/api/public/yeovil-league/docs/${d.id}?download=1`)); assert.match(res.headers.get("content-disposition"), /^attachment/);
+  r = await up({ name: "rules.docx", data: b64("PK\x03\x04 word") }); const w = r.body.item;
+  res = await api(new Request(`http://x/api/public/yeovil-league/docs/${w.id}`)); assert.match(res.headers.get("content-disposition"), /^attachment/, "Word files always download");
+  r = await call("PATCH", `leagues/${L.id}/docs/${d.id}`, { title: "Fixture book 2026–27", category: "Fixtures" }, boss); assert.equal(r.body.items.find(x => x.id === d.id).title, "Fixture book 2026–27");
+  r = await call("POST", `leagues/${L.id}/docs`, { name: "x.pdf", data: b64("%PDF") }); assert.equal(r.status, 401, "only admins add files");
+  r = await call("DELETE", `leagues/${L.id}/docs/${w.id}`, null, boss); assert.equal(r.body.items.length, 1);
+  assert.equal((await api(new Request(`http://x/api/public/yeovil-league/docs/${w.id}`))).status, 404);
+}
 for (const bad of [[], [{ in: "users", id: "x", value: {} }], [{ in: "teams", id: "__proto__", value: { a: 1 } }], [{ in: "teams", id: "x", value: "str" }]]) {
   r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: bad }, boss); assert.equal(r.status, 400);
 }
@@ -221,4 +377,18 @@ r = await call("DELETE", `leagues/${L.id}/media/${mid}`, null, sec3); assert.equ
 r = await call("GET", "public/yeovil-league/media/nope"); assert.equal(r.status, 404);
 r = await call("DELETE", `leagues/${L.id}`, null, boss); r = await call("GET", "public/yeovil-league"); assert.equal(r.status, 404);
 assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "board-jobs/", "usage/", "news/", "media"].some(p => k.startsWith(p))).length, 0);
+// a shared news post's page carries its preview details
+{
+  const html = `<html><head><title>Skittles League</title><meta name="description" content="x"></head><body></body></html>`;
+  await store.set("slugs/share-test", { leagueId: "LS" }); await store.set("leagues/LS", { id: "LS", name: "Share & Co" });
+  await store.set("news/LS", { items: [{ id: "p1", title: 'Cup "final" night', body: "A great night.\n\nWell done all. ".repeat(20), photos: ["m1"] }, { id: "d1", title: "Draft", body: "x", status: "draft" }] });
+  const page = await newsSharePage({ store, slug: "Share-Test", id: "p1", origin: "https://s.example", html });
+  assert.match(page, /<title>Cup &quot;final&quot; night · Share &amp; Co<\/title>/);
+  assert.match(page, /<meta property="og:image" content="https:\/\/s.example\/api\/public\/share-test\/media\/m1">/);
+  assert.match(page, /<meta property="og:url" content="https:\/\/s.example\/share-test\/news\/p1">/);
+  assert.match(page, /name="twitter:card" content="summary_large_image"/);
+  assert.ok(/og:description" content="([^"]*)"/.exec(page)[1].length <= 200, "the description is kept short");
+  assert.equal(await newsSharePage({ store, slug: "share-test", id: "d1", origin: "https://s.example", html }), null, "drafts aren't shared");
+  assert.equal(await newsSharePage({ store, slug: "nope", id: "p1", origin: "https://s.example", html }), null);
+}
 console.log("all API checks passed");

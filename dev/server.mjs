@@ -12,6 +12,7 @@ const fn = await import(root + "netlify/functions/api.mjs");
 // Photo reading runs in a background function on Netlify; here it's started the same way and answers 202 straight away.
 // Set ANTHROPIC_API_KEY to read real photos, or BOARD_FAKE=1 for a made-up reading.
 const boardFn = await import(root + "netlify/functions/read-board-background.mjs");
+const shareFn = await import(root + "netlify/functions/share.mjs");
 const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".png": "image/png", ".svg": "image/svg+xml", ".csv": "text/csv" };
 
 http.createServer(async (req, res) => {
@@ -20,6 +21,11 @@ http.createServer(async (req, res) => {
     const chunks = []; for await (const c of req) chunks.push(c);
     boardFn.default(new Request("http://localhost:8899" + req.url, { method: "POST", headers: req.headers, body: Buffer.concat(chunks) })).catch(e => console.error(e));
     res.writeHead(202); res.end(); return;
+  }
+  const share = /^\/([^/]+)\/news\/([^/]+)$/.exec(path);
+  if (share && !path.startsWith("/api/")) {
+    const out = await shareFn.default(new Request("http://localhost:8899" + req.url), { params: { slug: decodeURIComponent(share[1]), id: decodeURIComponent(share[2]) } });
+    res.writeHead(out.status, Object.fromEntries(out.headers)); res.end(await out.text()); return;
   }
   if (path.startsWith("/api/")) {
     const chunks = []; for await (const c of req) chunks.push(c);
