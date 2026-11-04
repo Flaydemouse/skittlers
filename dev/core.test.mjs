@@ -234,6 +234,82 @@ r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, chan
 r = await call("GET", `public/yeovil-league/seasons/${S1.id}`); assert.equal(r.body.transfers.x1.to, "z");
 r = await call("PATCH", `leagues/${L.id}/seasons/${S1.id}/data`, { base: 0, changes: [{ in: "committee", id: "president", value: { id: "president", role: "president", team: "z", key: "sue ashby", first: "Sue", last: "Ashby" } }] }, boss); assert.equal(r.status, 200);
 r = await call("GET", `public/yeovil-league/seasons/${S1.id}`); assert.equal(r.body.committee.president.first, "Sue", "the committee is public");
+// a team's earlier names, kept with the league
+r = await call("PATCH", `leagues/${L.id}`, { teamNames: [{ name: "The Rejects", was: ["The Friday Rejects", " The Reckleford  Rejects ", "the rejects", ""] }, { name: "No history", was: [] }] }, boss);
+assert.deepEqual(r.body.league.teamNames, [{ name: "The Rejects", was: ["The Friday Rejects", "The Reckleford Rejects"] }], "blank and same-as-now names are dropped, and teams with none");
+r = await call("GET", "public/yeovil-league"); assert.equal(r.body.league.teamNames[0].was.length, 2, "they're public");
+r = await call("PATCH", `leagues/${L.id}`, { teamNames: [{ name: "A", was: ["Old"] }, { name: "B", was: ["old"] }] }, boss); assert.equal(r.status, 400, "a name belongs to one team");
+r = await call("PATCH", `leagues/${L.id}`, { teamNames: "x" }, boss); assert.equal(r.status, 400);
+// a league's own domain: an add-on, connected by hand by the overall admin
+{
+  r = await call("PATCH", `leagues/${L.id}`, { domain: "https://www.YeovilSkittles.co.uk/fixtures" }, boss);
+  assert.equal(r.status, 200, "the overall admin can always set one"); assert.equal(r.body.league.domain, "yeovilskittles.co.uk"); assert.equal(r.body.league.domainConnected, false);
+  r = await call("GET", "public-domain/yeovilskittles.co.uk"); assert.equal(r.body.slug, "yeovil-league");
+  r = await call("GET", "public-domain/www.yeovilskittles.co.uk"); assert.equal(r.body.slug, "yeovil-league", "with or without www");
+  r = await call("GET", "public-domain/nobody.co.uk"); assert.equal(r.status, 404);
+  for (const bad of ["not a domain", "x.skittlers.co.uk", "mysite.netlify.app"]) { r = await call("PATCH", `leagues/${L.id}`, { domain: bad }, boss); assert.equal(r.status, 400, bad); }
+  r = await call("GET", "super/domains", null, boss); assert.deepEqual(r.body.domains.map(d => [d.domain, d.connected]), [["yeovilskittles.co.uk", false]]);
+  r = await call("PATCH", `super/domains/${L.id}`, { connected: true }, boss); assert.equal(r.body.connected, true);
+  r = await call("GET", "public/yeovil-league"); assert.equal(r.body.league.domainConnected, true);
+  r = await call("GET", "super/domains", null, sec2); assert.notEqual(r.status, 200, "only the overall admin");
+  r = await call("PATCH", `leagues/${L.id}`, { domain: "skittles-yeovil.org.uk" }, boss); assert.equal(r.body.league.domainConnected, false, "a new address needs connecting again");
+  r = await call("GET", "public-domain/yeovilskittles.co.uk"); assert.equal(r.status, 404, "the old address is freed");
+  r = await call("PATCH", `leagues/${L.id}`, { domain: "" }, boss); assert.equal(r.body.league.domain, null);
+  r = await call("GET", "super/settings", null, boss); assert.equal(r.body.addons.domain.mode, "extra", "an extra unless the overall admin includes it");
+}
+// the front page: prices by league size, extras, and the contact form
+{
+  r = await call("GET", "site"); assert.deepEqual(r.body.plans.map(p => p.maxTeams), [30, 60, 90]); assert.equal(r.body.addons.photos.name, "Photo reading");
+  r = await call("PATCH", "super/settings", { plans: [{ maxTeams: 30, price: 60 }, { maxTeams: 20, price: 90 }] }, boss); assert.equal(r.status, 400, "each break has more teams than the last");
+  r = await call("PATCH", "super/settings", { plans: [] }, boss); assert.equal(r.status, 400);
+  r = await call("PATCH", "super/settings", { plans: [{ maxTeams: 30, price: 60 }, { maxTeams: 60, price: "90.50" }, { maxTeams: 90, price: 120 }] }, boss); assert.deepEqual(r.body.plans.map(p => p.price), [6000, 9050, 12000]);
+  r = await call("GET", "site"); assert.equal(r.body.plans[1].price, 9050); assert.equal(r.body.addons.domain.price !== undefined, true);
+  mails.length = 0;
+  r = await call("POST", "contact", { name: "Bob", email: "bob@pub.co.uk", league: "Taunton Skittles", message: "How much for 40 teams?", website: "" }); assert.equal(r.status, 200);
+  assert.equal(mails[0].to, "Owner@Test.com"); assert.equal(mails[0].replyTo, "bob@pub.co.uk");
+  r = await call("POST", "contact", { name: "Spam", email: "x@y.zz", message: "buy now", website: "http://spam" }); assert.equal(r.status, 200); assert.equal(mails.length, 1, "the hidden box catches robots");
+  r = await call("POST", "contact", { name: "Bob", email: "not an email", message: "hello there" }); assert.equal(r.status, 400);
+  r = await call("GET", "super/support", null, boss); const g = r.body.threads.find(t => t.guest);
+  assert.equal(g.name, "Bob"); assert.deepEqual(g.leagues, ["Taunton Skittles"]);
+  r = await call("POST", `super/support/${g.userId}`, { text: "£90.50 a year." }, boss); assert.equal(r.body.emailed, true);
+  assert.equal(mails.at(-1).to, "bob@pub.co.uk"); assert.match(mails.at(-1).subject, /enquiry/);
+  for (let i = 0; i < 4; i++) await call("POST", "contact", { name: "Bob", email: "bob@pub.co.uk", message: "again " + i });
+  r = await call("POST", "contact", { name: "Bob", email: "bob@pub.co.uk", message: "and again" }); assert.equal(r.status, 429);
+}
+// price breaks: a league that goes over its plan's teams is asked first, then moves up and the extra is noted
+{
+  r = await call("PATCH", "super/settings", { plans: [{ maxTeams: 4, price: 60 }, { maxTeams: 6, price: 90 }, { maxTeams: 8, price: 120 }, { maxTeams: 10, price: 150 }] }, boss);
+  assert.equal(r.body.plans.length, 4, "breaks can be added");
+  r = await call("POST", "auth/signup", { name: "Pat", email: "pat@plans.test", password: "longenough" }); const pat = r.body.token;
+  r = await call("POST", "leagues", { name: "Plan League", slug: "plan-league" }, pat); const PL = r.body.league;
+  assert.deepEqual([PL.plan.maxTeams, PL.plan.price], [4, 6000], "a new league starts on the smallest plan");
+  r = await call("POST", `leagues/${PL.id}/seasons`, { name: "2026–27", start: "2026-09-01", end: "2027-05-31" }, pat); const PS = r.body.season;
+  const team = i => ({ in: "teams", id: "t" + i, value: { id: "t" + i, name: "Team " + i, players: [] } });
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 0, changes: [1, 2, 3, 4].map(team) }, pat); assert.equal(r.status, 200, "4 teams fit");
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 1, changes: [team(5)] }, pat);
+  assert.equal(r.status, 402); const offer = r.body.planNeeded;
+  assert.deepEqual([offer.teams, offer.from.maxTeams, offer.to.maxTeams, offer.to.price], [5, 4, 6, 9000]);
+  assert.equal(offer.until, "2026-12-31"); assert.equal(offer.days, 30); assert.equal(offer.extra, Math.round(3000 * 30 / 365), "the difference for the rest of the year");
+  r = await call("GET", `leagues/${PL.id}/seasons/${PS.id}`, null, pat); assert.equal(Object.keys(r.body.teams).length, 4, "nothing saved until accepted");
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 1, changes: [team(5)], acceptPlan: true }, pat); assert.equal(r.status, 200);
+  r = await call("GET", "public/plan-league"); assert.equal(r.body.league.plan.maxTeams, 6); assert.equal(r.body.league.plan.price, 9000);
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 2, changes: [team(6)] }, pat); assert.equal(r.status, 200, "up to the new plan's teams is fine");
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 3, changes: [7, 8, 9, 10, 11].map(team) }, pat);
+  assert.equal(r.status, 402); assert.equal(r.body.planNeeded.to.poa, true, "past the last break is on application"); assert.equal(r.body.planNeeded.extra, null);
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 3, changes: [7, 8, 9, 10, 11].map(team), acceptPlan: true }, pat); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${PL.id}/seasons/${PS.id}/data`, { base: 4, changes: [team(12)] }, pat); assert.equal(r.status, 200, "no more questions once on application");
+  // a past season doesn't count
+  r = await call("POST", `leagues/${PL.id}/seasons`, { name: "2019–20", start: "2019-09-01", end: "2020-05-31" }, pat); const old = r.body.season;
+  r = await call("PUT", `leagues/${PL.id}/seasons/${old.id}`, { version: 0, data: { teams: Object.fromEntries(Array.from({ length: 20 }, (_, i) => ["o" + i, { id: "o" + i, name: "Old " + i }])), venues: {}, fixtures: {} }, contacts: {} }, pat);
+  assert.equal(r.status, 200, "importing an old season isn't limited");
+  // the overall admin's list to bill
+  r = await call("GET", "super/plans", null, boss); const moves = r.body.changes.filter(c => c.leagueId === PL.id);
+  const up = moves.find(c => c.to.maxTeams === 6);
+  assert.equal(moves.length, 2); assert.ok(up); assert.ok(moves.some(c => c.to.poa)); assert.equal(up.billed, false); assert.equal(up.from.maxTeams, 4);
+  r = await call("PATCH", `super/plans/${PL.id}/${up.id}`, { billed: true }, boss); assert.equal(r.body.billed, true);
+  r = await call("PATCH", "super/settings", { plans: [{ maxTeams: 30, price: 60 }, { maxTeams: 60, price: 90 }, { maxTeams: 90, price: 120 }] }, boss);
+  r = await call("DELETE", `leagues/${PL.id}`, null, boss); assert.equal(r.status, 200);
+}
 // downloads: files a league puts up for anyone
 {
   const b64 = str => Buffer.from(str, "binary").toString("base64");
@@ -390,5 +466,74 @@ assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "
   assert.ok(/og:description" content="([^"]*)"/.exec(page)[1].length <= 200, "the description is kept short");
   assert.equal(await newsSharePage({ store, slug: "share-test", id: "d1", origin: "https://s.example", html }), null, "drafts aren't shared");
   assert.equal(await newsSharePage({ store, slug: "nope", id: "p1", origin: "https://s.example", html }), null);
+}
+// admin roles and captain logins
+{
+  const su = async (name, email) => (await call("POST", "auth/signup", { name, email, password: "longenough" })).body.token;
+  const own = await su("Roles Sec", "roles-sec@x.com"), res = await su("Res", "res@x.com"), fix = await su("Fix", "fix@x.com"), med = await su("Med", "med@x.com"), cap = await su("Cap", "cap@x.com"), nobody = await su("No", "no@x.com");
+  r = await call("POST", "leagues", { name: "Roles League", slug: "roles-league" }, own); const RL = r.body.league;
+  r = await call("POST", `leagues/${RL.id}/seasons`, { name: "2026–27", start: "2026-09-01", end: "2027-05-01" }, own); const RS = r.body.season;
+  const data0 = { teams: { a: { id: "a", name: "Aces", players: [{ first: "Al", last: "One" }] }, b: { id: "b", name: "Bees", players: [] } }, venues: { v: { id: "v", name: "Hall" } },
+    fixtures: { f: { id: "f", comp: "league", date: "2026-10-01", home: "a", away: "b", homePins: null, awayPins: null }, f2: { id: "f2", comp: "league", date: "2026-10-02", home: "b", away: "a", homePins: null, awayPins: null } }, divisions: {}, cups: { c: { id: "c", name: "Cup", results: {} } } };
+  r = await call("PUT", `leagues/${RL.id}/seasons/${RS.id}`, { version: 0, data: data0, contacts: { a: { mobile: "07700 900000" } } }, own); assert.equal(r.status, 200);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, res); assert.equal(r.status, 404, "not an admin yet");
+  r = await call("PATCH", `leagues/${RL.id}`, { members: [{ email: "RES@x.com", roles: ["results"] }, { email: "fix@x.com", roles: ["fixtures"] }, { email: "med@x.com", roles: ["media", "nope"] }] }, own); assert.equal(r.status, 200);
+  assert.equal(mails.filter(m => /added you to Roles League/.test(m.text)).length, 3, "each new admin is emailed");
+  r = await call("PATCH", `leagues/${RL.id}`, { members: [{ email: "x@x.com", roles: [] }] }, own); assert.equal(r.status, 400);
+  r = await call("PATCH", `leagues/${RL.id}`, { members: [] }, res); assert.equal(r.status, 403, "only the secretary changes admins");
+  r = await call("GET", `leagues/${RL.id}/members`, null, own); assert.deepEqual(r.body.members.map(m => [m.email, m.roles]), [["res@x.com", ["results"]], ["fix@x.com", ["fixtures"]], ["med@x.com", ["media"]]]);
+  assert.equal(r.body.captainLogins, false); assert.equal(r.body.contactRoles.results, false);
+  r = await call("GET", `leagues/${RL.id}/members`, null, res); assert.equal(r.status, 403);
+  r = await call("GET", "my/leagues", null, res); assert.deepEqual(r.body.leagues.map(l => [l.name, l.access.roles, l.access.owner]), [["Roles League", ["results"], false]]);
+  // contacts: hidden from roles until the secretary allows them
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, res); const v1 = r.body.version; assert.deepEqual(r.body.contacts, {}); assert.equal(r.body.contactsHidden, true);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, own); assert.equal(r.body.contacts.a.mobile, "07700 900000");
+  r = await call("PATCH", `leagues/${RL.id}`, { contactRoles: { results: true } }, own);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, res); assert.equal(r.body.contacts.a.mobile, "07700 900000");
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, fix); assert.deepEqual(r.body.contacts, {});
+  // results secretary: results of games already there, nothing else
+  const ch = (k, id, value) => ({ base: v1, changes: [{ in: k, id, value }] });
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "f2", { ...data0.fixtures.f2, homePins: 250, awayPins: 240, ready: true }), res); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "f2", { ...data0.fixtures.f2, homePins: 250, awayPins: 240, ready: true, date: "2026-11-01" }), res); assert.equal(r.status, 403, "results secretaries don't move games");
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "new", { id: "new", comp: "league" }), res); assert.equal(r.status, 403);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "f", null), res); assert.equal(r.status, 403);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("cups", "c", { id: "c", name: "Cup", results: { "1-0": { aPins: 1, bPins: 0 } } }), res); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("cups", "c", { id: "c", name: "Renamed", results: {} }), res); assert.equal(r.status, 403);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("teams", "a", { ...data0.teams.a, name: "X" }), res); assert.equal(r.status, 403);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}/submissions`, null, res); assert.equal(r.status, 200);
+  r = await call("PUT", `leagues/${RL.id}/seasons/${RS.id}`, { version: 0, data: data0, contacts: {} }, res); assert.equal(r.status, 403);
+  r = await call("POST", `leagues/${RL.id}/news`, { title: "Hi", body: "x" }, res); assert.equal(r.status, 403);
+  r = await call("PATCH", `leagues/${RL.id}`, { name: "Hijack" }, res); assert.equal(r.status, 403);
+  r = await call("POST", `leagues/${RL.id}/seasons`, { name: "X", start: "2027-09-01", end: "2028-05-01" }, res); assert.equal(r.status, 403);
+  // fixtures & cups secretary: games, venues, divisions and cups, but not teams or seasons
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "new", { id: "new", comp: "league", date: "2026-12-01", home: "b", away: "a" }), fix); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("venues", "v2", { id: "v2", name: "Club" }), fix); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("teams", "z", { id: "z", name: "Zeds" }), fix); assert.equal(r.status, 403);
+  r = await call("DELETE", `leagues/${RL.id}/seasons/${RS.id}`, null, fix); assert.equal(r.status, 403);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}/history`, null, fix); assert.equal(r.status, 403);
+  // news & media: posts, but no season changes
+  r = await call("POST", `leagues/${RL.id}/news`, { title: "Hi", body: "x" }, med); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, ch("fixtures", "f", { ...data0.fixtures.f, homePins: 1, awayPins: 2 }), med); assert.equal(r.status, 403);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}/submissions`, null, med); assert.equal(r.status, 403);
+  // captains: off by default; once on, a captain sends their own team's result without the code and keeps its players
+  r = await call("PATCH", `leagues/${RL.id}`, { captains: [{ email: "cap@x.com", team: "Aces" }] }, own); assert.equal(r.status, 200);
+  r = await call("GET", "public/roles-league"); assert.equal(r.body.league.takesResults, false); assert.equal(r.body.league.captainLogins, false);
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, cap); assert.equal(r.status, 404, "captain logins are off");
+  r = await call("PATCH", `leagues/${RL.id}`, { captainLogins: true }, own);
+  r = await call("GET", "public/roles-league"); assert.equal(r.body.league.takesResults, true);
+  r = await call("GET", "my/leagues", null, cap); assert.equal(r.body.leagues[0].access.captain, "Aces");
+  r = await call("GET", `leagues/${RL.id}/seasons/${RS.id}`, null, cap); assert.equal(r.status, 200); assert.deepEqual(r.body.contacts, {}); const vc = r.body.version;
+  r = await call("GET", `leagues/${RL.id}/news`, null, cap); assert.equal(r.status, 403);
+  const capCh = (id, value) => ({ base: vc, changes: [{ in: "teams", id, value }] });
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, capCh("a", { ...data0.teams.a, players: [{ first: "Al", last: "One" }, { first: "Bo", last: "Two" }] }), cap); assert.equal(r.status, 200);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, capCh("a", { ...data0.teams.a, name: "Aces Up" }), cap); assert.equal(r.status, 403, "captains change only players");
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, capCh("b", { ...data0.teams.b, players: [{ first: "X", last: "Y" }] }), cap); assert.equal(r.status, 403, "only their own team");
+  const card = n => ({ mode: "totals", rows: [{ key: n, name: n, total: 40 }, { key: n + "2", name: n + "2", total: 41 }] });
+  const sub = (body, token) => api(new Request(`http://x/api/public/roles-league/seasons/${RS.id}/submissions`, { method: "POST", headers: token ? { authorization: "Bearer " + token } : {}, body: JSON.stringify(body) })).then(async x => ({ status: x.status, body: await x.json() }));
+  r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, null); assert.equal(r.status, 403, "no code and not logged in");
+  r = await sub({ fixtureId: "f", team: "b", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 403, "not their team");
+  r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, nobody); assert.equal(r.status, 403);
+  r = await call("DELETE", `leagues/${RL.id}`, null, own); assert.equal(r.status, 200);
 }
 console.log("all API checks passed");

@@ -25,7 +25,7 @@ const TEMPLATE_HEADINGS = {
 html = html.replace(/<p style="margin:0"><a class="btn ghost sm" href="templates\/([^"]+)"[^]*?<\/p>/g, (_, file) =>
   `<p class="lookup-note">The template download works on the live site. Its headings are: ${TEMPLATE_HEADINGS[file] || "see the live site"}.</p>`);
 const banner = `<div style="background:var(--warn-bg);color:var(--ink);font-size:.9rem">
-  <div class="wrap" style="padding-block:8px"><strong>Preview.</strong> It doesn't touch the live site. <span id="preview-store-note">Connecting to your saved preview data…</span> Sign up with any email to try it as a league secretary. Sign up as <code>owner@skittlers.test</code> to see the overall admin pages. Postcode lookups and maps only work on the live site.</div>
+  <div class="wrap" style="padding-block:8px"><strong>Preview.</strong> It doesn't touch the live site. <span id="preview-store-note">Connecting to your saved preview data…</span> Sign up with any email to try it as a league secretary. Sign up as <code>owner@skittlers.test</code> to see the Super Admin pages. Postcode lookups and maps only work on the live site.</div>
 </div>
 `;
 html = html.replace('<header class="band">', banner + '<header class="band">');
@@ -139,9 +139,15 @@ ${core}
 </script>
 `;
 // The page's main script is the one after Leaflet; the preview's API goes in just before it.
+// The front page's screenshots go into the page itself, as the preview has no other files.
+const { readdir } = await import("node:fs/promises");
+const shots = {};
+for (const f of (await readdir(new URL("../public/img/", import.meta.url))).filter(f => /^shot-[a-z-]+\.jpg$/.test(f)))
+  shots[f.slice(5, -4)] = `data:image/jpeg;base64,${(await readFile(new URL(`../public/img/${f}`, import.meta.url))).toString("base64")}`;
+const shotScript = `<script>window.SKITTLERS_SHOTS = ${JSON.stringify(shots)};</script>\n`;
 const i = html.indexOf("<script>\n", html.indexOf("leaflet.js"));
 if (i < 0) throw new Error("Couldn't find the main script in public/index.html");
-html = html.slice(0, i) + previewApi + html.slice(i);
+html = html.slice(0, i) + shotScript + previewApi + html.slice(i);
 
 await writeFile(out, html);
 console.log("Preview written to " + out);

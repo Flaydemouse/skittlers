@@ -313,6 +313,27 @@ table.league.mini td.team { overflow: hidden; text-overflow: ellipsis; white-spa
 .nf-list { list-style: none; margin: 0; padding: 0; }
 .nf-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 0 8px; align-items: baseline; padding: 5px 0; font-size: .9rem; }
 .nf-row + .nf-row { border-top: 1px solid var(--line); }
+.tn-link { cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 35%, transparent); text-underline-offset: 3px; }
+.tn-link:hover { text-decoration-color: currentColor; }
+.tn-link:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; border-radius: 3px; }
+.pt-honours ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pt-honours li { font-size: .92rem; }
+.pt-honours .pt-h-gap { margin-top: 12px; }
+.pt-back { margin: 0 0 12px; }
+body:not(.can-fixtures) [data-need~="fixtures"], body:not(.can-fixtures) :is([data-act="fx-move"], [data-act="edit-fx"], [data-act="del-fx"], [data-act="cup-del"], [data-act="cup-draw"], [data-act="cup-redraw"], [data-act="cup-save-entries"], [data-act="ce-all"], [data-act="ce-none"]),
+body:not(.can-owner) [data-need~="owner"] { display: none !important; }
+.role-grid { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.role-row { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; }
+.role-row .role-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; align-items: center; }
+.role-row .radios { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.roles-help { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
+.mf-contacts { margin-bottom: 14px; }
+.mf-contacts table { width: 100%; }
+.my-players { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
+.my-players li { display: flex; gap: 8px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
+.pt-card { cursor: pointer; transition: border-color .15s; }
+.pt-card:hover { border-color: var(--brass); }
+.nf-bye { padding: 5px 0; font-size: .9rem; border-top: 1px solid var(--line); }
 .nf-home { text-align: right; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nf-away { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nf-row .won { font-weight: 800; }
@@ -384,6 +405,14 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .look-link { color: var(--lk-link); font-weight: 600; }
 .look-chip { background: var(--lk-brass); color: var(--lk-on-brass); border-radius: 99px; padding: 0 6px; font-size: .68rem; font-weight: 700; }
 .look-name { padding: 6px 10px 8px; font-size: .82rem; font-weight: 600; }
+.look-sub { margin: 16px 0 8px; font-size: .9rem; }
+.font-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.font-opt { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.font-opt:hover { border-color: var(--muted); }
+.font-opt[aria-checked="true"] { border-color: var(--brass); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 35%, transparent); }
+.font-head { font: 700 1.15rem var(--fo-head); }
+.font-body { font: 400 .85rem var(--fo-body); color: var(--muted); }
+.font-name { font: 600 .78rem var(--font-body); margin-top: 4px; }
 .chat-panel { display: grid; gap: 10px; }
 .chat { display: flex; flex-direction: column; gap: 8px; max-height: min(60vh, 560px); min-height: 180px; overflow-y: auto; padding: 4px 2px; }
 .chat-empty { margin: auto 0; text-align: center; }
@@ -415,6 +444,22 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .share-btn { display: inline-flex; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 4px 12px; font: 600 .82rem var(--font-body); text-decoration: none; cursor: pointer; }
 .share-btn:hover { border-color: var(--muted); background: var(--sunk); }
 .post-page { max-width: 760px; }
+.past-h { margin: 18px 0 10px; font-size: 1.15rem; }
+.past-champ { margin: 0 0 6px; font-size: .9rem; }
+.past-cups { display: grid; gap: 8px; }
+.past-cup { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.past-cup summary { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 12px 14px; cursor: pointer; list-style: none; }
+.past-cup summary::-webkit-details-marker { display: none; }
+.past-cup-name { font: 700 1.02rem var(--font-display); min-width: 160px; }
+.past-cup-who { display: flex; flex-wrap: wrap; gap: 4px 14px; flex: 1; font-size: .92rem; }
+.past-cup-open { color: var(--brass-ink); font-weight: 600; font-size: .88rem; }
+.past-cup-open::after { content: " ▾"; }
+.past-cup[open] .past-cup-open::after { content: " ▴"; }
+.past-cup-body { padding: 0 14px 14px; }
+.pt-was { margin: 0 0 6px; font-size: .88rem; }
+.pt-history, .pt-honours { margin-top: 12px; }
+.pt-history h4, .pt-honours h4 { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.pt-hist td, .pt-hist th { white-space: nowrap; }
 .doc-group + .doc-group { margin-top: 18px; }
 .doc-group h3 { font-size: 1rem; margin-bottom: 8px; }
 .doc-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
@@ -431,6 +476,76 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .share-dlg { max-width: min(520px, 96vw); }
 .share-dlg .card-head { display: flex; gap: 12px; align-items: start; justify-content: space-between; margin-bottom: 8px; }
 .share-dlg .share-bar { border-top: 0; padding-top: 0; }
+.nc-panel { margin-top: 16px; border-left: 4px solid var(--brass); }
+.nc-panel .card-head { display: flex; gap: 12px; align-items: start; justify-content: space-between; }
+.nc-table select { min-width: 220px; max-width: 100%; }
+.nc-table .hint { display: block; }
+.plan-rows { display: grid; gap: 8px; }
+.plan-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.plan-row .field { margin: 0; }
+.plan-dlg { max-width: min(540px, 96vw); }
+.plan-dlg h3 { margin-top: 0; }
+.plan-cost { background: var(--warn-bg); border-radius: 8px; padding: 10px 12px; }
+.dom-form { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.dom-form input { flex: 1; min-width: 180px; }
+.dns-table td, .dns-table th { white-space: nowrap; text-align: left; }
+.dom-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.dom-list li { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; }
+.dom-list .muted { display: block; font-size: .84rem; }
+.lp { display: grid; gap: 8px; }
+.lp h2 { font-size: clamp(1.5rem, 3.4vw, 2.2rem); line-height: 1.15; margin: 0 0 12px; }
+.lp-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 32px; align-items: center; padding: 18px 0 8px; }
+.lp-hero h2 { font-size: clamp(1.8rem, 4.4vw, 2.9rem); }
+.lp-hero p { font-size: 1.08rem; color: var(--muted); max-width: 52ch; }
+.lp-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; }
+.lp-big { padding: 12px 20px; font-size: 1rem; }
+.lp-small { font-size: .88rem !important; }
+.lp-hero-pic { position: relative; padding-bottom: 24px; }
+.lp-frame { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 18px 40px -18px rgb(0 0 0 / .35); background: var(--surface); }
+.lp-frame img { display: block; width: 100%; height: auto; }
+.lp-phone { position: absolute; right: -8px; bottom: 0; width: 26%; border-radius: 18px; overflow: hidden; border: 4px solid var(--ink); box-shadow: 0 14px 30px -10px rgb(0 0 0 / .45); background: var(--surface); }
+.lp-phone img { display: block; width: 100%; height: auto; }
+.lp-jump { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 0; border-block: 1px solid var(--line); margin: 14px 0 4px; }
+.lp-jump button { background: none; border: 1px solid var(--line); border-radius: 99px; padding: 6px 14px; font: 600 .9rem var(--font-body); color: var(--ink); cursor: pointer; }
+.lp-jump button:hover { background: var(--sunk); }
+.lp-sec { padding: 26px 0; scroll-margin-top: 12px; }
+.lp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.lp-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.lp-card h3 { font-size: 1.05rem; margin: 8px 0 4px; }
+.lp-card p { margin: 0; color: var(--muted); font-size: .93rem; }
+.lp-ico { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--baize); color: var(--on-baize); }
+.lp-split { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 28px; align-items: center; }
+.lp-steps-list { margin: 0 0 12px; padding-left: 20px; display: grid; gap: 8px; }
+.lp-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.lp-tabs button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 99px; padding: 6px 14px; font: 600 .88rem var(--font-body); cursor: pointer; }
+.lp-tabs button[aria-selected="true"] { background: var(--baize); color: var(--on-baize); border-color: var(--baize); }
+.lp-gallery { max-width: 980px; }
+.lp-how { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.lp-how li { display: flex; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.lp-how p { margin: 2px 0 0; color: var(--muted); font-size: .92rem; }
+.lp-n { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--brass); color: var(--on-brass, #fff); font-weight: 800; }
+.lp-prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; align-items: stretch; }
+.lp-plan { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px 16px; display: flex; flex-direction: column; gap: 6px; }
+.lp-plan h3 { font-size: 1.05rem; margin: 0; }
+.lp-plan ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; font-size: .9rem; }
+.lp-pop { border: 2px solid var(--brass); }
+.lp-price { display: flex; align-items: baseline; gap: 6px; }
+.lp-amount { font: 800 1.7rem var(--font-display); color: var(--ink); }
+.lp-ask { font-size: 1.25rem; }
+.lp-per { color: var(--muted); font-size: .9rem; }
+.lp-extras { background: var(--sunk); }
+.lp-extra-list { list-style: none; padding: 0 !important; }
+.lp-extra-list li { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 6px; }
+.lp-extra-list span { color: var(--muted); white-space: nowrap; }
+.lp-signup { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; background: var(--baize); color: var(--on-baize); border-radius: 16px; padding: 28px; margin-top: 10px; }
+.lp-signup h2 { color: var(--on-baize); }
+.lp-signup p { color: var(--on-baize-muted); }
+.lp-signup .view-head { display: none; }
+.lp-signup #lp-signup-form { background: var(--surface); color: var(--ink); border-radius: 12px; padding: 4px 6px; }
+.lp-contact { max-width: 720px; }
+.lp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.lp-foot { text-align: center; color: var(--muted); font-size: .88rem; padding: 26px 0 10px; border-top: 1px solid var(--line); }
+@media (max-width: 820px) { .lp-hero, .lp-split, .lp-signup { grid-template-columns: minmax(0, 1fr); } .lp-phone { width: 30%; right: 4px; } .lp-signup { padding: 20px 16px; } }
 .xfer-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
 .xfer-box { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px 10px; margin: 0; min-width: 0; display: grid; gap: 8px; }
 .xfer-box legend { font-weight: 700; padding: 0 4px; }
@@ -849,6 +964,29 @@ function themeCss(id) {
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { ${block("dark")} } }
 :root[data-theme="dark"] { ${block("dark")} }`;
 }
+// Font styles: a heading font and a text font, from Google Fonts. "classic" is the page's own.
+const FONTS = [
+  { id: "classic", name: "Classic", display: "Rokkitt", body: "Barlow", q: "" },
+  { id: "modern", name: "Modern", display: "Montserrat", body: "Inter", q: "family=Montserrat:wght@600;800&family=Inter:wght@400;500;600;700" },
+  { id: "traditional", name: "Traditional", display: "Playfair Display", body: "Source Sans 3", q: "family=Playfair+Display:wght@600;800&family=Source+Sans+3:wght@400;500;600;700" },
+  { id: "bold", name: "Bold", display: "Oswald", body: "Roboto", q: "family=Oswald:wght@500;700&family=Roboto:wght@400;500;700" },
+  { id: "friendly", name: "Friendly", display: "Merriweather", body: "Nunito", q: "family=Merriweather:wght@700;900&family=Nunito:wght@400;600;700" },
+  { id: "clean", name: "Clean", display: "Poppins", body: "Open Sans", q: "family=Poppins:wght@600;700&family=Open+Sans:wght@400;600;700" },
+];
+const fontStack = (name, serif) => `"${name}", ${serif ? '"Georgia", serif' : '"Segoe UI", "Helvetica Neue", Arial, sans-serif'}`;
+const SERIF_FONTS = new Set(["Rokkitt", "Playfair Display", "Merriweather"]);
+// Loads a Google Fonts stylesheet once.
+function loadFontCss(q) {
+  if (!q || document.querySelector(`link[data-font-q="${CSS.escape(q)}"]`)) return;
+  const link = Object.assign(document.createElement("link"), { rel: "stylesheet", href: `https://fonts.googleapis.com/css2?${q}&display=swap` });
+  link.dataset.fontQ = q; document.head.append(link);
+}
+function applyFont(id) {
+  const f = FONTS.find(x => x.id === id), root = document.documentElement.style;
+  if (!f || f.id === "classic") { root.removeProperty("--font-display"); root.removeProperty("--font-body"); return; }
+  loadFontCss(f.q);
+  root.setProperty("--font-display", fontStack(f.display, SERIF_FONTS.has(f.display))); root.setProperty("--font-body", fontStack(f.body, false));
+}
 // The colours a scheme sets.
 const THEME_TOKENS = ["paper", "surface", "sunk", "line", "baize", "baize-2", "brass", "warn-bg", "ink", "muted", "on-baize", "on-baize-muted", "on-brass", "brass-ink", "win", "loss", "draw", "nick"];
 /* THEMES-END */
@@ -916,6 +1054,11 @@ const sortedVenues = () => Object.values(S.venues).sort((a, b) => a.name.localeC
 const sortedDivisions = () => Object.values(S.divisions).sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || a.name.localeCompare(b.name, undefined, { numeric: true }));
 const divisionName = id => S.divisions[id]?.name || "";
 const played = f => Number.isFinite(f.homePins) && Number.isFinite(f.awayPins);
+// A walkover: no game was played and one side was given the win ("home" or "away"). Pins, when entered, come first.
+const walkover = f => !played(f) && (f.walkover === "home" || f.walkover === "away") ? f.walkover : null;
+const decided = f => played(f) || !!walkover(f);
+// "home", "away", "draw", or null when there's no result yet.
+const winnerSide = f => played(f) ? (f.homePins > f.awayPins ? "home" : f.awayPins > f.homePins ? "away" : "draw") : walkover(f);
 const fxSort = (a, b) => (a.date || "").localeCompare(b.date || "") || (a.time || "").localeCompare(b.time || "") || teamName(a.home).localeCompare(teamName(b.home));
 function fxVenue(f) {
   const vid = f.venue || S.teams[f.home]?.venue;
@@ -950,10 +1093,13 @@ function slugFromLocation() {
   const seg = NAV.path().split("/").filter(Boolean)[0];
   return seg ? decodeURIComponent(seg).toLowerCase() : null;
 }
-const leaguePath = slug => `/${slug}`;
+// A league's own domain (the Own domain add-on) shows that league at "/". The account area stays on the main site.
+const MAIN_ORIGIN = "https://skittlers.netlify.app";
+const OWN_HOST = !window.SKITTLERS_NAV && !/(^|\.)(skittlers\.co\.uk|netlify\.app)$|^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const leaguePath = slug => OWN_HOST ? "/" : `/${slug}`;
 const SITE_HOST = window.SKITTLERS_HOST || location.host || "skittlers.co.uk";
 const leagueAddress = slug => `${SITE_HOST}/${slug}`;
-const accountLink = (hash, label, extra = "") => `<a href="/#${hash}" data-path="/" data-hash="${hash}"${extra}>${label}</a>`;
+const accountLink = (hash, label, extra = "") => OWN_HOST ? `<a href="${MAIN_ORIGIN}/#${hash}"${extra}>${label}</a>` : `<a href="/#${hash}" data-path="/" data-hash="${hash}"${extra}>${label}</a>`;
 const leagueLink = (slug, hash, label, extra = "") => `<a href="${leaguePath(slug)}${hash ? "#" + hash : ""}" data-path="${leaguePath(slug)}" data-hash="${hash || ""}"${extra}>${label}</a>`;
 
 /* ---------- data ---------- */
@@ -972,6 +1118,29 @@ async function api(path, opts = {}) {
   return body;
 }
 const send = (path, method, body) => api(path, { method, body: JSON.stringify(body || {}) });
+/* ---------- admin roles ---------- */
+// S.access, for the league open now: { owner, roles, contacts, captain } from My leagues (the Super Admin and the
+// league secretary are "owner" and can do everything). The API checks every change too; the page just shows what fits.
+const ADMIN_ROLES = { results: "Results secretary", fixtures: "Fixtures & cups secretary", media: "News & media" };
+const ROLE_HELP = { results: "Fixtures & results: scores, scorecards, photo reading, publishing, captains' results, cup results.",
+  fixtures: "Fixtures, dates and postponements, venues, divisions, cups and draws, and everything a results secretary does.",
+  media: "News & photos, match night report drafts and Downloads." };
+const CAN = { fixtures: ["fixtures"], results: ["fixtures", "results"], media: ["media"] };
+const can = p => { const a = S.access; if (!a) return false; if (a.owner) return true; return p !== "owner" && (CAN[p] || []).some(r => a.roles.includes(r)); };
+const TAB_NEEDS = { seasons: "owner", venues: "fixtures", teams: "owner", divisions: "fixtures", "manage-fixtures": "results", cups: "results", "manage-news": "media", "manage-docs": "media", "league-setup": "owner" };
+const canTab = id => S.admin && can(TAB_NEEDS[id] || "owner");
+const accessText = a => !a ? "" : a.owner ? "League secretary" : [...Object.keys(ADMIN_ROLES).filter(r => a.roles.includes(r)).map(r => ADMIN_ROLES[r]), ...(a.captain ? [`Captain of ${a.captain}`] : [])].join(", ");
+// Where an admin starts: the first tab their role opens.
+const firstTab = a => !a ? "home" : a.owner ? "seasons" : a.roles.includes("fixtures") || a.roles.includes("results") ? "manage-fixtures" : a.roles.includes("media") ? "manage-news" : a.captain ? "my-team" : "home";
+function setAccess() {
+  const mine = S.league && S.myLeagues.find(l => l.id === S.league.id);
+  S.access = !S.user || !S.league ? null : S.user.isSuper ? { owner: true, roles: Object.keys(ADMIN_ROLES), contacts: true, captain: null } : mine?.access || null;
+  S.admin = !!S.access && (S.access.owner || S.access.roles.length > 0);
+  S.captainTeam = S.league?.captainLogins && S.access?.captain || null;
+  for (const k of ["owner", "fixtures", "results", "media"]) document.body.classList.toggle(`can-${k}`, can(k));
+}
+// The team a logged-in captain looks after, this season.
+const myTeam = () => S.captainTeam ? Object.values(S.teams).find(t => teamKey(t.name) === teamKey(S.captainTeam)) || null : null;
 function setToken(token) { S.token = token; store.set(TOKEN_KEY, token); }
 async function loadMe() {
   if (!S.token) return;
@@ -984,7 +1153,7 @@ async function loadMe() {
   }
 }
 function signedOut(msg) {
-  setToken(null); S.user = null; S.myLeagues = []; S.admin = false; S.contacts = {};
+  setToken(null); S.user = null; S.myLeagues = []; S.admin = false; S.access = null; S.captainTeam = null; S.contacts = {}; setAccess();
   if (msg) toast(msg);
   if (S.mode === "league") { if (ADMIN_VIEWS.some(([id]) => id === location.hash.slice(1))) location.hash = "home"; route(); loadSeason(); }
   else { location.hash = "login"; route(); }
@@ -1001,8 +1170,10 @@ const seasonPref = () => `skittlers-season-${S.league?.id}`;
 async function openLeague() {
   try { S.league = (await api(`/api/public/${encodeURIComponent(S.slug)}`)).league; }
   catch (e) { S.status = e.status === 404 ? "missing" : "offline"; return route(); }
-  S.admin = !!S.user && (S.user.isSuper || S.myLeagues.some(l => l.id === S.league.id));
-  const remembered = S.admin && store.get(seasonPref());
+  setAccess();
+  // The site always opens on the season on the public site. A season chosen with "Work on this season" is kept
+  // only for this visit, so earlier seasons don't take over the tables and fixtures next time.
+  let remembered = null; try { remembered = S.admin && sessionStorage.getItem(seasonPref()); } catch {}
   S.seasonId = S.league.seasons.some(s => s.id === remembered) ? remembered : S.league.currentSeasonId || S.league.seasons.at(-1)?.id || null;
   route();
   loadExtras();
@@ -1052,7 +1223,7 @@ function readyHtml() {
 // S.subs: { code, items } for the season, admins only. Checked when the season loads and every two minutes.
 const subsPending = () => S.admin && S.subs?.season === S.seasonId ? S.subs.items.filter(x => x.status === "pending") : [];
 async function loadSubs() {
-  if (!S.admin || !S.league?.id || !S.seasonId) return;
+  if (!S.admin || !can("results") || !S.league?.id || !S.seasonId) return;
   const first = S.subs?.season !== S.seasonId, before = subsPending().length;
   try { S.subs = { ...(await api(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/submissions`)), season: S.seasonId }; } catch { return; }
   const n = subsPending().length;
@@ -1116,7 +1287,7 @@ function openSubCard(x) {
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-sub-act]"); if (b) subAction(b.closest("[data-sub]").dataset.sub, b.dataset.subAct, b); });
 function useSeason(id) {
-  S.seasonId = id; store.set(seasonPref(), id);
+  S.seasonId = id; try { sessionStorage.setItem(seasonPref(), id); } catch {}
   S.status = "connecting"; S.loaded = { teams: false, venues: false, fixtures: false };
   refresh(); loadSeason();
 }
@@ -1129,7 +1300,7 @@ function saveError(e) {
 // copy (homePins, awayPins, cards, note) is what admins edit. `ready` is the "checked, can go live" tick and
 // `notePublic` says whether the note goes on the live site. Fixtures with no `pub` predate publishing and are live as they are.
 const resultSig = f => JSON.stringify([f?.homePins ?? null, f?.awayPins ?? null, f?.cards ?? null]);
-const snapResult = f => played(f) ? { homePins: f.homePins, awayPins: f.awayPins, ...(f.cards ? { cards: f.cards } : {}) } : { homePins: null, awayPins: null };
+const snapResult = f => played(f) ? { homePins: f.homePins, awayPins: f.awayPins, ...(f.cards ? { cards: f.cards } : {}) } : { homePins: null, awayPins: null, ...(walkover(f) ? { walkover: walkover(f) } : {}) };
 const pubNote = f => f.notePublic && f.note?.trim() ? f.note.trim() : null;
 // When an edit changes a result, the live site keeps showing what it showed before, and the tick comes off.
 function holdBack(before, after) {
@@ -1139,7 +1310,7 @@ function holdBack(before, after) {
 }
 // Where a fixture stands: no result yet, entered but not checked, checked and waiting, or live.
 function pubState(f) {
-  if (!("pub" in f)) return played(f) ? "live" : f.note ? (pubNote(f) ? "pending" : "none") : "none";
+  if (!("pub" in f)) return decided(f) ? "live" : f.note ? (pubNote(f) ? "pending" : "none") : "none";
   const resultLive = resultSig(f.pub) === resultSig(snapResult(f)), noteLive = (f.pub?.note ?? null) === pubNote(f);
   if (resultLive && noteLive) return played(f) ? "live" : f.pub?.note ? "live" : "none";
   if (!resultLive && !f.ready) return played(f) ? "unchecked" : "none";
@@ -1238,7 +1409,9 @@ async function commit(mutate, { live = false } = {}) {
   }
   if (!changes.length) return true;
   try {
-    const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: S.version, changes });
+    const save = extra => send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: S.version, changes, ...extra });
+    const r = await save().catch(async e => { if (!e.body?.planNeeded || !(await planDialog(e.body.planNeeded))) throw e.body?.planNeeded ? Object.assign(e, { quiet: true }) : e; return save({ acceptPlan: true }); });
+    if (S.league && Object.keys(draft.teams || {}).length > Object.keys(S.teams || {}).length) api(`/api/public/${encodeURIComponent(S.league.slug)}`).then(x => { if (x.league?.plan) S.league.plan = x.league.plan; }).catch(() => {});
     // Nights that this save finished off: a result entered for a game that didn't have one. Bulk changes
     // (loading an example season, importing or generating fixtures) never start a report.
     // Match night reports start when a night's results are published (see publishNight and publishCup).
@@ -1246,14 +1419,41 @@ async function commit(mutate, { live = false } = {}) {
     if (r.stale) loadSeason().then(() => setTimeout(() => toast("Someone else also saved changes just now. They're shown here too."), 1500));
     return true;
   } catch (e) {
-    saveError(e);
+    if (!e.quiet) saveError(e);
     return false;
   }
 }
 // League-level changes: name, web address, points, seasons.
 async function leagueRequest(path, method, body) {
-  try { const r = await send(`/api/leagues/${S.league.id}${path}`, method, body); if (r.league) S.league = r.league; return r; }
+  try {
+    const go = extra => send(`/api/leagues/${S.league.id}${path}`, method, { ...body, ...extra });
+    const r = await go().catch(async e => { if (!e.body?.planNeeded) throw e; if (!(await planDialog(e.body.planNeeded))) return null; return go({ acceptPlan: true }); });
+    if (r?.league) S.league = r.league; return r;
+  }
   catch (e) { saveError(e); return null; }
+}
+/* ---------- price breaks ---------- */
+const planName = p => p?.poa || p?.maxTeams == null ? "a plan priced on application" : `the up to ${p.maxTeams} teams plan`;
+const planPrice = p => p?.poa || p?.maxTeams == null ? "priced on application" : p.price ? `${money(p.price)} a year` : "price to be confirmed";
+// Asks before a change takes the league over its plan's teams. Resolves true to go ahead.
+function planDialog(o) {
+  return new Promise(done => {
+    let dlg = $("#plan-dlg");
+    if (!dlg) { dlg = document.createElement("dialog"); dlg.id = "plan-dlg"; dlg.className = "sc-dlg plan-dlg"; dlg.setAttribute("aria-labelledby", "plan-title"); document.body.append(dlg); }
+    const renew = dayMonthYear(o.until);
+    dlg.innerHTML = `<h3 id="plan-title">Moving to a bigger plan</h3>
+      <p>This takes <strong>${esc(S.league.name)}</strong> to <strong>${plural(o.teams, "team")}</strong> this season. Your plan covers up to ${o.from.maxTeams} teams (${planPrice(o.from)}).</p>
+      ${o.to.poa ? `<p>Leagues with more teams than that are <strong>priced on application</strong>. If you go ahead, we'll be in touch to agree a price. You can keep adding teams meanwhile.</p>`
+        : `<p>You'll move to <strong>${planName(o.to)}</strong> (${planPrice(o.to)}).</p>
+          <p class="plan-cost">${o.extra != null ? `You'll be billed the extra <strong>${money(o.extra)}</strong> for the rest of your subscription year, the ${plural(o.days, "day")} until ${esc(renew)}.` : `The extra for the rest of your subscription year, until ${esc(renew)}, will be confirmed with you.`}
+          From your renewal on ${esc(renew)}, your plan will be ${planPrice(o.to)}.</p>`}
+      <p><strong>Do you wish to proceed?</strong></p>
+      <div class="actions"><button type="button" class="btn" data-plan="yes">Yes, move to the bigger plan</button><button type="button" class="btn ghost" data-plan="no">No, don't add it</button></div>`;
+    const close = ok => { dlg.close(); done(ok); if (!ok) toast("Nothing was saved. The league stays on its plan."); };
+    dlg.onclick = e => { const b = e.target.closest("[data-plan]"); if (b) close(b.dataset.plan === "yes"); };
+    dlg.oncancel = e => { e.preventDefault(); close(false); };
+    dlg.showModal(); $("[data-plan=yes]", dlg).focus();
+  });
 }
 
 function clashes() {
@@ -1275,9 +1475,11 @@ function standings(keep = () => true) {
   const c = cfg(), rows = {};
   for (const t of Object.values(S.teams)) rows[t.id] = { t, P: 0, W: 0, D: 0, L: 0, hp: 0, ap: 0, pf: 0, pa: 0, apd: 0, hpts: 0 };
   for (const f of Object.values(S.fixtures)) {
-    if (f.comp !== "league" || !played(f) || !keep(f)) continue;
+    if (f.comp !== "league" || !decided(f) || !keep(f)) continue;
     const h = rows[f.home], a = rows[f.away];
     if (!h || !a) continue;
+    // A walkover counts as a game won and lost, with no pins.
+    if (walkover(f)) { h.P++; a.P++; if (walkover(f) === "home") { h.W++; a.L++; } else { a.W++; h.L++; } continue; }
     const hp = f.homePins, ap = f.awayPins;
     h.P++; a.P++;
     h.hp += hp; a.ap += ap;
@@ -1290,12 +1492,12 @@ function standings(keep = () => true) {
   }
   for (const r of Object.values(rows)) { r.pd = r.pf - r.pa; r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss + r.hpts; }
   // Head to head: the points the tied teams took off each other in league games (hand points included).
-  const games = Object.values(S.fixtures).filter(f => f.comp === "league" && played(f) && keep(f));
+  const games = Object.values(S.fixtures).filter(f => f.comp === "league" && decided(f) && keep(f));
   const h2h = group => {
     const ids = new Set(group.map(r => r.t.id)), pts = {};
     for (const f of games) {
       if (!ids.has(f.home) || !ids.has(f.away)) continue;
-      const hw = f.homePins > f.awayPins, aw = f.awayPins > f.homePins;
+      const w = winnerSide(f), hw = w === "home", aw = w === "away";
       pts[f.home] = (pts[f.home] || 0) + (hw ? c.win : aw ? c.loss : c.draw);
       pts[f.away] = (pts[f.away] || 0) + (aw ? c.win : hw ? c.loss : c.draw);
       const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away);
@@ -1322,7 +1524,7 @@ function standings(keep = () => true) {
 }
 
 /* ---------- shell & routing ---------- */
-const PUBLIC_VIEWS = [["home", "Home"], ["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"], ["league-teams", "Teams"], ["league-venues", "Venues"], ["downloads", "Downloads"], ["submit", "Send a result"]];
+const PUBLIC_VIEWS = [["home", "Home"], ["tables", "League tables"], ["fixtures", "League fixtures"], ["cup", "Cups"], ["stats", "Stats"], ["league-teams", "Teams"], ["league-venues", "Venues"], ["past", "Past seasons"], ["downloads", "Downloads"], ["submit", "Send a result"]];
 const ADMIN_VIEWS = [["seasons", "Seasons"], ["venues", "Manage venues"], ["teams", "Manage teams, players & roles"], ["divisions", "Divisions"], ["manage-fixtures", "Fixtures & results"], ["cups", "Manage cups"], ["manage-news", "News & photos"], ["manage-docs", "Downloads"], ["league-setup", "League setup"]];
 const ACCOUNT_VIEWS = [["leagues", "My leagues"], ["account", "Account"], ["help", "Help & requests"]];
 let current = null;
@@ -1334,9 +1536,9 @@ function renderNav() {
   if (S.mode === "account") {
     const count = (x, n) => n ? link(x).replace("</a>", ` <span class="badge">${n}</span></a>`) : link(x);
     $("#tabs").innerHTML = `<div class="tab-row">${S.user
-      ? ACCOUNT_VIEWS.map(x => x[0] === "help" ? count(x, S.support.mine) : link(x)).join("") + (S.user.isSuper ? link(["super", "Overall admin"]) + count(["inbox", "Messages"], S.support.inbox) : "")
-      : link(["login", "Log in"]) + link(["signup", "Sign up"])}</div>`;
-    $("#acct").innerHTML = S.user ? logout : "";
+      ? ACCOUNT_VIEWS.map(x => x[0] === "help" ? count(x, S.support.mine) : link(x)).join("") + (S.user.isSuper ? link(["super", "Super Admin"]) + count(["inbox", "Messages"], S.support.inbox) : "")
+      : link(["welcome", "About"]) + link(["signup", "Sign up"]) + link(["login", "Log in"])}</div>`;
+    $("#acct").innerHTML = S.user ? logout : `<a href="#login">Log in</a>`;
     return menuExtras();
   }
   if (!S.league) { $("#tabs").innerHTML = ""; $("#acct").innerHTML = ""; return menuExtras(); }
@@ -1344,11 +1546,12 @@ function renderNav() {
   // Fixtures & results shows how many results captains have sent in; Send a result shows when the league takes them.
   const waiting = subsPending().length;
   const adminLink = x => x[0] === "manage-fixtures" && waiting ? link(x).replace("</a>", ` <span class="badge" title="${plural(waiting, "result")} sent in by captains">${waiting}</span></a>`) : link(x);
-  $("#tabs").innerHTML = (S.admin ? `<div class="tab-row admin-row"><span class="sep">Admin</span>${ADMIN_VIEWS.map(adminLink).join("")}</div>` : "")
-    + `<div class="tab-row">${PUBLIC_VIEWS.filter(([id]) => (id !== "submit" || S.league.takesResults) && (id !== "downloads" || S.docs.length)).map(link).join("")}</div>`;
-  $("#acct").innerHTML = S.admin
+  $("#tabs").innerHTML = (S.admin ? `<div class="tab-row admin-row"><span class="sep">Admin</span>${ADMIN_VIEWS.filter(([id]) => canTab(id)).map(adminLink).join("")}${S.captainTeam ? link(["my-team", "My team"]) : ""}</div>` : "")
+    + (!S.admin && S.captainTeam ? `<div class="tab-row admin-row"><span class="sep">Captain</span>${link(["my-team", "My team"])}</div>` : "")
+    + `<div class="tab-row">${PUBLIC_VIEWS.filter(([id]) => (id !== "submit" || S.league.takesResults) && (id !== "downloads" || S.docs.length) && (id !== "past" || pastSeasons().length)).map(link).join("")}</div>`;
+  $("#acct").innerHTML = S.admin || S.captainTeam
     ? `<span class="who">${esc(S.user.name)}</span>${accountLink("leagues", "My leagues")}${accountLink("help", `Help${S.support.mine ? ` <span class="badge">${S.support.mine}</span>` : ""}`)}${S.user.isSuper ? accountLink("inbox", `Messages${S.support.inbox ? ` <span class="badge">${S.support.inbox}</span>` : ""}`) : ""}${logout}`
-    : `<a href="/#login" data-act="secretary-login">Secretary login</a>`;
+    : OWN_HOST ? `<a href="${MAIN_ORIGIN}/#login">Log in</a>` : `<a href="/#login" data-act="secretary-login">Log in</a>`;
   menuExtras(waiting);
 }
 // Phones: the tabs fold into a menu. The account links go in it too, and the button shows the captains' count.
@@ -1386,6 +1589,7 @@ darkQuery.addEventListener?.("change", () => applyTheme());
 new MutationObserver(() => applyTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 function renderBrand() {
   applyTheme(S.mode === "league" ? S.league?.settings?.theme : "");
+  applyFont(S.mode === "league" ? S.league?.settings?.font : "");
   const name = $("#league-name"), sub = $("#league-season");
   if (S.mode === "account") {
     document.title = "Skittlers";
@@ -1398,28 +1602,52 @@ function renderBrand() {
   name.textContent = S.league.name;
   const seasons = [...S.league.seasons].reverse();
   if (!seasons.length) { sub.textContent = S.admin ? "No season set up yet" : ""; return; }
-  if (seasons.length === 1) { sub.textContent = `Season ${seasons[0].name}`; return; }
-  const sel = sub.querySelector("select");
-  const opts = seasons.map(s => `<option value="${esc(s.id)}"${s.id === S.seasonId ? " selected" : ""}>Season ${esc(s.name)}${S.admin && s.id === S.league.currentSeasonId ? " (on public site)" : ""}</option>`).join("");
-  if (!sel || sel.dataset.opts !== opts) {
-    sub.innerHTML = `<label class="visually-hidden" for="season-pick">Season</label><select id="season-pick" class="season-pick" data-opts="">${opts}</select>`;
-    $("#season-pick").dataset.opts = opts;
-  }
+  // Earlier seasons are on the Past seasons tab; admins choose the season they work on from the Seasons page.
+  const shown = currentSeason() || seasons[0];
+  sub.textContent = `Season ${shown.name}${S.admin && shown.id !== S.league.currentSeasonId ? " · not on the public site" : ""}`;
 }
 function currentView() {
   const h = location.hash.slice(1);
   if (S.mode === "account") {
-    if (!S.user) return h === "signup" ? "signup" : "login";
+    if (h === "welcome") return "welcome";
+    if (!S.user) return h === "signup" ? "signup" : h === "login" ? "login" : "welcome";
     if (ACCOUNT_VIEWS.some(([id]) => id === h) || (["super", "inbox"].includes(h) && S.user.isSuper)) return h;
     return "leagues";
   }
   if (!S.league) return "league-status";
   if (PUBLIC_VIEWS.some(([id]) => id === h)) return h;
   if (/^news\/./.test(h)) return "post";
-  if (S.admin && ADMIN_VIEWS.some(([id]) => id === h)) return h;
-  if (S.admin && !S.league.seasons.length) return "seasons";
+  if (/^team\/./.test(h)) return "league-teams";
+  if (S.admin && ADMIN_VIEWS.some(([id]) => id === h) && canTab(h)) return h;
+  if (h === "my-team" && S.captainTeam) return "my-team";
+  if (S.admin && can("owner") && !S.league.seasons.length) return "seasons";
   return "home";
 }
+// The team now playing under a name, or an older name of it (null for teams no longer in the league).
+function teamByName(name) {
+  const k = teamKey((name || "").trim()); if (!k) return null;
+  return Object.values(S.teams).find(t => teamKey(t.name) === k) || null;
+}
+// Team names (".tn") on the public pages become links to the team's page. Marked after each render.
+function linkTeamNames(root) {
+  if (S.mode !== "league" || !S.league || !PUBLIC_VIEWS.some(([id]) => id === currentView())) return;
+  for (const el of root.querySelectorAll(".tn:not([data-team]):not(.tn-off)")) {
+    if (el.closest("button, a, select, label, [data-no-team-link]")) { el.classList.add("tn-off"); continue; }
+    const t = teamByName(el.textContent); if (!t) { el.classList.add("tn-off"); continue; }
+    el.dataset.team = t.id; el.classList.add("tn-link"); el.setAttribute("role", "link"); el.tabIndex = 0;
+    el.title = `See ${t.name}'s team page`;
+  }
+}
+function openTeamPage(id) { if (S.teams[id]) location.hash = `team/${id}`; }
+document.addEventListener("click", e => {
+  const el = e.target.closest(".tn-link[data-team]"); if (!el) return;
+  e.preventDefault(); e.stopPropagation(); el.closest("dialog[open]")?.close(); openTeamPage(el.dataset.team);
+}, true);
+document.addEventListener("keydown", e => {
+  const el = e.target.closest?.(".tn-link[data-team]"); if (!el || (e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault(); e.stopPropagation(); openTeamPage(el.dataset.team);
+}, true);
+new MutationObserver(() => { for (const m of [document.getElementById("main"), document.getElementById("h2h-dlg")]) if (m) linkTeamNames(m); }).observe(document.documentElement, { childList: true, subtree: true });
 function route() {
   const v = currentView();
   renderNav();
@@ -1448,11 +1676,11 @@ function refresh() {
 }
 // Add-ons: reading scores from a photo of the board, and match night reports written by Claude. The overall
 // admin decides whether each is included in the basic subscription or an extra given to chosen accounts.
-const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" } };
+const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" }, domain: { name: "Own domain", unit: "", plain: true } };
 const money = pence => `£${(pence / 100).toFixed(2)}`;
 const addonActive = (u, k) => !!u[k]?.until && u[k].until >= today();
 function addonNote(u, k, mode) {
-  if (u.isSuper) return "Always on for the overall admin";
+  if (u.isSuper) return "Always on for the Super Admin";
   if (mode === "included") return "Included in the subscription";
   if (!u[k]?.until) return "Not added";
   const limit = u[k].monthlyLimit ? `, up to ${u[k].monthlyLimit} ${ADDON_INFO[k].unit} a month per league` : "";
@@ -1460,7 +1688,7 @@ function addonNote(u, k, mode) {
 }
 function subscriptionNote(u) {
   const s = u.subscription || {}, when = dayMonthYear(s.until);
-  if (u.isSuper) return "You're the overall admin, so there's no subscription to pay.";
+  if (u.isSuper) return "You're the Super Admin, so there's no subscription to pay.";
   if (!u.canEdit) return `Your subscription ended on ${when}. You can still view your leagues, but changes are paused until it's renewed. Contact the site owner to renew.`;
   return s.status === "trial" ? `Free trial until ${when}. A yearly subscription keeps your leagues running after that.` : `Subscription paid until ${when}.`;
 }
@@ -1490,7 +1718,7 @@ async function afterLogin({ token, user }) {
   if (next?.path && next.path !== "/") return NAV.go(next.path, next.hash || "teams");
   location.hash = "leagues"; route();
 }
-function authForm(el, { title, intro, fields, button, endpoint, footer }) {
+function authForm(el, { title, intro, fields, button, endpoint, footer, focus = true }) {
   el.innerHTML = `<div class="auth">
     <div class="view-head"><div><div class="eyebrow">Skittlers</div><h2>${title}</h2><p>${intro}</p></div></div>
     <form class="panel form" id="auth-form" autocomplete="on" novalidate>
@@ -1508,8 +1736,128 @@ function authForm(el, { title, intro, fields, button, endpoint, footer }) {
     catch (x) { err.textContent = x.status ? x.message : "Couldn't reach the server. Try again."; err.hidden = false; }
     finally { if (btn.isConnected) btn.disabled = false; }
   });
-  $("input", el).focus();
+  if (focus) $("input", el).focus();
 }
+/* ---------- the front page: what Skittlers is, prices, sign up and contact ---------- */
+const LP_FEATURES = [
+  ["calendar", "Fixtures in seconds", "Generate a whole season's league fixtures: everyone plays everyone home and away, and teams sharing an alley are never both at home the same night. Postpone and move games with clash warnings."],
+  ["table", "Tables that keep themselves", "League tables update as results go in, with your points, hand points and tie-break order. Divisions side by side on the home page."],
+  ["trophy", "Cups and knockouts", "Team, pairs, captains or individual cups. Byes worked out for you, draws that avoid alley clashes, or a straight final. Winners go through on their own."],
+  ["chart", "Scorecards and stats", "Hand by hand or totals with spares. Averages, best hands, spares, records, form by position in the order, and every player's games."],
+  ["camera", "Read scores from a photo", "Photograph the board and the scorecard fills itself in, in the board's order, with anything unclear highlighted for you to check."],
+  ["check", "Checked before it goes live", "Results, scorecards and notes reach the public site only when you press Publish. Captains can send results in with a code for you to approve."],
+  ["news", "News, photos and sharing", "Post news and cup winners' photos. Each post has share buttons and a proper preview on Facebook, WhatsApp and X. Match night reports can be written for you."],
+  ["history", "Your league's history", "Import past seasons from a spreadsheet, link teams that changed their names, and see season-by-season records and every past meeting between two teams."],
+  ["palette", "Your look", "Twelve colour schemes and six font styles, every one checked so text stays easy to read. Use your own web address as an extra."],
+  ["phone", "Made for phones", "Tables, fixtures and results look right on any phone, with a simple menu. Calendars for Google and iPhone keep everyone's fixtures up to date."],
+  ["users", "Teams, players and committee", "Captains, vice captains and pairs players, player transfers that keep their stats, and a Meet your committee section."],
+  ["folder", "Downloads and help", "Put up fixture books and rules for anyone to download. Automatic backups of every season, and a help inbox if you get stuck."],
+];
+const LP_ICONS = {
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/>',
+  trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9 17h6"/>',
+  chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  news: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>',
+  history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>',
+  palette: '<path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5 0-1.5-1.5-1.5-1.5-3S13 14 14.5 14H17a4 4 0 0 0 4-4c0-3.9-4-7-9-7z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+  phone: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  users: '<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0M16 4a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6"/>',
+  folder: '<path d="M3 6h6l2 2h10v11H3z"/>',
+};
+const lpIcon = k => `<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${LP_ICONS[k]}</svg>`;
+// The preview carries its screenshots inside the page; the site serves them from /img.
+const shotSrc = k => window.SKITTLERS_SHOTS?.[k] || `/img/shot-${k}.jpg`;
+const LP_SHOTS = [["home", "Home page"], ["tables", "League tables"], ["cups", "Cups"], ["stats", "Player stats"], ["form", "Form and past meetings"], ["generator", "Fixture generator"], ["look", "Your look"]];
+VIEWS.welcome = {
+  mount(el) {
+    const shot = (k, alt) => `<img src="${shotSrc(k)}" alt="${esc(alt)}" loading="lazy">`;
+    el.innerHTML = `<div class="lp">
+      <section class="lp-hero">
+        <div class="lp-hero-text">
+          <div class="eyebrow">Skittles league websites</div>
+          <h2>Your league's tables, fixtures, cups and stats, online in an evening.</h2>
+          <p>Skittlers gives your league its own website. Generate the fixtures, enter results or read them from a photo of the board, check them, and publish. Tables, stats and cup draws look after themselves.</p>
+          <div class="lp-cta"><a class="btn lp-big" href="#signup">Start your free trial</a><button type="button" class="btn ghost lp-big" data-lp-go="lp-features">See what it does</button></div>
+          <p class="lp-small" id="lp-trial">Free for 30 days. No card needed.</p>
+        </div>
+        <div class="lp-hero-pic"><div class="lp-frame">${shot("home", "A league's home page with its table and next match night")}</div><div class="lp-phone">${shot("phone", "The home page on a phone")}</div></div>
+      </section>
+      <nav class="lp-jump" aria-label="On this page">${[["lp-features", "Features"], ["lp-photo", "Photo reading"], ["lp-look", "Take a look"], ["lp-steps", "Setting up"], ["lp-pricing", "Prices"], ["lp-contact", "Contact"]].map(([id, l]) => `<button type="button" data-lp-go="${id}">${l}</button>`).join("")}</nav>
+      <section class="lp-sec" id="lp-features"><h2>Everything a skittles league needs</h2>
+        <div class="lp-grid">${LP_FEATURES.map(([i, h, t]) => `<div class="lp-card"><span class="lp-ico">${lpIcon(i)}</span><h3>${h}</h3><p>${t}</p></div>`).join("")}</div></section>
+      <section class="lp-sec lp-split" id="lp-photo">
+        <div><div class="eyebrow">Spotlight</div><h2>Snap the board. The scores fill themselves in.</h2>
+          <ol class="lp-steps-list">
+            <li><strong>Take a photo</strong> of the chalk board at the end of the night.</li>
+            <li><strong>Every player's hands are read</strong> and put on the scorecard in the order they threw, with spares circled.</li>
+            <li><strong>Anything unclear is highlighted</strong>, so you only check what needs checking.</li>
+            <li><strong>Tick it as checked and press Publish.</strong> The table, stats and records update on the live site.</li></ol>
+          <p class="muted">Photo reading is an extra. Results can always be typed in, or sent in by captains.</p></div>
+        <div class="lp-frame">${shot("photo", "A scorecard filled in from a photo of the board, with two boxes to check")}</div></section>
+      <section class="lp-sec" id="lp-look"><h2>Take a look</h2>
+        <div class="lp-tabs" role="tablist">${LP_SHOTS.map(([k, l], i) => `<button type="button" role="tab" aria-selected="${!i}" data-lp-shot="${k}">${l}</button>`).join("")}</div>
+        <div class="lp-frame lp-gallery" id="lp-gallery">${shot("home", "Home page")}</div></section>
+      <section class="lp-sec" id="lp-steps"><h2>Set up in an evening</h2>
+        <ol class="lp-how">${[["Sign up", "Create your account. Your free trial starts straight away."], ["Name your league", "Choose its name and web address, and the points and game you play."],
+          ["Add venues and teams", "Type them in or import them from a spreadsheet, with players and captains."], ["Generate the fixtures", "Pick the nights and the whole season is drawn up, with no alley clashes."],
+          ["Enter results", "Type them, read them from a photo, or let captains send them in."], ["Check and publish", "Press Publish and the tables, stats and news go live."]]
+          .map(([h, t], i) => `<li><span class="lp-n">${i + 1}</span><div><strong>${h}</strong><p>${t}</p></div></li>`).join("")}</ol></section>
+      <section class="lp-sec" id="lp-pricing"><h2>Prices</h2><p class="muted">A yearly subscription for each league, by how many teams it has. Every feature above is included; the extras are optional.</p>
+        <div class="lp-prices" id="lp-prices"><p class="muted">Loading prices…</p></div></section>
+      <section class="lp-sec lp-signup" id="lp-signup"><div><h2>Try it with your league</h2><p>Set up your league and see it working before you pay anything.</p></div><div id="lp-signup-form"></div></section>
+      <section class="lp-sec" id="lp-contact"><h2>Get in touch</h2><p class="muted">Questions about Skittlers, prices for a bigger league, or help moving your league across? Send a message and we'll reply by email.</p>
+        <form class="panel form lp-contact" id="lp-contact-form" autocomplete="on" novalidate>
+          <div class="row2"><div class="field"><label for="ct-name">Your name</label><input type="text" id="ct-name" autocomplete="name" maxlength="80" required></div>
+            <div class="field"><label for="ct-email">Email</label><input type="email" id="ct-email" autocomplete="email" maxlength="120" required></div></div>
+          <div class="field"><label for="ct-league">League <span class="muted">(optional)</span></label><input type="text" id="ct-league" maxlength="120"></div>
+          <div class="field"><label for="ct-msg">Message</label><textarea id="ct-msg" rows="4" maxlength="4000" required></textarea></div>
+          <div class="lp-hp" aria-hidden="true"><label for="ct-site">Leave this empty</label><input type="text" id="ct-site" tabindex="-1" autocomplete="off"></div>
+          <p class="sc-msg" id="ct-out" role="status"></p>
+          <div class="actions"><button class="btn" type="submit" id="ct-go">Send message</button></div></form></section>
+      <footer class="lp-foot">Skittlers · League websites for skittles · <a href="#login">Secretary login</a></footer></div>`;
+    // The sign-up form, the same one as on the Sign up page.
+    authForm($("#lp-signup-form"), { title: "Create your account", intro: "", button: "Start free trial", endpoint: "/api/auth/signup",
+      fields: `<div class="field"><label for="a-name">Your name</label><input type="text" id="a-name" name="name" autocomplete="name" required></div>
+        <div class="field"><label for="a-email">Email</label><input type="email" id="a-email" name="email" autocomplete="email" required></div>
+        <div class="field"><label for="a-pass">Password</label><input type="password" id="a-pass" name="password" autocomplete="new-password" minlength="8" required><span class="hint">At least 8 characters.</span></div>`,
+      footer: `Already have an account? <a href="#login">Log in</a>.`, focus: false });
+    el.addEventListener("click", e => {
+      const go = e.target.closest("[data-lp-go]"); if (go) { document.getElementById(go.dataset.lpGo)?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+      const tab = e.target.closest("[data-lp-shot]"); if (!tab) return;
+      $$("[data-lp-shot]", el).forEach(b => b.setAttribute("aria-selected", b === tab));
+      const [k, l] = LP_SHOTS.find(x => x[0] === tab.dataset.lpShot);
+      $("#lp-gallery").innerHTML = `<img src="${shotSrc(k)}" alt="${esc(l)}">`;
+    });
+    $("#lp-contact-form").addEventListener("submit", e => { e.preventDefault(); this.contact(); });
+    this.prices();
+  },
+  async prices() {
+    let site; try { site = await api("/api/site"); } catch { return $("#lp-prices").innerHTML = `<p class="muted">Prices couldn't be loaded. <button type="button" class="linkish" data-lp-go="lp-contact">Ask us</button>.</p>`; }
+    $("#lp-trial").textContent = `Free for ${site.trialDays} days. No card needed.`;
+    const price = p => p ? `<span class="lp-amount">${money(p)}</span><span class="lp-per">a year</span>` : `<span class="lp-amount lp-ask">Ask us</span>`;
+    const col = (head, body, list, cls = "") => `<div class="lp-plan${cls}"><h3>${head}</h3><div class="lp-price">${body}</div><ul>${list.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
+    const base = ["Every feature listed above", "Unlimited seasons, fixtures and results", "Your league's own web pages", "Automatic backups", "Help when you need it"];
+    const bands = site.plans.map((p, i) => col(`Up to ${p.maxTeams} teams`, price(p.price), [`${i ? site.plans[i - 1].maxTeams + 1 : 1} to ${p.maxTeams} teams`, ...base], i === 0 ? " lp-pop" : ""));
+    const big = col(`More than ${site.plans.at(-1).maxTeams} teams`, `<span class="lp-amount lp-ask">On application</span>`, ["For the biggest leagues", "Everything in the other plans", `<button type="button" class="linkish" data-lp-go="lp-contact">Contact us for a price</button>`]);
+    const extras = `<div class="lp-plan lp-extras"><h3>Extras</h3><p class="muted">Add to any plan.</p><ul class="lp-extra-list">${Object.values(site.addons).map(a =>
+      `<li><strong>${esc(a.name)}</strong><span>${a.mode === "included" ? "Included" : a.price ? `${money(a.price)} a year` : "Ask us"}</span></li>`).join("")}</ul></div>`;
+    $("#lp-prices").innerHTML = bands.join("") + big + extras;
+  },
+  async contact() {
+    const out = $("#ct-out"), btn = $("#ct-go"), v = id => $("#" + id).value.trim();
+    out.textContent = v("ct-name").length < 2 ? "Give your name." : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v("ct-email")) ? "Give an email address so we can reply." : v("ct-msg").length < 5 ? "Write your message." : "";
+    if (out.textContent) return;
+    btn.disabled = true;
+    try {
+      await send("/api/contact", "POST", { name: v("ct-name"), email: v("ct-email"), league: v("ct-league"), message: v("ct-msg"), website: $("#ct-site").value });
+      $("#lp-contact-form").innerHTML = `<h3>Thanks, ${esc(v("ct-name").split(" ")[0])}</h3><p>Your message has been sent. We'll reply to ${esc(v("ct-email"))} soon.</p>`;
+    } catch (e) { out.textContent = e.status ? e.message : "Couldn't send. Check your connection and try again."; btn.disabled = false; }
+  },
+  refresh() {}
+};
 VIEWS.login = {
   mount(el) {
     authForm(el, {
@@ -1575,10 +1923,10 @@ VIEWS.leagues = {
     const list = $("#lg-list");
     if (!S.myLeagues.length) return list.innerHTML = `<div class="empty"><strong>No leagues yet</strong>Create your first league with the form.</div>`;
     list.innerHTML = `<div class="cards">${[...S.myLeagues].sort((a, b) => a.name.localeCompare(b.name)).map(l => {
-      const cur = l.seasons.find(s => s.id === l.currentSeasonId);
+      const cur = l.seasons.find(s => s.id === l.currentSeasonId), a = l.access;
       return `<article class="card">
-        <div class="card-head"><div><h3>${esc(l.name)}</h3><div class="sub">${esc(leagueAddress(l.slug))}</div></div>
-          <div class="actions">${leagueLink(l.slug, "seasons", "Manage", ' class="btn sm"')}${leagueLink(l.slug, "home", "View site", ' class="btn ghost sm"')}</div></div>
+        <div class="card-head"><div><h3>${esc(l.name)}</h3><div class="sub">${esc(leagueAddress(l.slug))}</div>${a && !a.owner ? `<div class="tags"><span class="chip">${esc(accessText(a))}</span></div>` : ""}</div>
+          <div class="actions">${leagueLink(l.slug, firstTab(a || { owner: true }), a && !a.owner && !a.roles.length ? "My team" : "Manage", ' class="btn sm"')}${leagueLink(l.slug, "home", "View site", ' class="btn ghost sm"')}</div></div>
         <dl class="kv"><dt>Season</dt><dd>${cur ? `${esc(cur.name)} (${dayMonthYear(cur.start)} to ${dayMonthYear(cur.end)})` : "Not set up yet"}</dd>
           <dt>Seasons</dt><dd>${l.seasons.length}</dd>
           ${l.owner ? `<dt>Secretary</dt><dd>${esc(l.owner.name)} · ${esc(l.owner.email)}</dd>` : ""}</dl>
@@ -1602,7 +1950,7 @@ function checkSlug(input, note, leagueId) {
 
 /* ---------- account area: account details ---------- */
 /* ---------- help & requests ---------- */
-// Each account has one conversation with the overall admin. Counts of unread messages are checked every minute;
+// Each account has one conversation with the Super Admin. Counts of unread messages are checked every minute;
 // an open conversation every 20 seconds.
 async function loadSupportCounts() {
   if (!S.token) return;
@@ -1651,10 +1999,10 @@ VIEWS.help = {
   },
   refresh() {}
 };
-// The overall admin's inbox: every conversation on the left, the chosen one on the right.
+// The Super Admin's inbox: every conversation on the left, the chosen one on the right.
 VIEWS.inbox = {
   mount(el) {
-    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Overall admin</div><h2>Messages</h2>
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Super Admin</div><h2>Messages</h2>
       <p>Questions and requests from league secretaries. Your reply shows in their Help &amp; requests and is emailed to them.</p></div></div>
       <div class="inbox"><div class="panel inbox-list" id="ib-list"><p class="muted">Loading…</p></div>
         <div class="panel chat-panel" id="ib-thread"><p class="muted chat-empty">Choose a conversation.</p></div></div>`;
@@ -1720,15 +2068,16 @@ VIEWS.account = {
   }
 };
 
-/* ---------- account area: overall admin ---------- */
+/* ---------- account area: Super Admin ---------- */
 VIEWS.super = {
   users: null, legacy: null,
   mount(el) {
-    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Overall admin</div><h2>Accounts</h2>
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Super Admin</div><h2>Accounts</h2>
       <p>Every secretary's account, their leagues and subscription. Payments aren't connected yet, so set each account's paid-until date here.</p></div>
       <div class="list-tools" style="margin:0"><input type="search" id="su-search" placeholder="Search names, emails or leagues" aria-label="Search accounts"><span class="list-count" id="su-count"></span></div></div>
       <div id="su-photo-note"></div>
       <div id="su-addons"></div>
+      <div id="su-domains"></div>
       <div id="su-list"><div class="empty"><strong>Loading accounts…</strong></div></div>
       <div id="su-legacy"></div>`;
     $("#su-search").addEventListener("input", () => this.filter());
@@ -1737,12 +2086,16 @@ VIEWS.super = {
   async load() {
     try {
       const [{ users, photoReading, month, addons }, legacy] = await Promise.all([api("/api/super/users"), api("/api/super/legacy")]);
-      this.users = users; this.legacy = legacy; this.photoReading = photoReading; this.month = month; this.addons = addons; this.render();
+      this.users = users; this.legacy = legacy; this.photoReading = photoReading; this.month = month; this.addons = addons;
+      this.plans = (await api("/api/super/settings").catch(() => ({}))).plans || [];
+      const pm = await api("/api/super/plans").catch(() => ({ changes: [], leagues: [] })); this.moves = pm.changes; this.leaguePlans = Object.fromEntries(pm.leagues.map(l => [l.id, l.plan]));
+      this.domains = (await api("/api/super/domains").catch(() => ({ domains: [] }))).domains; this.render();
     } catch (x) { saveError(x); }
   },
   render() {
     const list = $("#su-list"); if (!list || !this.users) return;
     const users = [...this.users].sort((a, b) => a.name.localeCompare(b.name));
+    this.renderDomains();
     $("#su-photo-note").innerHTML = this.photoReading ? "" : `<div class="notice" role="note">Photo reading and match night reports aren't switched on for the site yet. Add an <code>ANTHROPIC_API_KEY</code> in Netlify's environment variables, then redeploy. You can still choose how the add-ons are sold and who has them.</div>`;
     $("#su-addons").innerHTML = `<section class="panel form su-addons"><h3>Add-ons</h3>
       <p class="muted" style="margin:0">Choose for each whether it comes with every subscription or is an extra you give to chosen accounts below. You can change this at any time.</p>
@@ -1751,14 +2104,22 @@ VIEWS.super = {
         <div class="seg" role="radiogroup" aria-label="${a.name}"><label><input type="radio" name="am-${k}" value="included"${cur.mode === "included" ? " checked" : ""}> Included in the basic subscription</label><label><input type="radio" name="am-${k}" value="extra"${cur.mode !== "included" ? " checked" : ""}> Extra add-on</label></div>
         <div class="addon-fields">
           <div class="field"><label for="ap-${k}">Price as an extra</label><div class="money"><span aria-hidden="true">£</span><input type="number" id="ap-${k}" min="0" max="1000" step="0.01" inputmode="decimal" value="${((cur.price || 0) / 100).toFixed(2)}"></div><span class="hint">A year, shown to secretaries</span></div>
-          <div class="field"><label for="al-${k}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month when included</label><input type="number" id="al-${k}" min="0" max="10000" step="1" value="${cur.monthlyLimit || 0}"><span class="hint">Per league. 0 for no limit</span></div>
+          ${a.plain ? "" : `<div class="field"><label for="al-${k}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month when included</label><input type="number" id="al-${k}" min="0" max="10000" step="1" value="${cur.monthlyLimit || 0}"><span class="hint">Per league. 0 for no limit</span></div>`}
         </div>
       </div>`; }).join("")}
-      <div class="actions"><button class="btn sm" data-act="su-addons-save">Save add-on settings</button></div></section>`;
+      <div class="actions"><button class="btn sm" data-act="su-addons-save">Save add-on settings</button></div></section>
+      <section class="panel form su-plans"><h3>Subscription prices</h3>
+        <p class="muted" style="margin:0">A year for each league, by how many teams it has: the price breaks. They show on the front page; leave a price at 0 to show "Ask us". Leagues bigger than the last break are priced on application. A league that adds teams past its break is asked to move up, and the extra appears below to bill.</p>
+        <div class="plan-rows" id="plan-rows">${(this.plans || []).map((p, i) => `<div class="plan-row" data-row="${i}">
+          <div class="field"><label for="pm-${i}">Up to … teams</label><input type="number" id="pm-${i}" min="2" max="1000" step="1" value="${p.maxTeams}"></div>
+          <div class="field"><label for="pp-${i}">Price a year</label><div class="money"><span aria-hidden="true">£</span><input type="number" id="pp-${i}" min="0" max="10000" step="0.01" inputmode="decimal" value="${((p.price || 0) / 100).toFixed(2)}"></div></div>
+          <button type="button" class="btn ghost sm" data-act="su-plan-del" data-id="${i}"${(this.plans || []).length < 2 ? " disabled" : ""}>Remove</button></div>`).join("")}</div>
+        <div class="actions"><button type="button" class="btn ghost sm" data-act="su-plan-add">Add a price break</button><button class="btn sm" data-act="su-plans-save">Save prices</button><a class="btn ghost sm" href="#welcome">See the front page</a></div></section>
+      ${this.planMoves()}`;
     list.innerHTML = `<div class="cards">${users.map(u => `<article class="card" data-id="${esc(u.id)}" data-search="${esc(searchText([u.name, u.email, ...u.leagues.map(l => l.name)].join(" ")))}">
-      <div class="card-head"><div><h3>${esc(u.name)}${u.isSuper ? ` <span class="chip">Overall admin</span>` : ""}</h3><div class="sub">${esc(u.email)} · joined ${dayMonthYear(u.created)}</div></div>
+      <div class="card-head"><div><h3>${esc(u.name)}${u.isSuper ? ` <span class="chip">Super Admin</span>` : ""}</h3><div class="sub">${esc(u.email)} · joined ${dayMonthYear(u.created)}</div></div>
         <span class="chip ${u.canEdit ? "" : "warn"}">${u.isSuper ? "No subscription" : u.canEdit ? (u.subscription?.status === "paid" ? "Paid" : "Trial") + " until " + dayMonthYear(u.subscription?.until) : "Ended " + dayMonthYear(u.subscription?.until)}</span></div>
-      <dl class="kv"><dt>Leagues</dt><dd>${u.leagues.map(l => leagueLink(l.slug, "seasons", esc(l.name))).join(", ") || "None yet"}</dd>
+      <dl class="kv"><dt>Leagues</dt><dd>${u.leagues.map(l => leagueLink(l.slug, "seasons", esc(l.name)) + (this.leaguePlans?.[l.id] ? ` <span class="muted">(${this.leaguePlans[l.id].poa ? "on application" : `up to ${this.leaguePlans[l.id].maxTeams} teams, renews at ${planPrice(this.leaguePlans[l.id])}`})</span>` : "")).join(", ") || "None yet"}</dd>
         ${u.leagues.some(l => l.photosThisMonth) ? `<dt>Photos read</dt><dd>${u.leagues.filter(l => l.photosThisMonth).map(l => `${esc(l.name)}: ${l.photosThisMonth}`).join(", ")} this month</dd>` : ""}
         ${u.leagues.some(l => l.reportsThisMonth) ? `<dt>Reports written</dt><dd>${u.leagues.filter(l => l.reportsThisMonth).map(l => `${esc(l.name)}: ${l.reportsThisMonth}`).join(", ")} this month</dd>` : ""}</dl>
       ${u.isSuper ? "" : `<div class="sub-row">
@@ -1769,7 +2130,7 @@ VIEWS.super = {
       ${Object.entries(ADDON_INFO).map(([k, a]) => this.addons?.[k]?.mode === "included" ? `<div class="sub-row addon-row"><div class="addon-head"><strong>${a.name}</strong> <span class="chip ok">Included in the subscription</span></div></div>` : `<div class="sub-row addon-row">
         <div class="addon-head"><strong>${a.name} add-on</strong>${this.addons?.[k]?.price ? ` <span class="muted">${money(this.addons[k].price)} a year</span>` : ""} <span class="chip ${addonActive(u, k) ? "ok" : ""}">${esc(addonNote(u, k))}</span></div>
         <div class="field"><label for="su-${k}-until-${esc(u.id)}">Until</label><input type="date" id="su-${k}-until-${esc(u.id)}" value="${esc(u[k]?.until || "")}"></div>
-        <div class="field"><label for="su-${k}-limit-${esc(u.id)}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month</label><input type="number" min="0" max="10000" step="1" id="su-${k}-limit-${esc(u.id)}" value="${u[k]?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>
+        ${a.plain ? "" : `<div class="field"><label for="su-${k}-limit-${esc(u.id)}">${a.unit[0].toUpperCase() + a.unit.slice(1)} a month</label><input type="number" min="0" max="10000" step="1" id="su-${k}-limit-${esc(u.id)}" value="${u[k]?.monthlyLimit ?? 0}"><span class="hint">Per league. 0 for no limit</span></div>`}
         <div class="actions"><button class="btn sm" data-act="su-addon-save" data-kind="${k}" data-id="${esc(u.id)}">Save</button><button class="btn ghost sm" data-act="su-addon-year" data-kind="${k}" data-id="${esc(u.id)}">Add for a year</button>${u[k] ? `<button class="btn ghost sm" data-act="su-addon-remove" data-kind="${k}" data-id="${esc(u.id)}">Remove</button>` : ""}</div>
       </div>`).join("")}`}
       <p class="temp-pass" id="su-temp-${esc(u.id)}" hidden></p>
@@ -1778,6 +2139,29 @@ VIEWS.super = {
     this.renderLegacy();
   },
   filter() { const l = $("#su-list"); if (l && this.users) applySearch(l, $("#su-search").value, $("#su-count"), "account"); },
+  // Leagues that moved up a price break: what to bill for the rest of their year, with a tick once billed.
+  planMoves() {
+    const moves = this.moves || [], open = moves.filter(m => !m.billed);
+    if (!moves.length) return "";
+    return `<section class="panel form su-moves"><h3>Price break moves to bill${open.length ? ` <span class="badge">${open.length}</span>` : ""}</h3>
+      <ul class="dom-list">${moves.map(m => `<li><span><strong>${esc(m.league)}</strong> <span class="chip ${m.billed ? "ok" : "warn"}">${m.billed ? "Billed" : "To bill"}</span>
+        <span class="muted">${esc(fmtDate(m.at.slice(0, 10)))} · ${plural(m.teams, "team")} · up to ${m.from.maxTeams} → ${m.to.poa ? "on application" : `up to ${m.to.maxTeams}`} · ${m.to.poa ? "agree a price" : m.extra != null ? `${money(m.extra)} until ${esc(dayMonthYear(m.until))}` : "price to be confirmed"} · ${esc(m.owner)} (${esc(m.email)})</span></span>
+        <button type="button" class="btn sm${m.billed ? " ghost" : ""}" data-act="su-plan-billed" data-id="${esc(m.id)}" data-league="${esc(m.leagueId)}" data-to="${m.billed ? "0" : "1"}">${m.billed ? "Mark as not billed" : "Mark as billed"}</button></li>`).join("")}</ul></section>`;
+  },
+  // Leagues' own domains: each one is added to the Netlify site by hand, then ticked off here.
+  renderDomains() {
+    const box = $("#su-domains"); if (!box) return;
+    const list = this.domains || [], waiting = list.filter(d => !d.connected).length;
+    box.innerHTML = !list.length ? "" : `<section class="panel form su-domains"><h3>Own domains${waiting ? ` <span class="badge">${waiting}</span>` : ""}</h3>
+      <p class="muted" style="margin:0">To connect one: in Netlify, open the site, then Domain management → Add a domain alias, and type the address. Netlify sets up its padlock (HTTPS) once the league's records point at it. Then mark it connected here.</p>
+      <ul class="dom-list">${list.map(d => `<li><span><strong>${esc(d.domain)}</strong> <span class="chip ${d.connected ? "ok" : "warn"}">${d.connected ? "Connected" : "Waiting"}</span>
+        <span class="muted">${esc(d.league)} · ${esc(d.owner)}${d.asked ? ` · asked ${esc(fmtDate(d.asked.slice(0, 10)))}` : ""}</span></span>
+        <span class="actions"><button type="button" class="btn ghost sm" data-dom-copy="${esc(d.domain)}">Copy</button><button type="button" class="btn sm${d.connected ? " ghost" : ""}" data-dom-set="${esc(d.leagueId)}" data-dom-to="${d.connected ? "0" : "1"}">${d.connected ? "Mark as not connected" : "Mark as connected"}</button></span></li>`).join("")}</ul></section>`;
+  },
+  async setDomain(lid, connected) {
+    try { await send(`/api/super/domains/${lid}`, "PATCH", { connected }); const d = this.domains.find(x => x.leagueId === lid); if (d) d.connected = connected; this.renderDomains(); toast(connected ? "Marked as connected" : "Marked as waiting"); }
+    catch (x) { saveError(x); }
+  },
   renderLegacy() {
     const box = $("#su-legacy"); if (!box) return;
     if (!this.legacy?.available) return box.innerHTML = "";
@@ -1799,7 +2183,7 @@ VIEWS.super = {
   },
   async saveAddonModes() {
     const price = k => { const v = parseFloat($(`#ap-${k}`).value); return Number.isFinite(v) && v >= 0 ? Math.round(v * 100) / 100 : 0; };
-    const addons = Object.fromEntries(Object.keys(ADDON_INFO).map(k => [k, { mode: $(`[name=am-${k}]:checked`).value, monthlyLimit: Math.max(0, num($(`#al-${k}`).value) || 0), price: price(k) }]));
+    const addons = Object.fromEntries(Object.keys(ADDON_INFO).map(k => [k, { mode: $(`[name=am-${k}]:checked`).value, monthlyLimit: Math.max(0, num($(`#al-${k}`)?.value) || 0), price: price(k) }]));
     try { const r = await send("/api/super/settings", "PATCH", { addons }); this.addons = r.addons; this.render(); toast("Add-on settings saved"); }
     catch (x) { saveError(x); }
   },
@@ -1847,12 +2231,12 @@ VIEWS.tables = {
 /* ---------- public: fixtures ---------- */
 function fxCard(f, showComp) {
   const { v, alley } = fxVenue(f);
-  const p = played(f);
-  const hw = p && f.homePins > f.awayPins, aw = p && f.awayPins > f.homePins;
+  const p = played(f), wo = walkover(f);
+  const hw = winnerSide(f) === "home", aw = winnerSide(f) === "away";
   const where = v ? `${esc(v.name)}${alley ? ` · Alley ${alley}` : ""}` : "Venue to be confirmed";
   return `<div class="fx">
     <div class="home ${hw ? "won" : ""}"><span class="tn">${esc(teamName(f.home))}</span></div>
-    <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
+    <div class="score">${p ? `<span class="${hw ? "won" : ""}">${f.homePins}</span> <span class="v">–</span> <span class="${aw ? "won" : ""}">${f.awayPins}</span>` : wo ? `<span class="v" title="Walkover: no game was played">W/O</span>` : `<span class="v">${esc(f.time || "v")}</span>`}</div>
     <div class="away ${aw ? "won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></div>
     <div class="meta">${showComp && f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${f.postponedFrom && !p ? `<span class="chip warn">Postponed from ${esc(fmtDate(f.postponedFrom))}</span> ` : ""}${where}</div>
     ${(() => { const n = "pub" in f ? f.pub?.note : S.admin ? null : f.note; return n ? `<p class="fx-note">${esc(n)}</p>` : ""; })()}
@@ -1867,11 +2251,11 @@ function groupByDate(list, desc, byDivision = false) {
   const keys = Object.keys(g).filter(Boolean).sort();
   if (desc) keys.reverse();
   if (g[""]) keys.push("");
-  const next = keys.filter(d => d && d >= today() && g[d].some(f => !played(f))).sort()[0];
+  const next = keys.filter(d => d && d >= today() && g[d].some(f => !decided(f))).sort()[0];
   const divs = sortedDivisions(), divOf = f => S.divisions[S.teams[f.home]?.division] ? S.teams[f.home].division : "";
   const split = fs => {
     if (byDivision) return nfColumns(fs, !!sharedTime(fs), true, true);
-    if (!divs.length) return `<div class="fx-list">${fs.map(f => fxCard(f)).join("")}</div>`;
+    return `<div class="fx-list">${fs.map(f => fxCard(f)).join("")}</div>`;
     return [...divs.map(d => d.id), ""].map(id => [id, fs.filter(f => divOf(f) === id)]).filter(([, x]) => x.length)
       .map(([id, x]) => `<div class="div-group"><h4>${esc(id ? divisionName(id) : "Not in a division")} <span class="chip">${esc(GAMES[gameOf(S.divisions[id])])}</span></h4><div class="fx-list">${x.map(f => fxCard(f)).join("")}</div></div>`).join("");
   };
@@ -1903,8 +2287,8 @@ VIEWS.fixtures = {
     const st = statusBlock(); if (st) return body.innerHTML = st;
     let list = Object.values(S.fixtures).filter(f => f.comp === "league");
     if (S.ui.fxTeam) list = list.filter(f => f.home === S.ui.fxTeam || f.away === S.ui.fxTeam);
-    if (S.ui.fxShow === "upcoming") list = list.filter(f => !played(f));
-    if (S.ui.fxShow === "results") list = list.filter(played);
+    if (S.ui.fxShow === "upcoming") list = list.filter(f => !decided(f));
+    if (S.ui.fxShow === "results") list = list.filter(decided);
     list.sort(fxSort);
     if (!list.length) return body.innerHTML = Object.keys(S.teams).length
       ? `<div class="empty"><strong>${S.ui.fxShow === "results" ? "No results yet" : S.ui.fxShow === "upcoming" ? "No upcoming fixtures" : "No fixtures yet"}</strong>${S.admin ? `Add fixtures under <a href="#manage-fixtures">Fixtures &amp; results</a>.` : "Check back once the fixture list is published."}</div>`
@@ -1954,7 +2338,7 @@ VIEWS.submit = {
     $("#sub-body").addEventListener("submit", e => { e.preventDefault(); this.send(); });
   },
   // Games that can be sent in: dated up to tomorrow, with no result on the website yet.
-  games() { const until = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return Object.values(S.fixtures).filter(f => f.date && f.date <= until && !played(f) && f.home && f.away); },
+  games() { const until = new Date(Date.now() + 864e5).toISOString().slice(0, 10); return Object.values(S.fixtures).filter(f => f.date && f.date <= until && !decided(f) && f.home && f.away); },
   refresh() {
     const body = $("#sub-body"); if (!body) return;
     const stBlock = statusBlock(); if (stBlock) return body.innerHTML = stBlock;
@@ -1973,10 +2357,15 @@ VIEWS.submit = {
     if (!theirs.some(f => f.id === st.fixtureId)) st.fixtureId = theirs.length === 1 ? theirs[0].id : "";
     const f = S.fixtures[st.fixtureId];
     let code = keep["sub-code"]; if (code == null) code = store.get(`captain-code:${S.league.id}`) || "";
+    // A captain logged in for their team needs no code, and sends for that team only.
+    const mine = myTeam(), asCaptain = !!mine;
+    if (asCaptain && teams.includes(mine.id) && !st.team) { st.team = mine.id; return this.refresh(); }
     body.innerHTML = !dates.length ? `<div class="empty"><strong>No games waiting for a result</strong>Games show here from the day they're played until their result is on the website.</div>` : `
       <form class="panel form sub-form" autocomplete="off" novalidate>
-        <div class="field"><label for="sub-code">Captains' code</label><input type="text" id="sub-code" autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(code)}" required>
-          <span class="hint">The league secretary gives captains this code.</span></div>
+        ${asCaptain ? `<p class="muted" style="margin:0">Sending as captain of <strong>${esc(mine.name)}</strong>.</p><input type="hidden" id="sub-code" value="">`
+          : !S.league.captainLogins || code || S.subs?.code ? `<div class="field"><label for="sub-code">Captains' code</label><input type="text" id="sub-code" autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(code)}" required>
+          <span class="hint">The league secretary gives captains this code.${S.league.captainLogins ? ` Captains can also ${accountLink("login", "log in")} instead.` : ""}</span></div>`
+          : `<p class="muted" style="margin:0">Captains, ${accountLink("login", "log in")} to send your team's result. Or type the captains' code if the league secretary gave you one.</p><div class="field"><label for="sub-code">Captains' code</label><input type="text" id="sub-code" autocomplete="off" autocapitalize="none" spellcheck="false" value=""></div>`}
         <div class="row2">
           <div class="field"><label for="sub-date">Date of the match</label><select id="sub-date">${dates.map(d => `<option value="${d}"${d === st.date ? " selected" : ""}>${esc(fmtDate(d, true))}</option>`).join("")}</select></div>
           <div class="field"><label for="sub-team">Your team</label><select id="sub-team"><option value="">Choose your team</option>${teams.map(t => `<option value="${esc(t)}"${t === st.team ? " selected" : ""}>${esc(teamName(t))}</option>`).join("")}</select></div>
@@ -1986,7 +2375,7 @@ VIEWS.submit = {
             ${st.cards ? `<div class="sub-score">${cardTotal(st.cards[0])} – ${cardTotal(st.cards[1])}</div>` : ""}
             <button type="button" class="btn${st.cards ? " ghost" : ""}" data-sub-form="card">${st.cards ? "Change the scorecard" : "Fill in the scorecard"}</button></div>` : ""}
         <div class="row2">
-          <div class="field"><label for="sub-name">Your name</label><input type="text" id="sub-name" autocomplete="name" value="${esc(keep["sub-name"] ?? store.get("captain-name") ?? "")}"></div>
+          <div class="field"><label for="sub-name">Your name</label><input type="text" id="sub-name" autocomplete="name" value="${esc(keep["sub-name"] ?? store.get("captain-name") ?? (asCaptain ? S.user.name : ""))}"></div>
           <div class="field"><label for="sub-contact">Email or phone <span class="muted">(optional)</span></label><input type="text" id="sub-contact" value="${esc(keep["sub-contact"] ?? store.get("captain-contact") ?? "")}">
             <span class="hint">So the secretary can get back to you.</span></div>
         </div>
@@ -2009,13 +2398,13 @@ VIEWS.submit = {
   async send() {
     const st = this.st, f = S.fixtures[st.fixtureId], msg = $("#sub-msg");
     const code = $("#sub-code").value.trim(), name = $("#sub-name").value.trim(), contact = $("#sub-contact").value.trim(), note = $("#sub-note").value.trim();
-    msg.textContent = !code ? "Enter the captains' code." : !st.team ? "Choose your team." : !f ? "Choose the game." : !st.cards ? "Fill in the scorecard." : name.length < 2 ? "Give your name." : "";
+    msg.textContent = !code && !myTeam() ? "Enter the captains' code." : myTeam() && st.team !== myTeam().id ? `You can send results for ${myTeam().name} only.` : !st.team ? "Choose your team." : !f ? "Choose the game." : !st.cards ? "Fill in the scorecard." : name.length < 2 ? "Give your name." : "";
     if (msg.textContent) return;
     const btn = $("#sub-go"); btn.disabled = true; btn.textContent = "Sending…";
     try {
       await send(`/api/public/${encodeURIComponent(S.league.slug)}/seasons/${S.seasonId}/submissions`, "POST",
         { code, fixtureId: f.id, team: st.team, name, contact, note, cards: { home: st.cards[0], away: st.cards[1] } });
-      store.set(`captain-code:${S.league.id}`, code); store.set("captain-name", name); store.set("captain-contact", contact);
+      if (code) store.set(`captain-code:${S.league.id}`, code); store.set("captain-name", name); store.set("captain-contact", contact);
       this.st = { fixtureId: "", team: "", cards: null, sent: `${teamName(f.home)} ${cardTotal(st.cards[0])} – ${cardTotal(st.cards[1])} ${teamName(f.away)}, ${fmtDate(f.date, true)}.` };
       this.refresh(); scrollTo({ top: 0 });
       if (S.admin) loadSubs();
@@ -2163,6 +2552,130 @@ function shareDialog(n, copyFailed = false) {
 }
 const newsPhotos = n => { const pics = (n.photos || []).map(id => S.media.find(m => m.id === id)).filter(Boolean); return pics.length ? `<div class="news-photos">${photoGrid(pics, "news-" + n.id)}</div>` : ""; };
 
+/* ---------- captains: my team ---------- */
+// A captain logged in keeps their team's players up to date. Changes go straight to the season: only the players.
+VIEWS["my-team"] = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Captain</div><h2>My team</h2><p>Keep your team's players up to date, and send in results on the <a href="#submit">Send a result</a> tab.</p></div></div><div id="mt-body"><p class="muted">Loading…</p></div>`;
+    el.addEventListener("click", e => {
+      const del = e.target.closest("[data-mt-del]"); if (del) return this.save(this.players.filter((_, i) => i !== +del.dataset.mtDel), "Player removed");
+      if (e.target.closest("[data-mt-add]")) {
+        const first = $("#mt-first").value.trim(), last = $("#mt-last").value.trim(), nick = $("#mt-nick").value.trim();
+        if (!first || !last) return toast("Type the player's first name and surname.");
+        if (this.players.some(p => fullName(p).toLowerCase() === `${first} ${last}`.toLowerCase())) return toast(`${first} ${last} is already in the team.`);
+        return this.save([...this.players, { first, last, nick }], `${first} ${last} added`);
+      }
+    });
+  },
+  async refresh() {
+    const body = $("#mt-body"); if (!body) return;
+    const t = myTeam();
+    if (!t) return body.innerHTML = `<div class="empty"><strong>Your team isn't in this season</strong>Ask the league secretary to check your team on Admins &amp; roles.</div>`;
+    try { const d = await api(`/api/leagues/${S.league.id}/seasons/${S.seasonId}`); this.version = d.version; this.team = d.teams[t.id]; } catch (e) { return body.innerHTML = `<p class="bad">${esc(e.message || "Your team couldn't be loaded.")}</p>`; }
+    if (!$("#mt-body")) return;
+    this.players = playersOf(this.team);
+    body.innerHTML = `<div class="panel"><h3 class="tn">${esc(t.name)}</h3>
+      <ul class="my-players">${this.players.map((p, i) => `<li><span>${playerHtml(p)}${p.captain ? " (C)" : ""}${p.vice ? " (VC)" : ""}</span><button type="button" class="btn ghost sm" data-mt-del="${i}">Remove</button></li>`).join("") || `<li class="muted">No players listed yet.</li>`}</ul>
+      <div class="row3"><div class="field"><label for="mt-first">First name</label><input type="text" id="mt-first" maxlength="40"></div>
+        <div class="field"><label for="mt-last">Surname</label><input type="text" id="mt-last" maxlength="40"></div>
+        <div class="field"><label for="mt-nick">Nickname <span class="muted">(optional)</span></label><input type="text" id="mt-nick" maxlength="40"></div></div>
+      <div class="actions"><button type="button" class="btn" data-mt-add>Add player</button></div></div>`;
+  },
+  async save(players, msg) {
+    const value = { ...this.team, players };
+    try {
+      const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/data`, "PATCH", { base: this.version, changes: [{ in: "teams", id: this.team.id, value }] });
+      this.version = r.version; S.teams[this.team.id] = { ...S.teams[this.team.id], players }; toast(msg); this.refresh();
+    } catch (e) { saveError(e); }
+  }
+};
+
+/* ---------- public: past seasons ---------- */
+// Each cup in the season shown (use inside withSeason): its winner and runner-up by name, and its full results.
+// Knockouts and straight finals set up on the site, then cup games recorded as plain results (as from an import).
+function seasonCupResults() {
+  const results = [];
+  for (const c of sortedCups()) {
+    let win = null, runner = null;
+    if (c.structure === "final") { const f = cupFinal(c); win = f.winner; runner = f.complete ? f.rows.find(r => r.id !== f.winner)?.id : null; }
+    else if (c.draw?.length) { const br = cupBracket(c), last = br.rounds.at(-1)?.matches[0]; win = br.champion; runner = win && last ? (last.a === win ? last.b : last.a) : null; }
+    const label = id => id ? entrantLabel(c, id) : null;
+    results.push({ name: c.name, win: label(win), runner: label(runner),
+      body: c.structure === "final" ? ((c.entrants || []).length ? finalTableHtml(c) : "") : c.draw?.length ? bracketHtml(c) : `<p class="muted">No draw was made.</p>` });
+  }
+  // Cup games recorded as plain results (as from an import): the final's winner and loser, and a column per round.
+  const byCup = {}; for (const f of Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort)) (byCup[(f.round || "Cup").split(" · ")[0]] ||= []).push(f);
+  for (const [name, fs] of Object.entries(byCup)) {
+    const rounds = plainCupRounds(fs), last = rounds.at(-1);
+    // The winner and runner-up come from the final: the round named Final, or the last night when it's one game.
+    const fin = last && last.list.length === 1 && last.byes.length === 0 && (/final/i.test(last.r) && !/semi|quarter/i.test(last.r)) && decided(last.list[0]) ? last.list[0] : null;
+    const hw = fin && winnerSide(fin) === "home", aw = fin && winnerSide(fin) === "away";
+    const rows = list => list.map(f => nfRow({ ...f, comp: "league" }, false)).join("").replace(/ data-h2h="[^"]*" tabindex="0"/g, "");
+    results.push({ name, win: hw ? teamName(fin.home) : aw ? teamName(fin.away) : null, runner: hw ? teamName(fin.away) : aw ? teamName(fin.home) : null,
+      body: `<div class="nf-grid">${rounds.map(g => `<div class="nf-div"><h4>${esc(g.r)}${g.date ? ` <span class="muted">· ${esc(fmtDate(g.date))}</span>` : ""}</h4><ul class="nf-list">${rows(g.list)}${g.byes.map(t => `<li class="nf-bye"><span class="tn">${esc(teamName(t))}</span> <span class="muted">· bye</span></li>`).join("")}</ul></div>`).join("")}</div>` });
+  }
+  return results;
+}
+const isBye = id => /^bye$/i.test((S.teams[id]?.name || "").trim());
+// A cup's games recorded as plain results, in rounds. Rounds come from the Round column when the file had one;
+// otherwise each night is a round, named from the end (Final, Semi-finals, Quarter-finals) while each round
+// has half the games of the one before, and Round 1, 2… before that. A game against "Bye" is shown as a bye.
+function plainCupRounds(fs) {
+  const named = fs.some(f => (f.round || "").includes(" · ")), rounds = [];
+  for (const f of fs) {
+    const r = named ? (f.round || "").split(" · ")[1] || "Other games" : f.date || "No date";
+    let g = rounds.find(x => x.key === r); if (!g) rounds.push(g = { key: r, r, date: f.date, list: [], byes: [] });
+    if (isBye(f.home) || isBye(f.away)) { const t = isBye(f.home) ? f.away : f.home; if (!isBye(t)) g.byes.push(t); }
+    else g.list.push(f);
+  }
+  if (!named) {
+    const ends = ["Final", "Semi-finals", "Quarter-finals"];
+    let k = 0; for (let i = rounds.length - 1; i >= 0 && k < ends.length; i--, k++) {
+      const games = rounds[i].list.length;
+      if (games !== 2 ** k) break; rounds[i].r = ends[k];
+    }
+    rounds.forEach((g, i) => { if (g.r === g.key) g.r = `Round ${i + 1}`; });
+  }
+  return rounds;
+}
+// Every season other than the one on the public site, newest first.
+const pastSeasons = () => !S.league ? [] : [...S.league.seasons].filter(x => x.id !== S.league.currentSeasonId).sort((a, b) => b.start.localeCompare(a.start));
+// Divisions in name order, so Division 1 comes before Division 2 whatever order they were set up in.
+const byDivisionName = (a, b) => (a.division?.name || "").localeCompare(b.division?.name || "", undefined, { numeric: true });
+VIEWS.past = {
+  mount(el) {
+    el.innerHTML = `<div class="view-head"><div><div class="eyebrow">History</div><h2>Past seasons</h2><p>Final league tables, cup draws and results from earlier seasons.</p></div></div>
+      <div class="cup-jump" id="past-pick" role="group" aria-label="Season"></div><div id="past-body"></div>`;
+    $("#past-pick").addEventListener("click", e => { const b = e.target.closest("[data-past]"); if (b) { S.ui.past = b.dataset.past; this.refresh(); } });
+  },
+  async refresh() {
+    const list = pastSeasons(), pick = $("#past-pick"), body = $("#past-body"); if (!pick) return;
+    if (!list.length) { pick.innerHTML = ""; return body.innerHTML = `<div class="empty"><strong>No past seasons yet</strong>Earlier seasons appear here.</div>`; }
+    if (!list.some(x => x.id === S.ui.past)) S.ui.past = list[0].id;
+    pick.innerHTML = list.map(x => `<button type="button" data-past="${esc(x.id)}" aria-pressed="${x.id === S.ui.past}">${esc(x.name)}</button>`).join("");
+    const sid = S.ui.past, season = list.find(x => x.id === sid);
+    body.innerHTML = `<p class="muted">Loading season ${esc(season.name)}…</p>`;
+    const data = await seasonFor(sid);
+    if (S.ui.past !== sid || !$("#past-body")) return;
+    body.innerHTML = withSeason(data, () => {
+      // League tables, side by side in division order, with each division's winners.
+      const groups = standings().filter(g => !g.loose && g.rows.some(r => r.P)).sort(byDivisionName);
+      const tables = !groups.length ? `<p class="muted">No league results for this season.</p>` : `<div class="div-strip past-strip" tabindex="0" aria-label="Division tables, scroll sideways for more">${groups.map(g => `<div class="div-card">
+        <h3>${esc(g.division?.name || "League table")}</h3>
+        ${g.rows[0]?.P ? `<p class="past-champ">🏆 Champions: <strong class="tn">${esc(g.rows[0].t.name)}</strong></p>` : ""}
+        <table class="league mini"><thead><tr><th class="pos">#</th><th class="team">Team</th><th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th><th><abbr title="Pin difference">PD</abbr></th><th class="pts"><abbr title="Points">Pts</abbr></th></tr></thead>
+        <tbody>${g.rows.map((r, i) => `<tr><td class="pos">${i + 1}</td><td class="team" title="${esc(r.t.name)}"><span class="tn">${esc(r.t.name)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.pf - r.pa > 0 ? "+" : ""}${r.pf - r.pa}</td><td class="pts">${r.pts}</td></tr>`).join("")}</tbody></table></div>`).join("")}</div>`;
+      const results = seasonCupResults();
+      const cupList = !results.length ? "" : `<h3 class="past-h">Cups · ${esc(season.name)}</h3><div class="past-cups">${results.map(r => `<details class="past-cup">
+        <summary><span class="past-cup-name">${esc(r.name)}</span>
+          <span class="past-cup-who">${r.win ? `<span>🏆 <strong class="tn">${esc(r.win)}</strong></span>` : `<span class="muted">No winner recorded</span>`}${r.runner ? `<span class="muted">Runner-up <span class="tn">${esc(r.runner)}</span></span>` : ""}</span>
+          <span class="past-cup-open">Results</span></summary>
+        <div class="past-cup-body">${r.body}</div></details>`).join("")}</div>`;
+      return `<h3 class="past-h">League tables · ${esc(season.name)}</h3>${tables}${cupList}`;
+    });
+  }
+};
+
 /* ---------- public: one news post ---------- */
 VIEWS.post = {
   mount(el) { el.innerHTML = `<div class="post-page" id="post-body"></div>`; },
@@ -2211,8 +2724,8 @@ VIEWS.home = {
     if (st) fx.innerHTML = "";
     else {
       const all = Object.values(S.fixtures).filter(f => f.date);
-      const next = all.filter(f => !played(f) && f.date >= today()).map(f => f.date).sort()[0];
-      const last = all.filter(played).map(f => f.date).sort().at(-1);
+      const next = all.filter(f => !decided(f) && f.date >= today()).map(f => f.date).sort()[0];
+      const last = all.filter(decided).map(f => f.date).sort().at(-1);
       const night = next || last, list = night ? all.filter(f => f.date === night).sort(fxSort) : [];
       $("#home-fx-title").textContent = next ? "Next match night" : last ? "Latest results" : "Fixtures";
       const times = [...new Set(list.map(f => f.time).filter(Boolean))], oneTime = times.length === 1 && list.every(f => f.time === times[0]);
@@ -2242,12 +2755,12 @@ VIEWS.home = {
 // One game on a line: home, the time (or result), away, with the venue underneath. With `full` (the fixtures page)
 // it also shows the published note and a button for the scorecard.
 function nfRow(f, oneTime, full = false) {
-  const p = played(f), hw = p && f.homePins > f.awayPins, aw = p && f.awayPins > f.homePins, { v, alley } = fxVenue(f);
+  const p = played(f), hw = winnerSide(f) === "home", aw = winnerSide(f) === "away", { v, alley } = fxVenue(f);
   const where = v ? `${v.name}${alley ? `, alley ${alley}` : ""}` : "Venue to be confirmed";
-  const mid = p ? `${f.homePins}–${f.awayPins}` : oneTime || !f.time ? "v" : f.time;
+  const mid = p ? `${f.homePins}–${f.awayPins}` : walkover(f) ? "W/O" : oneTime || !f.time ? "v" : f.time;
   const note = full ? ("pub" in f ? f.pub?.note : S.admin ? null : f.note) : null, card = full && p && f.cards;
   return `<li class="nf-row" data-h2h="${esc(f.id)}" tabindex="0" title="${esc(where)}: tap for form and past meetings" aria-label="${esc(teamName(f.home))} v ${esc(teamName(f.away))}: form and past meetings">
-    <span class="nf-home${hw ? " won" : ""}"><span class="tn">${esc(teamName(f.home))}</span></span><span class="nf-mid${p ? " res" : ""}">${esc(mid)}</span><span class="nf-away${aw ? " won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></span>
+    <span class="nf-home${hw ? " won" : ""}"><span class="tn">${esc(teamName(f.home))}</span></span><span class="nf-mid${p || walkover(f) ? " res" : ""}"${walkover(f) ? ' title="Walkover: no game was played"' : ""}>${esc(mid)}</span><span class="nf-away${aw ? " won" : ""}"><span class="tn">${esc(teamName(f.away))}</span></span>
     <span class="nf-meta">${f.comp === "cup" ? `<span class="chip cup">${esc(f.round || "Cup")}</span> ` : ""}${f.postponedFrom && !p ? `<span class="chip warn">${full ? `Postponed from ${esc(fmtDate(f.postponedFrom))}` : "Postponed"}</span> ` : ""}${esc(where)}${card ? ` · <button type="button" class="linkish" data-card-open="${esc(f.id)}">Scorecard</button>` : ""}</span>
     ${note ? `<span class="nf-note">${esc(note)}</span>` : ""}</li>`;
 }
@@ -2256,13 +2769,54 @@ function nfRow(f, oneTime, full = false) {
 // in any season (league games, cup fixtures and team cup matches), from what's published. Earlier seasons are
 // fetched once and kept. Teams are matched by id, or by name for seasons where they were set up again.
 const ARCHIVE = {};
+// A team's name as it is now, following any earlier names it had (League → team names), lower case for matching.
+function teamKey(name) {
+  const n = String(name || "").replace(/\s+/g, " ").trim().toLowerCase();
+  const g = (S.league?.teamNames || []).find(x => x.name.toLowerCase() === n || x.was.some(w => w.toLowerCase() === n));
+  return g ? g.name.toLowerCase() : n;
+}
+const previousNames = name => (S.league?.teamNames || []).find(x => x.name.toLowerCase() === String(name || "").trim().toLowerCase())?.was || [];
+// Runs fn with another season's teams, fixtures and divisions in place (for its table), then puts this season back.
+function withSeason(data, fn) {
+  const keep = [S.teams, S.fixtures, S.divisions, S.venues, S.cups, S.admin];
+  Object.assign(S, { teams: data.teams || {}, fixtures: data.fixtures || {}, divisions: data.divisions || {}, venues: data.venues || {}, cups: data.cups || {}, admin: false });
+  try { return fn(); } finally { [S.teams, S.fixtures, S.divisions, S.venues, S.cups, S.admin] = keep; }
+}
+// A team's league record in each season, newest first: the name it played under, its division and finishing place.
+async function teamHistory(name) {
+  const key = teamKey(name), out = [];
+  for (const se of [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start))) {
+    const data = await seasonFor(se.id);
+    const t = Object.values(data.teams || {}).find(x => teamKey(x.name) === key); if (!t) continue;
+    const row = withSeason(data, () => { for (const g of standings().filter(x => !x.loose)) { const i = g.rows.findIndex(r => r.t.id === t.id); if (i >= 0) return { pos: i + 1, of: g.rows.length, div: g.division?.name || "", ...g.rows[i] }; } return null; });
+    // A season is finished once its dates are over or every league game has a result.
+    const league = Object.values(data.fixtures || {}).filter(f => f.comp === "league");
+    const done = se.end < today() || (league.length > 0 && league.every(decided));
+    if (row) out.push({ season: se.name, name: t.name, done, ...row });
+  }
+  return out;
+}
+// Cups a team (under any of its names) won or were runners-up in, newest season first.
+async function teamHonours(name) {
+  const key = teamKey(name), out = [];
+  for (const se of [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start))) {
+    const data = await seasonFor(se.id);
+    for (const r of withSeason(data, seasonCupResults)) {
+      if (r.win && teamKey(r.win) === key) out.push({ season: se.name, cup: r.name, won: true, name: r.win });
+      else if (r.runner && teamKey(r.runner) === key) out.push({ season: se.name, cup: r.name, won: false, name: r.runner });
+    }
+  }
+  return out;
+}
 async function seasonFor(sid) {
   if (sid === S.seasonId) return { teams: S.teams, fixtures: S.fixtures, cups: S.cups };
   return ARCHIVE[sid] ||= api(`/api/public/${encodeURIComponent(S.league.slug)}/seasons/${sid}`).catch(() => ({ teams: {}, fixtures: {}, cups: {} }));
 }
 function formOf(teamId, before) {
-  return Object.values(S.fixtures).filter(f => f.comp === "league" && played(f) && (f.home === teamId || f.away === teamId) && (!before || f.date < before))
+  return Object.values(S.fixtures).filter(f => f.comp === "league" && decided(f) && (f.home === teamId || f.away === teamId) && (!before || f.date < before))
     .sort(fxSort).slice(-5).map(f => {
+      if (walkover(f)) { const won = (walkover(f) === "home") === (f.home === teamId);
+        return { r: won ? "W" : "L", text: `Walkover ${f.home === teamId ? "v" : "at"} ${teamName(f.home === teamId ? f.away : f.home)}, ${dayMonth(f.date)}` }; }
       const mine = f.home === teamId ? f.homePins : f.awayPins, theirs = f.home === teamId ? f.awayPins : f.homePins;
       return { r: mine > theirs ? "W" : mine < theirs ? "L" : "D", text: `${mine}–${theirs} ${f.home === teamId ? "v" : "at"} ${teamName(f.home === teamId ? f.away : f.home)}, ${dayMonth(f.date)}` };
     });
@@ -2273,7 +2827,7 @@ function placeOf(teamId) {
 }
 function meetingsIn(data, season, a, b) {
   const nameOf = id => data.teams?.[id]?.name || "";
-  const is = (id, team) => id === team.id || (nameOf(id) && searchText(nameOf(id)) === searchText(team.name));
+  const is = (id, team) => id === team.id || (nameOf(id) && teamKey(nameOf(id)) === teamKey(team.name));
   const pair = (x, y) => (is(x, a) && is(y, b)) || (is(x, b) && is(y, a));
   const out = [];
   for (const f of Object.values(data.fixtures || {})) if (played(f) && pair(f.home, f.away))
@@ -2297,7 +2851,7 @@ async function openH2H(id) {
       ${pl ? `<p class="muted">${ordinal(pl.pos)} of ${pl.of}${pl.div ? ` in ${esc(pl.div)}` : ""} · ${plural(pl.pts, "point")} from ${plural(pl.P, "game")}</p>` : ""}
       ${fm.length ? `<div class="form-row" aria-label="Last ${fm.length} league results, oldest first">${fm.map(x => `<span class="form-chip ${x.r}" title="${esc(x.text)}">${x.r}</span>`).join("")}</div>
         <ul class="form-list">${fm.slice().reverse().map(x => `<li><span class="form-chip ${x.r} sm">${x.r}</span> ${esc(x.text)}</li>`).join("")}</ul>` : `<p class="muted">No league results yet this season.</p>`}</div>`; };
-  dlg.innerHTML = `<div class="card-head"><div><h3 id="h2h-title">${esc(A.name)} ${p ? `<span class="nowrap">${f.homePins}–${f.awayPins}</span>` : "v"} ${esc(B.name)}</h3>
+  dlg.innerHTML = `<div class="card-head"><div><h3 id="h2h-title">${esc(A.name)} ${p ? `<span class="nowrap">${f.homePins}–${f.awayPins}</span>` : walkover(f) ? `<span class="nowrap" title="Walkover: no game was played">W/O</span>` : "v"} ${esc(B.name)}</h3>
       <p class="lookup-note">${f.date ? esc(fmtDate(f.date, true)) : "Date to be arranged"}${f.time && !p ? ` · ${esc(f.time)}` : ""}${v ? ` · ${esc(v.name)}` : ""}${f.comp === "cup" ? ` · ${esc(f.round || "Cup")}` : ""}</p></div>
       <button type="button" class="btn ghost sm" data-h2h-close>Close</button></div>
     <h4 class="h2h-sec">Current form</h4><div class="h2h-form">${form(A)}${form(B)}</div>
@@ -2390,6 +2944,12 @@ function openCard(id) {
   dlg.showModal();
 }
 document.addEventListener("click", e => { const b = e.target.closest("[data-card-open]"); if (b) openCard(b.dataset.cardOpen); });
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-dom-set], [data-dom-copy], [data-dns-copy]"); if (!b) return;
+  if (b.dataset.domSet) return VIEWS.super.setDomain(b.dataset.domSet, b.dataset.domTo === "1");
+  const text = b.dataset.domCopy || b.dataset.dnsCopy;
+  try { await navigator.clipboard.writeText(text); toast("Copied"); } catch { prompt("Copy this:", text); }
+});
 function groupByDivisionHtml(list) {
   const divs = sortedDivisions(), divOf = f => f.comp === "league" && S.divisions[S.teams[f.home]?.division] ? S.teams[f.home].division : "";
   const groups = [...divs.map(d => [d.name, list.filter(f => divOf(f) === d.id)]), [divs.length ? "Cup and other games" : "Games", list.filter(f => !divOf(f))]].filter(([, x]) => x.length);
@@ -3217,10 +3777,14 @@ VIEWS.cup = {
     const st = statusBlock(); if (st) return body.innerHTML = st;
     const cups = sortedCups(), old = Object.values(S.fixtures).filter(f => f.comp === "cup").sort(fxSort);
     if (!cups.length && !old.length) return body.innerHTML = `<div class="empty"><strong>No cups yet</strong>${S.admin ? `Set up a cup on the <a href="#cups">Manage cups</a> page.` : "Cup draws appear here once they're made."}</div>`;
-    const items = cups.map(c => [c.id, c.name]).concat(old.length ? [["other", "Other cup fixtures"]] : []);
-    const pick = items.some(([id]) => id === S.ui.pubCup) ? S.ui.pubCup : null, c = S.cups[pick];
+    const items = cups.map(c => [c.id, c.name]).concat(old.length ? [["other", cups.length ? "Other cup fixtures" : "Cup results"]] : []);
+    // A season with only cup results (such as one imported from a file) shows them straight away.
+    const pick = items.some(([id]) => id === S.ui.pubCup) ? S.ui.pubCup : items.length === 1 && !cups.length ? "other" : null, c = S.cups[pick];
     let shown = `<div class="empty"><strong>Choose a cup</strong>Pick a cup above to see its draw and results.</div>`;
-    if (pick === "other") shown = `<section class="cup-section"><h3>Other cup fixtures</h3>${groupByDate(old)}</section>`;
+    if (pick === "other") {
+      const byCup = {}; for (const f of old) (byCup[(f.round || "Cup").split(" · ")[0]] ||= []).push(f);
+      shown = Object.entries(byCup).map(([name, list]) => `<section class="cup-section"><h3>${esc(name)}</h3>${groupByDate(list)}</section>`).join("");
+    }
     else if (c) {
       const st = cupStatus(c);
       const inner = c.structure === "final"
@@ -3245,7 +3809,7 @@ VIEWS["league-teams"] = {
   open: new Set(),
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">This season</div><h2>Teams</h2>
-      <p>Every team, where they play at home, and their players. Click a team to see its players.</p></div></div>
+      <p>Every team in alphabetical order, where they play at home, and their players. Click a team to open or close it.</p></div></div>
       <div class="list-tools" role="search">
         <input type="search" id="pt-search" placeholder="Search teams, venues or players" aria-label="Search teams">
         <span class="list-count" id="pt-count" aria-live="polite"></span>
@@ -3253,35 +3817,71 @@ VIEWS["league-teams"] = {
       </div><div id="pt-list"></div>`;
     wireSearch($("#pt-search"), "pubTeamSearch", () => this.filter());
     el.addEventListener("click", e => {
-      const b = e.target.closest("[data-pt], [data-pt-all]"); if (!b) return;
-      if (b.dataset.ptAll) { for (const id of Object.keys(S.teams)) this.toggle(id, b.dataset.ptAll === "1"); return; }
-      this.toggle(b.dataset.pt);
+      const b = e.target.closest("[data-pt], [data-pt-all]");
+      if (b?.dataset.ptAll) { for (const id of Object.keys(S.teams)) this.toggle(id, b.dataset.ptAll === "1"); return; }
+      if (b) return this.toggle(b.dataset.pt);
+      // A click anywhere else on a team's box opens or closes it, except on links, buttons and names that go somewhere.
+      const card = e.target.closest("#pt-list .card[data-team-card]");
+      if (!card || e.target.closest("a, button, input, select, [role=link], [tabindex]") || getSelection()?.toString()) return;
+      this.toggle(card.dataset.teamCard);
     });
   },
   toggle(id, show = !this.open.has(id)) {
     show ? this.open.add(id) : this.open.delete(id);
     const btn = $(`#pt-list [data-pt="${CSS.escape(id)}"]`);
     if (btn) { btn.setAttribute("aria-expanded", show); document.getElementById("ptb-" + id).hidden = !show; }
+    if (show) { this.history(id); this.honours(id); }
+  },
+  // Cups the team won or were runners-up in, this season and earlier ones, under whatever name it had.
+  async honours(id) {
+    const box = $(`#ptb-${CSS.escape(id)} [data-honours]`); if (!box || box.dataset.done) return;
+    box.dataset.done = "1";
+    const [rows, hist] = await Promise.all([teamHonours(box.dataset.honours), teamHistory(box.dataset.honours)]);
+    // Finished seasons only: top of the division, second, or bottom (the wooden spoon).
+    const now = (S.teams[id]?.name || "").toLowerCase(), as = r => r.name.toLowerCase() !== now ? ` as ${esc(r.name)}` : "";
+    const league = hist.filter(r => r.done && r.P && r.of > 1 && (r.pos <= 2 || r.pos === r.of)).map(r => `<li>${r.pos === 1 ? "🏆 Division winners" : r.pos === 2 ? "🥈 Division runners-up" : "🥄 Wooden spoon winners"}: <strong>${esc(r.div || "League")}</strong> <span class="muted">· ${esc(r.season)}${as(r)}</span></li>`);
+    const cups = rows.map(r => `<li>${r.won ? "🏆 Winners" : "🥈 Runners-up"}: <strong>${esc(r.cup)}</strong> <span class="muted">· ${esc(r.season)}${as(r)}</span></li>`);
+    // Only the sections with something in them; nothing at all when the team hasn't won anything yet.
+    box.hidden = !league.length && !cups.length;
+    box.innerHTML = (league.length ? `<h4>League honours</h4><ul>${league.join("")}</ul>` : "") + (cups.length ? `<h4${league.length ? ' class="pt-h-gap"' : ""}>Cup honours</h4><ul>${cups.join("")}</ul>` : "");
+  },
+  // Each season's league finish for the team, under whatever name it had, filled in when the card opens.
+  async history(id) {
+    const box = $(`#ptb-${CSS.escape(id)} [data-history]`); if (!box || box.dataset.done) return;
+    box.dataset.done = "1";
+    const rows = await teamHistory(box.dataset.history);
+    box.innerHTML = `<h4>Season by season</h4>` + (!rows.length ? `<p class="muted">No league results yet.</p>` : `<div class="table-scroll"><table class="sc-table pt-hist">
+      <thead><tr><th class="pl">Season</th><th class="pl">Division</th><th>Pos</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
+      <tbody>${rows.map(r => `<tr><td class="pl">${esc(r.season)}${r.name.toLowerCase() !== S.teams[id]?.name.toLowerCase() ? `<span class="muted"> as ${esc(r.name)}</span>` : ""}</td><td class="pl">${esc(r.div || "–")}</td>
+        <td>${r.P ? `${ordinal(r.pos)}<span class="muted"> of ${r.of}</span>` : "–"}</td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td><b>${r.pts}</b></td></tr>`).join("")}</tbody></table></div>`);
   },
   refresh() {
     const list = $("#pt-list"); $("#pt-count").textContent = "";
     const st = statusBlock(); if (st) return list.innerHTML = st;
-    const order = Object.fromEntries(sortedDivisions().map((d, i) => [d.id, i]));
-    const teams = sortedTeams().sort((a, b) => (order[a.division] ?? 999) - (order[b.division] ?? 999));
+    // Opened from a team's name (#team/<id>): just that team, open, with a way back to them all.
+    const focus = /^#team\/(.+)$/.exec(location.hash)?.[1], one = focus && S.teams[decodeURIComponent(focus)];
+    $(".list-tools", $("#pt-list").parentElement).hidden = !!one;
+    let teams = sortedTeams();
+    if (one) { teams = [one]; this.open.add(one.id); }
     if (!teams.length) return list.innerHTML = `<div class="empty"><strong>No teams yet</strong>Teams appear here once they're added.</div>`;
     const role = (label, p) => p ? `<dt>${label}</dt><dd>${playerHtml(p)}</dd>` : "";
     list.innerHTML = `<div class="cards">${teams.map(t => {
       const v = S.venues[t.venue], players = playersOf(t), cap = players.find(p => p.captain);
       const search = [t.name, v?.name, divisionName(t.division), ...players.map(playerLabel)].join(" ");
-      return `<article class="card" data-search="${esc(searchText(search))}">
+      return `<article class="card pt-card" data-team-card="${esc(t.id)}" data-search="${esc(searchText(search))}">
         <div class="card-head"><div><h3><button type="button" class="card-toggle tn" data-pt="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="ptb-${esc(t.id)}">${esc(t.name)}</button></h3>
           <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `<a href="#league-venues">${esc(v.name)}</a>${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${plural(players.length, "player")}</div></div></div>
         <div class="card-body" id="ptb-${esc(t.id)}"${this.open.has(t.id) ? "" : " hidden"}>
+          ${previousNames(t.name).length ? `<p class="muted pt-was">Previously ${esc(previousNames(t.name).join(", then "))}</p>` : ""}
           <dl class="kv">${role("Captain", cap)}${role("Vice captain", viceOf(t))}${role("Sticker up", stickerOf(t))}</dl>
           <div class="tags">${players.map(p => `<span class="tag">${playerHtml(p)}${p.captain ? " (C)" : ""}${p.vice ? " (VC)" : ""}</span>`).join("") || `<span class="muted">No players listed</span>`}</div>
+          <div class="pt-honours" data-honours="${esc(t.name)}"><h4>Honours</h4><p class="muted">Loading…</p></div>
+          ${S.league.seasons.length > 1 ? `<div class="pt-history" data-history="${esc(t.name)}"><h4>Season by season</h4><p class="muted">Loading…</p></div>` : ""}
         </div></article>`;
     }).join("")}</div>`;
+    if (one) list.insertAdjacentHTML("afterbegin", `<p class="pt-back"><a class="btn ghost sm" href="#league-teams">← All teams</a></p>`);
     this.filter();
+    for (const id of this.open) if (teams.some(t => t.id === id)) { this.history(id); this.honours(id); }
   },
   filter() { applySearch($("#pt-list"), S.ui.pubTeamSearch, $("#pt-count"), "team"); }
 };
@@ -3332,7 +3932,7 @@ VIEWS.cups = {
       <p>Set up this season's cup competitions, choose the entries, make the draw and enter results.</p></div></div>
       <div class="split">
         <div id="cup-list"></div>
-        <div class="form-col"><form class="panel form" id="cup-form" autocomplete="off">
+        <div class="form-col" data-need="fixtures"><form class="panel form" id="cup-form" autocomplete="off">
           <h3>Create a cup</h3>
           <div class="field"><label for="c-name">Cup name</label><input type="text" id="c-name" maxlength="60" placeholder="e.g. League Cup"></div>
           <div class="field"><label for="c-type">Type of cup</label><select id="c-type">${Object.entries(CUP_TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select><span class="hint">More types will be added later.</span></div>
@@ -4197,6 +4797,75 @@ function csvColumns(headRow, spec) {
   return col;
 }
 
+/* ---------- importing a past season's results ---------- */
+const RESULT_COLUMNS = {
+  date: ["date", "match date", "fixture date"],
+  home: ["home team", "home"], away: ["away team", "away"],
+  hp: ["home pins", "home score", "home total", "home result"], ap: ["away pins", "away score", "away total", "away result"],
+  comp: ["competition", "comp", "cup", "league or cup"], division: ["division", "div"], round: ["round", "cup round", "stage", "rd", "round name"], venue: ["venue", "played at", "alley"],
+};
+// "14/09/2023", "14/9/23", "2023-09-14" → "2023-09-14", or null.
+function csvDate(v) {
+  let m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(v || ""), y, mo, d;
+  if (m) [, y, mo, d] = m; else if ((m = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2}|\d{4})$/.exec(v || ""))) { [, d, mo, y] = m; if (y.length === 2) y = (+y > 50 ? "19" : "20") + y; } else return null;
+  const iso = `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`, t = new Date(iso + "T12:00:00Z");
+  return isNaN(t) || t.toISOString().slice(0, 10) !== iso ? null : iso;
+}
+// Reads a season's results file into games, teams, divisions, venues and cups, with any rows it couldn't use.
+const importSize = plan => [plan.games.length ? plural(plan.games.length, "game") : "", plan.finals.size ? plural(plan.finals.size, "final") : ""].filter(Boolean).join(" and ");
+function resultsImportPlan(text) {
+  const rows = parseCsv(text).filter(r => r.some(Boolean)), col = csvColumns(rows[0], RESULT_COLUMNS);
+  // finals: a cup's final where everyone throws (singles or pairs), one row per entry with no away team: name → { date, venue, entries }
+  const plan = { games: [], finals: new Map(), teams: new Map(), divisions: new Set(), venues: new Set(), cups: new Set(), problems: [], missing: [] };
+  for (const [k, label] of [["date", "Date"], ["home", "Home Team"], ["hp", "Home Pins"]]) if (col[k] === undefined) plan.missing.push(label);
+  if (plan.missing.length) return plan;
+  if (col.away === undefined) col.away = -1;
+  const name = v => (v || "").replace(/\s+/g, " ").trim(), key = v => name(v).toLowerCase();
+  const team = v => { const k = key(v); if (!plan.teams.has(k)) plan.teams.set(k, { name: name(v), division: "" }); return plan.teams.get(k); };
+  rows.slice(1).forEach((r, i) => {
+    const line = i + 2, get = k => col[k] === undefined ? "" : name(r[col[k]]);
+    const date = csvDate(get("date")), h = get("home"), a = get("away"), hpRaw = get("hp"), apRaw = get("ap");
+    const comp = get("comp"), isCup = !!comp && !/^league$/i.test(comp), division = isCup ? "" : get("division"), venue = get("venue");
+    const bad = msg => plan.problems.push(`Row ${line}: ${msg}`);
+    if (!date) return bad(`the date "${get("date")}" isn't a date. Use day/month/year, like 14/09/2023.`);
+    const round = get("round"), isFinal = /final/i.test(round) && !/semi|quarter/i.test(round);
+    if (h && !a && isCup && isFinal) {
+      // An entry in a final where the highest pins wins, such as a singles or pairs final.
+      if (!/^\d{1,4}$/.test(hpRaw)) return bad(`${h} needs their pins in the Home Pins column.`);
+      let fin = plan.finals.get(comp); if (!fin) plan.finals.set(comp, fin = { cup: comp, date, venue, entries: [] });
+      if (fin.entries.some(e => key(e.name) === key(h))) return bad(`${h} is in the ${comp} final twice.`);
+      fin.entries.push({ name: h, pins: +hpRaw }); if (!fin.venue && venue) fin.venue = venue;
+      if (venue) plan.venues.add(venue); plan.cups.add(comp);
+      return;
+    }
+    if (!h || !a) return bad(h && isCup ? "it needs an away team. For a final where the highest pins wins, put Final in the Round column." : "it needs both a home and an away team.");
+    if (key(h) === key(a)) return bad(`${h} can't play itself.`);
+    // "Home Walkover" or "Away Walkover" anywhere in the row: no game was played and that side gets the win.
+    // "Walkover" (or W/O) alone in one side's pins column gives that side the win.
+    const cells = r.map(name).join(" | "), woCell = v => /^(walk\s*-?\s*over|w\s*\/\s*o)$/i.test(v);
+    const wo = /\bhome\s*walk\s*-?\s*over\b/i.test(cells) ? "home" : /\baway\s*walk\s*-?\s*over\b/i.test(cells) ? "away" : woCell(hpRaw) ? "home" : woCell(apRaw) ? "away" : null;
+    const pins = v => /^\d{1,4}$/.test(v) ? +v : null, hp = wo ? null : pins(hpRaw), ap = wo ? null : pins(apRaw);
+    if (!wo && (hpRaw || apRaw) && (hp === null || ap === null)) return bad(`the pins "${hpRaw}" and "${apRaw}" need to be whole numbers, or both left empty for a game that wasn't played.`);
+    const ht = team(h), at = team(a);
+    if (division) { plan.divisions.add(division); for (const t of [ht, at]) if (!t.division) t.division = division; }
+    if (venue) plan.venues.add(venue);
+    if (isCup) plan.cups.add(comp);
+    plan.games.push({ date, home: ht.name, away: at.name, hp, ap, wo, cup: isCup ? comp : "", round, venue });
+  });
+  plan.games.sort((x, y) => x.date.localeCompare(y.date));
+  for (const [name, f] of plan.finals) if (f.entries.length < 2) { plan.problems.push(`The ${name} final needs at least two entries.`); plan.finals.delete(name); }
+  plan.dates = [...plan.games.map(g => g.date), ...[...plan.finals.values()].map(f => f.date)].sort();
+  return plan;
+}
+// A straight-final cup made from an imported final: each entry's pins, the highest wins.
+function importedFinalCup(f, venueId) {
+  const id = newId() + "c", entrants = f.entries.map((e, i) => ({ id: `${id}e${i}`, label: e.name }));
+  return { id, name: f.cup, type: "knockout", game: cfg().game, format: "individual", structure: "final", pairs: false, captains: false,
+    entries: entrants.length, entrants, draw: [], results: {}, schedule: {}, roundDates: {},
+    final: { date: f.date, time: "", venue: f.venue ? venueId[f.venue] || null : null, alley: null, scores: Object.fromEntries(f.entries.map((e, i) => [entrants[i].id, e.pins])) },
+    created: new Date().toISOString() };
+}
+
 const PLAYER_COLUMNS = {
   team: ["teams", "team", "team name"],
   first: ["first name", "firstname", "first", "forename"],
@@ -4343,6 +5012,8 @@ VIEWS.teams = {
         <div class="form-col"><form class="panel form" id="team-form" autocomplete="off">
           <h3 id="tf-title">Add a team</h3>
           <div class="field"><label for="t-name">Team name</label><input type="text" id="t-name" required></div>
+          <div class="field"><label for="t-was">Previous names <span class="muted">(optional)</span></label><input type="text" id="t-was" placeholder="e.g. The Friday Rejects, The Reckleford Rejects">
+            <span class="hint">Names this team played under in earlier seasons, separated by commas, so its history and past meetings join up. Renaming a team here keeps its old name automatically.</span></div>
           <div class="row2">
             <div class="field"><label for="t-venue">Home venue</label><select id="t-venue"></select></div>
             <div class="field" id="t-alley-wrap" hidden><label for="t-alley">Home alley</label><select id="t-alley"></select></div>
@@ -4469,7 +5140,7 @@ VIEWS.teams = {
     });
   },
   reset() {
-    const f = $("#team-form"); f.reset(); delete f.dataset.id;
+    const f = $("#team-form"); f.reset(); delete f.dataset.id; this.editingName = "";
     $("#tf-title").textContent = "Add a team";
     $("#t-players").innerHTML = playerRow();
     this.showCaptain();
@@ -4570,9 +5241,10 @@ VIEWS.teams = {
   edit(id) {
     const t = S.teams[id], c = S.contacts[id] || {};
     if (!t) return;
-    const f = $("#team-form"); f.dataset.id = id;
+    const f = $("#team-form"); f.dataset.id = id; this.editingName = t.name;
     $("#tf-title").textContent = `Edit ${t.name}`;
     $("#t-name").value = t.name || "";
+    $("#t-was").value = previousNames(t.name).join(", ");
     $("#t-venue").innerHTML = venueOptions(t.venue || "");
     this.syncAlley(t.alley || 1);
     $("#t-email").value = c.email || "";
@@ -4624,7 +5296,14 @@ VIEWS.teams = {
       d.contacts[id] = contact;
     });
     $("#tf-save").disabled = false;
-    if (ok) { toast(editing ? `Saved ${name}` : `Added ${name}`); this.reset(); }
+    if (!ok) return;
+    // Previous names live with the league, across seasons. A renamed team keeps its old name in the list.
+    const oldName = editing ? this.editingName : "", typed = $("#t-was").value.split(",").map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
+    const was = [...new Set([...(oldName && oldName.toLowerCase() !== name.toLowerCase() ? [oldName] : []), ...typed, ...previousNames(oldName)].filter(x => x.toLowerCase() !== name.toLowerCase()))];
+    const others = (S.league.teamNames || []).filter(g => ![name, oldName].filter(Boolean).some(n => g.name.toLowerCase() === n.toLowerCase()));
+    const before = JSON.stringify(S.league.teamNames || []), next = was.length ? [...others, { name, was }] : others;
+    if (JSON.stringify(next) !== before && !(await leagueRequest("", "PATCH", { teamNames: next }))) return;
+    toast(editing ? `Saved ${name}${oldName && oldName !== name ? `. ${oldName} is kept as a previous name` : ""}` : `Added ${name}`); this.reset();
   },
   // Every player as "Name (Team)" for the committee search.
   committeeChoices() {
@@ -4994,12 +5673,21 @@ VIEWS.venues = {
 function teamOptions(selected, blank) {
   return `<option value="">${blank}</option>` + sortedTeams().map(t => `<option value="${esc(t.id)}"${t.id === selected ? " selected" : ""}>${esc(t.name)}</option>`).join("");
 }
+// Captains' contact details for admins whose role may see them (the league secretary has them on Manage teams).
+function contactsPanel() {
+  if (!S.access?.contacts || S.access.owner) return "";
+  const rows = sortedTeams().map(t => { const c = S.contacts[t.id] || {}, cap = playersOf(t).find(p => p.captain) || captainOf(t);
+    return (c.mobile || c.email || c.address) ? `<tr><td class="pl"><span class="tn">${esc(t.name)}</span></td><td class="pl">${esc(fullName(cap || {}) || "—")}</td><td class="pl">${c.mobile ? `<a href="tel:${esc(c.mobile.replace(/\s+/g, ""))}">${esc(c.mobile)}</a>` : "—"}</td><td class="pl">${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : "—"}</td><td class="pl">${esc(c.address || "—")}</td></tr>` : ""; }).join("");
+  return `<details class="panel mf-contacts"><summary><strong>Captains' contact details</strong> <span class="muted">· for arranging games only</span></summary>
+    ${rows ? `<div class="table-scroll"><table class="sc-table"><thead><tr><th class="pl">Team</th><th class="pl">Captain</th><th class="pl">Mobile</th><th class="pl">Email</th><th class="pl">Address</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="muted">No contact details have been added yet.</p>`}</details>`;
+}
 VIEWS["manage-fixtures"] = {
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Fixtures &amp; results</h2>
       <p>Type each side's total pins and press Save to record a result. Clear both boxes to mark a fixture as not yet played. Results and notes stay here until they're checked: tick "Result checked" on each, then press Publish now for the night to put them on the live site.</p></div></div>
       <div class="split">
         <div>
+          <div id="mf-contacts"></div>
           <div id="mf-subs"></div>
           <div class="toolbar" style="margin-bottom:14px">
             <div class="seg" role="group" aria-label="Competition"><button type="button" data-comp="all">All</button><button type="button" data-comp="league">League</button><button type="button" data-comp="cup">Cup</button></div>
@@ -5007,7 +5695,7 @@ VIEWS["manage-fixtures"] = {
           </div>
           <div id="mf-list"></div>
         </div>
-        <div class="form-col">
+        <div class="form-col" data-need="fixtures">
           <form class="panel form" id="fx-form" autocomplete="off">
             <h3 id="ff-title">Add a fixture</h3>
             <div class="row2">
@@ -5291,6 +5979,7 @@ VIEWS["manage-fixtures"] = {
     toast(`${plural(made, "fixture")} created`);
   },
   refresh() {
+    $("#mf-contacts").innerHTML = contactsPanel();
     $("#mf-subs").innerHTML = subsHtml() + readyHtml();
     this.fillSelects();
     $$(".seg button[data-comp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.comp === S.ui.adminComp));
@@ -5456,7 +6145,7 @@ VIEWS.seasons = {
       <p>Each season has its own venues, teams, divisions, fixtures and results. The public site shows the season you choose.</p></div></div>
       <div id="setup-steps"></div>
       <div class="split">
-        <div id="ss-list"></div>
+        <div><div id="ss-list"></div><section class="panel nc-panel" id="nc-panel" hidden></section></div>
         <div class="form-col"><form class="panel form" id="ss-form" autocomplete="off">
           <h3 id="ss-title">Add a season</h3>
           <div class="row2">
@@ -5477,8 +6166,22 @@ VIEWS.seasons = {
           </div>
           <label class="check" id="ss-current-wrap"><input type="checkbox" id="ss-current" checked> Show this season on the public site</label>
           <div class="actions"><button class="btn" type="submit" id="ss-save">Add season</button><button class="btn ghost" type="button" data-act="cancel-season">Clear form</button></div>
-        </form></div>
+        </form>
+        <div class="panel form" id="ri-panel">
+          <h3>Import a past season's results</h3>
+          <p class="muted" style="margin:0">One row per game, with the columns Date, Home Team, Away Team, Home Pins and Away Pins. Competition (League, or the cup's name), Division, Round and Venue are optional. For a game that wasn't played, put Home Walkover or Away Walkover in the pins columns: that side gets the win. For a singles or pairs final where the highest pins wins, put one row per entry with the name under Home Team, their pins under Home Pins, no Away Team, and Final as the Round. Import a whole season at once, or a part at a time (the league games, then each cup) into a season you've already imported. Teams, divisions and venues are added to that season only, so old teams don't appear in this season. The results go straight on the public site, under that season.</p>
+          <p style="margin:0"><a class="btn ghost sm" href="/templates/results-template.csv" download="results-template.csv">Download the CSV template</a></p>
+          <div class="field"><label for="ri-file">CSV file</label><input type="file" id="ri-file" accept=".csv,text/csv"></div>
+          <div class="field"><label for="ri-into">Import into</label><select id="ri-into"></select><span class="hint">Adding to a season keeps its games and matches its teams, divisions and venues by name. Games already in it are left out.</span></div>
+          <div class="field" id="ri-name-wrap"><label for="ri-name">Season name</label><input type="text" id="ri-name" maxlength="40" placeholder="e.g. 2023–24"><span class="hint">Filled in from the dates in the file. You can change it.</span></div>
+          <div id="ri-summary" class="imp-summary" aria-live="polite"></div>
+          <div class="actions"><button class="btn" type="button" id="ri-go" disabled>Import season</button></div>
+        </div></div>
       </div>`;
+    $("#ri-file").addEventListener("change", async e => { const f = e.target.files[0]; this.importText = f ? await f.text() : ""; delete $("#ri-name").dataset.edited; this.importCheck(); });
+    $("#ri-name").addEventListener("input", () => { $("#ri-name").dataset.edited = "1"; this.importCheck(); });
+    $("#ri-go").addEventListener("click", e => this.importSeason(e.target));
+    $("#ri-into").addEventListener("change", () => this.importCheck());
     const sync = () => { if (!$("#ss-name").dataset.edited) $("#ss-name").value = seasonNameFor($("#ss-start").value, $("#ss-end").value); };
     $("#ss-start").addEventListener("change", sync); $("#ss-end").addEventListener("change", sync);
     $("#ss-name").addEventListener("input", () => $("#ss-name").dataset.edited = "1");
@@ -5486,6 +6189,127 @@ VIEWS.seasons = {
     $("#ss-c-teams").addEventListener("change", () => this.syncCopy());
     $("#ss-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
     this.reset();
+  },
+  // Checks the results file and shows what importing it will do.
+  // The seasons a file can be added to, newest first; keeps the choice when the list is redrawn.
+  importTargets() {
+    const sel = $("#ri-into"); if (!sel) return;
+    const keep = sel.value, list = [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start));
+    sel.innerHTML = `<option value="">A new season</option>` + list.map(x => `<option value="${esc(x.id)}">Season ${esc(x.name)}${x.id === S.league.currentSeasonId ? " (on the public site)" : ""}</option>`).join("");
+    if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+  },
+  importCheck() {
+    const box = $("#ri-summary"), go = $("#ri-go"), name = $("#ri-name"), into = $("#ri-into").value;
+    const target = into && S.league.seasons.find(x => x.id === into);
+    $("#ri-name-wrap").hidden = !!target;
+    // A fresh check disarms the button, so a second file always asks to confirm again.
+    delete go.dataset.armed; go.textContent = go.dataset.orig = target ? `Add to season ${target.name}` : "Import season";
+    go.disabled = true; this.importPlan = null;
+    if (!this.importText) return box.innerHTML = "";
+    const plan = resultsImportPlan(this.importText);
+    if (plan.missing.length) return box.innerHTML = `<p class="bad">The file needs ${plan.missing.length === 1 ? "a column" : "columns"} headed ${plan.missing.join(", ")}. Check the first row has the headings.</p>`;
+    if (!plan.games.length && !plan.finals.size) return box.innerHTML = `<p class="bad">No games could be read from the file.</p>${plan.problems.length ? `<ul class="imp-problems">${plan.problems.slice(0, 8).map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}`;
+    const first = plan.dates[0], last = plan.dates.at(-1);
+    // Skittles seasons run autumn to spring: a season starting in July or later is that year and the next.
+    const y = +first.slice(0, 4) - (+first.slice(5, 7) < 7 ? 1 : 0);
+    if (!name.dataset.edited) name.value = `${y}–${String((y + 1) % 100).padStart(2, "0")}`;
+    const clash = !target && S.league.seasons.find(x => x.name.toLowerCase() === name.value.trim().toLowerCase());
+    const wos = plan.games.filter(g => g.wo).length, played = plan.games.filter(g => g.hp !== null || g.wo).length, league = plan.games.filter(g => !g.cup).length;
+    box.innerHTML = `<ul class="imp-list">
+      ${plan.games.length ? `<li><strong>${plural(plan.games.length, "game")}</strong> from ${esc(fmtDate(first, true))} to ${esc(fmtDate(last, true))}: ${plural(league, "league game")}${plan.games.length > league ? `, ${plural(plan.games.length - league, "cup game")}` : ""}${wos ? `, including ${plural(wos, "walkover")}` : ""}${played < plan.games.length ? ` (${plan.games.length - played} not played)` : ""}</li>` : ""}
+      ${[...plan.finals.values()].map(f => { const top = [...f.entries].sort((a, b) => b.pins - a.pins); return `<li><strong>${esc(f.cup)} final</strong> on ${esc(fmtDate(f.date, true))}: ${`${f.entries.length} ${f.entries.length === 1 ? "entry" : "entries"}`}, ${top[0].pins === top[1].pins ? "a tie for first" : `won by ${esc(top[0].name)} with ${top[0].pins}`}</li>`; }).join("")}
+      ${plan.teams.size ? `<li><strong>${plural(plan.teams.size, "team")}</strong>` : "<li hidden>"}${plan.divisions.size ? ` in ${plural(plan.divisions.size, "division")} (${esc([...plan.divisions].join(", "))})` : ""}</li>
+      ${plan.cups.size ? `<li><strong>Cups:</strong> ${esc([...plan.cups].join(", "))}</li>` : ""}
+      ${plan.venues.size ? `<li><strong>${plural(plan.venues.size, "venue")}</strong></li>` : ""}</ul>
+      ${plan.problems.length ? `<p class="warn-text">${plural(plan.problems.length, "row")} will be left out:</p><ul class="imp-problems">${plan.problems.slice(0, 10).map(x => `<li>${esc(x)}</li>`).join("")}${plan.problems.length > 10 ? `<li>…and ${plan.problems.length - 10} more</li>` : ""}</ul>` : ""}
+      ${clash ? `<p class="bad">There's already a season called ${esc(clash.name)}. Give this one a different name, or delete that season first.</p>` : ""}`;
+    this.importPlan = plan;
+    go.disabled = !!clash || (!target && !name.value.trim());
+  },
+  // Creates the season with its teams, divisions, venues and results, and leaves the public site on its current season.
+  async importSeason(btn) {
+    const into = $("#ri-into").value; if (into) return this.importInto(btn, into);
+    const plan = this.importPlan, name = $("#ri-name").value.trim(); if (!plan || !name) return;
+    if (!arm(btn, `Confirm: import ${importSize(plan)}`)) return;
+    btn.disabled = true; btn.textContent = "Importing…";
+    const first = plan.dates[0], last = plan.dates.at(-1), current = S.league.currentSeasonId;
+    try {
+      const r = await send(`/api/leagues/${S.league.id}/seasons`, "POST", { name, start: first, end: last > first ? last : addDays(first, 1) });
+      const sid = r.season.id, data = { teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {} };
+      const divId = {}; [...plan.divisions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).forEach((d, i) => { const id = newId() + "d" + i; divId[d] = id; data.divisions[id] = { id, name: d, order: i + 1 }; });
+      const venueId = {}; [...plan.venues].forEach((v, i) => { const id = newId() + "v" + i; venueId[v] = id; data.venues[id] = { id, name: v, address1: "", address2: "", address3: "", postcode: "", phone: "", alleys: 1, lat: null, lng: null }; });
+      const teamId = {}; [...plan.teams.values()].forEach((t, i) => { const id = newId() + "t" + i; teamId[t.name.toLowerCase()] = id;
+        data.teams[id] = { id, name: t.name, venue: null, alley: null, captainFirst: "", captainLast: "", players: [], ...(t.division ? { division: divId[t.division] } : {}) }; });
+      plan.games.forEach((g, i) => { const id = newId() + "f" + i;
+        data.fixtures[id] = { id, comp: g.cup ? "cup" : "league", round: g.cup ? (g.round ? `${g.cup} · ${g.round}` : g.cup) : null, date: g.date, time: "",
+          home: teamId[g.home.toLowerCase()], away: teamId[g.away.toLowerCase()], venue: g.venue ? venueId[g.venue] : null, alley: null, homePins: g.hp, awayPins: g.ap, ...(g.wo ? { walkover: g.wo } : {}) }; });
+      for (const f of plan.finals.values()) { const c = importedFinalCup(f, venueId); data.cups[c.id] = c; }
+      await send(`/api/leagues/${S.league.id}/seasons/${sid}`, "PUT", { version: 0, data, contacts: {} });
+      if (current && S.league.currentSeasonId !== current) await send(`/api/leagues/${S.league.id}`, "PATCH", { currentSeasonId: current });
+      const lr = await api(`/api/public/${encodeURIComponent(S.league.slug)}`); if (lr.league) S.league = { ...S.league, seasons: lr.league.seasons, currentSeasonId: lr.league.currentSeasonId };
+      toast(`Season ${name} imported: ${importSize(plan)}${plan.teams.size ? `, ${plural(plan.teams.size, "team")}` : ""}. It shows on the Past seasons tab.`);
+      this.importDone(); renderBrand(); this.refresh();
+      if (nameRefSeason(sid)) openNameCheck(sid);
+    } catch (e) { saveError(e); }
+    btn.disabled = false; this.importCheck();
+  },
+  importDone() { this.importText = ""; this.importPlan = null; $("#ri-file").value = ""; $("#ri-name").value = ""; delete $("#ri-name").dataset.edited; $("#ri-summary").innerHTML = ""; $("#ri-name-wrap").hidden = !!$("#ri-into").value; },
+  // Adds the file's games to a season already set up: teams, divisions and venues are matched by name
+  // (a team also by its old names), anything new is added, and games already in the season are left out.
+  async importInto(btn, sid) {
+    const plan = this.importPlan, season = S.league.seasons.find(x => x.id === sid); if (!plan || !season) return;
+    if (!arm(btn, `Confirm: add ${importSize(plan)} to ${season.name}`)) return;
+    btn.disabled = true; btn.textContent = "Adding…";
+    try {
+      const data = await seasonAdminData(sid), changes = [], low = v => (v || "").trim().toLowerCase();
+      const divs = Object.values(data.divisions || {}), venues = Object.values(data.venues || {}), teams = Object.values(data.teams || {});
+      const divId = {}; let order = Math.max(0, ...divs.map(d => d.order || 0));
+      for (const d of [...plan.divisions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))) {
+        const had = divs.find(x => low(x.name) === low(d));
+        if (had) { divId[d] = had.id; continue; }
+        const id = newId() + "d" + order; divId[d] = id; changes.push({ in: "divisions", id, value: { id, name: d, order: ++order } });
+      }
+      const venueId = {}; [...plan.venues].forEach((v, i) => { const had = venues.find(x => low(x.name) === low(v));
+        if (had) return venueId[v] = had.id;
+        const id = newId() + "v" + i; venueId[v] = id; changes.push({ in: "venues", id, value: { id, name: v, address1: "", address2: "", address3: "", postcode: "", phone: "", alleys: 1, lat: null, lng: null } }); });
+      const teamId = {}; let added = 0;
+      [...plan.teams.values()].forEach((t, i) => { const had = teams.find(x => low(x.name) === low(t.name)) || teams.find(x => teamKey(x.name) === teamKey(t.name));
+        if (had) return teamId[low(t.name)] = had.id;
+        const id = newId() + "t" + i; teamId[low(t.name)] = id; added++;
+        changes.push({ in: "teams", id, value: { id, name: t.name, venue: null, alley: null, captainFirst: "", captainLast: "", players: [], ...(t.division ? { division: divId[t.division] } : {}) } }); });
+      const gameKey = f => [f.date, f.home, f.away, f.comp, low(f.round)].join("|");
+      const have = new Set(Object.values(data.fixtures || {}).map(gameKey)); let skipped = 0, games = 0;
+      plan.games.forEach((g, i) => { const id = newId() + "f" + i;
+        const f = { id, comp: g.cup ? "cup" : "league", round: g.cup ? (g.round ? `${g.cup} · ${g.round}` : g.cup) : null, date: g.date, time: "",
+          home: teamId[low(g.home)], away: teamId[low(g.away)], venue: g.venue ? venueId[g.venue] : null, alley: null, homePins: g.hp, awayPins: g.ap, ...(g.wo ? { walkover: g.wo } : {}) };
+        if (have.has(gameKey(f))) return skipped++;
+        have.add(gameKey(f)); games++; changes.push({ in: "fixtures", id, value: f }); });
+      // A final where the highest pins wins: a new cup, or new entries added to the same cup's final.
+      let finals = 0;
+      for (const f of plan.finals.values()) {
+        const had = Object.values(data.cups || {}).find(c => low(c.name) === low(f.cup) && c.structure === "final");
+        if (!had) { const c = importedFinalCup(f, venueId); changes.push({ in: "cups", id: c.id, value: c }); finals++; continue; }
+        const add = f.entries.filter(e => !(had.entrants || []).some(x => low(x.label) === low(e.name)));
+        if (!add.length) continue;
+        const c = structuredClone(had); c.final ||= { scores: {} }; c.final.scores ||= {};
+        add.forEach((e, i) => { const id = `${c.id}x${Date.now().toString(36)}${i}`; c.entrants.push({ id, label: e.name }); c.final.scores[id] = e.pins; });
+        c.entries = c.entrants.length; c.final.date ||= f.date; changes.push({ in: "cups", id: c.id, value: c }); finals++;
+      }
+      if (!games && !finals) { toast(`Nothing to add: everything in the file is already in season ${season.name}.`); btn.disabled = false; return this.importCheck(); }
+      const save = extra => send(`/api/leagues/${S.league.id}/seasons/${sid}/data`, "PATCH", { base: data.version, changes, ...extra });
+      const r = await save().catch(async e => { if (!e.body?.planNeeded) throw e; if (!(await planDialog(e.body.planNeeded))) return null; return save({ acceptPlan: true }); });
+      if (r) {
+        // Stretch the season's dates to take in the new games.
+        const first = plan.dates[0], last = plan.dates.at(-1);
+        if (first < season.start || last > season.end) await leagueRequest(`/seasons/${sid}`, "PATCH", { name: season.name, start: first < season.start ? first : season.start, end: last > season.end ? last : season.end });
+        toast(`Added ${[games ? plural(games, "game") : "", finals ? plural(finals, "final") : ""].filter(Boolean).join(" and ")} to season ${season.name}${added ? ` with ${plural(added, "new team")}` : ""}${skipped ? `. ${plural(skipped, "game")} already there ${skipped === 1 ? "was" : "were"} left out` : ""}.`);
+        delete ARCHIVE[sid];
+        if (sid === S.seasonId) await loadSeason();
+        this.importDone(); this.refresh();
+        if (added && nameRefSeason(sid)) openNameCheck(sid);
+      }
+    } catch (e) { saveError(e); }
+    btn.disabled = false; this.importCheck();
   },
   reset() {
     const f = $("#ss-form"); f.reset(); delete f.dataset.id; delete $("#ss-name").dataset.edited;
@@ -5536,6 +6360,7 @@ VIEWS.seasons = {
     if ($("#ss-save")) $("#ss-save").disabled = false;
   },
   refresh() {
+    this.importTargets();
     const list = $("#ss-list"), seasons = [...S.league.seasons].reverse();
     $("#setup-steps").innerHTML = setupSteps();
     if (!seasons.length) return list.innerHTML = `<div class="empty"><strong>No seasons yet</strong>Start by setting the first season's start and finish dates with the form. Then add venues, teams and players, and put the teams into divisions.</div>`;
@@ -5547,10 +6372,110 @@ VIEWS.seasons = {
         ${s.id !== S.seasonId ? `<button class="btn sm" data-act="use-season" data-id="${esc(s.id)}">Work on this season</button>` : ""}
         ${s.id !== S.league.currentSeasonId ? `<button class="btn ghost sm" data-act="publish-season" data-id="${esc(s.id)}">Show on public site</button>` : ""}
         <button class="btn ghost sm" data-act="edit-season" data-id="${esc(s.id)}">Edit dates</button>
+        ${seasons.length > 1 && s.id !== nameRefSeason(s.id) ? `<button class="btn ghost sm" data-act="check-names" data-id="${esc(s.id)}">Check names</button>` : ""}
         <button class="btn danger sm" data-act="del-season" data-id="${esc(s.id)}">Delete</button>
       </div></article>`).join("")}</div>`;
   }
 };
+/* ---------- checking a past season's team and venue names ---------- */
+// After an import, or any time, each team and venue in a past season can be matched to one in the season used as
+// the reference (the one on the public site, or else the newest other season): the same one spelt differently,
+// a team's old name, or new. Saving renames them in that season, joins duplicates, and records old names.
+const nameRefSeason = sid => { const ss = S.league.seasons; if (S.league.currentSeasonId && S.league.currentSeasonId !== sid) return S.league.currentSeasonId;
+  return [...ss].filter(x => x.id !== sid).sort((a, b) => b.start.localeCompare(a.start))[0]?.id || null; };
+// "The Crown & Anchor" and "crown and anchor" compare the same.
+const nameNorm = v => String(v || "").toLowerCase().replace(/&/g, " and ").replace(/^the\s+|\s+the$/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+function nameLikeness(a, b) {
+  a = nameNorm(a); b = nameNorm(b); if (!a || !b) return 0; if (a === b) return 1;
+  if (a.replace(/ /g, "") === b.replace(/ /g, "")) return 0.98;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]); for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  const lev = 1 - d[a.length][b.length] / Math.max(a.length, b.length), contains = a.includes(b) || b.includes(a) ? 0.85 : 0;
+  return Math.max(lev, contains);
+}
+async function seasonAdminData(sid) { return sid === S.seasonId ? { version: S.version, teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, cups: S.cups, transfers: S.transfers, committee: S.committee, contacts: S.contacts }
+  : api(`/api/leagues/${S.league.id}/seasons/${sid}`); }
+async function openNameCheck(sid) {
+  const season = S.league.seasons.find(x => x.id === sid), refId = nameRefSeason(sid); if (!season || !refId) return;
+  const box = $("#nc-panel"); box.hidden = false; box.innerHTML = `<p class="muted">Loading…</p>`; box.scrollIntoView({ behavior: "smooth", block: "start" });
+  const [data, ref] = await Promise.all([seasonAdminData(sid), seasonAdminData(refId)]);
+  const refSeason = S.league.seasons.find(x => x.id === refId);
+  const refTeams = Object.values(ref.teams || {}).map(t => t.name).sort((a, b) => a.localeCompare(b));
+  const refVenues = Object.values(ref.venues || {}).sort((a, b) => a.name.localeCompare(b.name));
+  const games = id => Object.values(data.fixtures || {}).filter(f => f.home === id || f.away === id).length;
+  const best = (name, pool) => pool.map(x => [x, nameLikeness(name, x)]).sort((a, b) => b[1] - a[1])[0] || [null, 0];
+  const teams = Object.values(data.teams || {}).filter(t => !/^bye$/i.test(t.name.trim())).sort((a, b) => a.name.localeCompare(b.name)), venues = Object.values(data.venues || {}).sort((a, b) => a.name.localeCompare(b.name));
+  const teamRow = t => {
+    const linked = refTeams.find(n => teamKey(n) === teamKey(t.name) && n.toLowerCase() !== t.name.toLowerCase());
+    const same = refTeams.find(n => n.toLowerCase() === t.name.toLowerCase()), [guess, score] = best(t.name, refTeams);
+    const pick = same ? `same:${same}` : linked ? `old:${linked}` : score >= 0.8 ? `same:${guess}` : "new";
+    const opt = (v, l) => `<option value="${esc(v)}"${v === pick ? " selected" : ""}>${esc(l)}</option>`;
+    return `<tr data-nc-team="${esc(t.id)}"><td class="pl"><strong>${esc(t.name)}</strong><span class="muted"> · ${plural(games(t.id), "game")}</span></td>
+      <td class="pl"><select aria-label="Match ${esc(t.name)}">${opt("new", "New team (keep this name)")}
+        <optgroup label="The same team, spelt differently">${refTeams.map(n => opt(`same:${n}`, `Same as ${n}`)).join("")}</optgroup>
+        <optgroup label="A team that changed its name">${refTeams.map(n => opt(`old:${n}`, `Old name of ${n}`)).join("")}</optgroup></select>
+        ${!same && !linked && score >= 0.6 && score < 0.8 ? `<span class="hint">Maybe ${esc(guess)}?</span>` : ""}</td></tr>`;
+  };
+  const venueRow = v => {
+    const same = refVenues.find(x => x.name.toLowerCase() === v.name.toLowerCase()), [guess, score] = best(v.name, refVenues.map(x => x.name));
+    const pick = same ? `same:${same.id}` : score >= 0.8 ? `same:${refVenues.find(x => x.name === guess).id}` : "new";
+    const opt = (val, l) => `<option value="${esc(val)}"${val === pick ? " selected" : ""}>${esc(l)}</option>`;
+    return `<tr data-nc-venue="${esc(v.id)}"><td class="pl"><strong>${esc(v.name)}</strong></td>
+      <td class="pl"><select aria-label="Match ${esc(v.name)}">${opt("new", "New venue (keep this name)")}${refVenues.map(x => opt(`same:${x.id}`, `Same as ${x.name}${x.alleys > 1 ? ` (${x.alleys} alleys)` : ""}`)).join("")}</select>
+        ${!same && score >= 0.6 && score < 0.8 ? `<span class="hint">Maybe ${esc(guess)}?</span>` : ""}</td></tr>`;
+  };
+  box.innerHTML = `<div class="card-head"><h3>Check names: season ${esc(season.name)}</h3><button type="button" class="btn ghost sm" data-act="nc-close">Close</button></div>
+    <p class="muted">Match each team and venue to one in season ${esc(refSeason.name)}. Suggestions are picked where the names are close; check each one.
+      <strong>Same as</strong> renames it in season ${esc(season.name)} (and joins it up if two become the same). <strong>Old name of</strong> keeps the old name in that season and links the two, so their history joins up.</p>
+    ${teams.length ? `<h4>Teams</h4><div class="table-scroll"><table class="sc-table nc-table"><thead><tr><th class="pl">In season ${esc(season.name)}</th><th class="pl">Is…</th></tr></thead><tbody>${teams.map(teamRow).join("")}</tbody></table></div>` : ""}
+    ${venues.length ? `<h4>Venues</h4><div class="table-scroll"><table class="sc-table nc-table"><thead><tr><th class="pl">In season ${esc(season.name)}</th><th class="pl">Is…</th></tr></thead><tbody>${venues.map(venueRow).join("")}</tbody></table></div>` : ""}
+    <div class="actions"><button type="button" class="btn" data-act="nc-save" data-id="${esc(sid)}">Save names</button></div>`;
+  box.dataset.ref = refId;
+}
+async function saveNameCheck(sid, btn) {
+  const box = $("#nc-panel"), refId = box.dataset.ref;
+  btn.disabled = true; btn.textContent = "Saving…";
+  try {
+    const [cur, ref] = await Promise.all([seasonAdminData(sid), seasonAdminData(refId)]);
+    const { version, contacts = {}, ...rest } = cur, data = structuredClone(rest);
+    const links = [];
+    // Teams: rename to the matching name; two that end up with the same name become one, keeping all their games.
+    for (const row of $$("[data-nc-team]", box)) {
+      const t = data.teams[row.dataset.ncTeam], v = $("select", row).value; if (!t || v === "new") continue;
+      const [kind, name] = [v.slice(0, v.indexOf(":")), v.slice(v.indexOf(":") + 1)];
+      if (kind === "old") { if (name.toLowerCase() !== t.name.toLowerCase()) links.push([name, t.name]); continue; }
+      const twin = Object.values(data.teams).find(x => x.id !== t.id && x.name.toLowerCase() === name.toLowerCase());
+      if (twin) {
+        for (const f of Object.values(data.fixtures || {})) { if (f.home === t.id) f.home = twin.id; if (f.away === t.id) f.away = twin.id; }
+        twin.players = [...(twin.players || []), ...(t.players || []).filter(p => !(twin.players || []).some(q => fullName(q) === fullName(p)))];
+        if (!twin.division && t.division) twin.division = t.division;
+        delete data.teams[t.id]; delete contacts[t.id];
+      } else t.name = name;
+    }
+    // Venues: take the matching venue's name, address and alleys; duplicates are joined.
+    for (const row of $$("[data-nc-venue]", box)) {
+      const vn = data.venues[row.dataset.ncVenue], v = $("select", row).value; if (!vn || v === "new") continue;
+      const src = ref.venues?.[v.slice(5)]; if (!src) continue;
+      const twin = Object.values(data.venues).find(x => x.id !== vn.id && x.name.toLowerCase() === src.name.toLowerCase());
+      if (twin) {
+        for (const f of Object.values(data.fixtures || {})) if (f.venue === vn.id) f.venue = twin.id;
+        for (const t of Object.values(data.teams || {})) if (t.venue === vn.id) t.venue = twin.id;
+        delete data.venues[vn.id];
+      } else Object.assign(vn, { name: src.name, address1: src.address1 || "", address2: src.address2 || "", address3: src.address3 || "", postcode: src.postcode || "", phone: src.phone || "", alleys: src.alleys || 1, lat: src.lat ?? null, lng: src.lng ?? null });
+    }
+    await send(`/api/leagues/${S.league.id}/seasons/${sid}`, "PUT", { version, data, contacts });
+    // Old names join the league's list of previous names.
+    if (links.length) {
+      const groups = structuredClone(S.league.teamNames || []);
+      for (const [now, was] of links) { const g = groups.find(x => x.name.toLowerCase() === now.toLowerCase()); if (g) { if (!g.was.some(w => w.toLowerCase() === was.toLowerCase())) g.was.push(was); } else groups.push({ name: now, was: [was] }); }
+      await leagueRequest("", "PATCH", { teamNames: groups });
+    }
+    delete ARCHIVE[sid];
+    if (sid === S.seasonId) await loadSeason();
+    box.hidden = true; box.innerHTML = "";
+    toast(`Names saved for season ${S.league.seasons.find(x => x.id === sid)?.name}${links.length ? `, with ${plural(links.length, "old name")} linked` : ""}`);
+  } catch (e) { saveError(e); btn.disabled = false; btn.textContent = "Save names"; }
+}
 // The setup checklist for the season being worked on, in the order a secretary sets things up.
 function setupSteps() {
   const s = currentSeason(); if (!s || !ready()) return "";
@@ -5733,10 +6658,15 @@ VIEWS["league-setup"] = {
           <div class="actions"><button class="btn" type="submit">Save league details</button></div>
         </form>
         <div class="form-col">
+          <div class="panel" id="roles-panel"><h3>Admins &amp; roles</h3><p class="muted">Loading…</p></div>
+          <div class="panel" id="plan-panel"></div>
+          <div class="panel" id="dom-panel"></div>
           <div class="panel" id="look-panel">
             <h3>Look of your site</h3>
             <p class="muted" style="margin:0 0 10px">Choose a colour scheme. Each one is checked so text stays easy to read, in light and dark mode. The change shows straight away for everyone.</p>
             <div class="look-grid" id="look-grid" role="radiogroup" aria-label="Colour scheme"></div>
+            <h4 class="look-sub">Font style</h4>
+            <div class="font-grid" id="font-grid" role="radiogroup" aria-label="Font style"></div>
           </div>
           <div class="panel bk-panel">
             <h3>Backups</h3>
@@ -5762,7 +6692,15 @@ VIEWS["league-setup"] = {
       </div>`;
     $("#s-pre").textContent = `${SITE_HOST}/`;
     $("#bk-file").addEventListener("change", e => this.readBackup(e.target.files[0]));
+    $("#roles-panel").addEventListener("click", e => this.rolesClick(e));
+    $("#roles-panel").addEventListener("change", e => { if (e.target.matches("[data-role-m], [data-contact-role], #rl-caplogins, [data-cap-team]")) this.rolesChange(e); });
+    this.loadRoles();
     $("#look-grid").addEventListener("click", e => { const b = e.target.closest("[data-look]"); if (b && b.getAttribute("aria-checked") !== "true") this.setLook(b.dataset.look); });
+    $("#font-grid").addEventListener("click", async e => {
+      const b = e.target.closest("[data-font]"); if (!b || b.getAttribute("aria-checked") === "true") return;
+      const r = await leagueRequest("", "PATCH", { settings: { font: b.dataset.font } }); if (!r) return;
+      renderBrand(); this.looks(); toast(`Font style: ${FONTS.find(f => f.id === b.dataset.font).name}`);
+    });
     const f = $("#set-form");
     f.addEventListener("input", () => { f.dataset.dirty = "1"; showGameMax("s"); });
     f.addEventListener("change", e => { f.dataset.dirty = "1"; showGameMax("s"); if (/^s-tb/.test(e.target.id)) this.syncTiebreak(); });
@@ -5786,6 +6724,68 @@ VIEWS["league-setup"] = {
       if (r.league.slug !== oldSlug) NAV.go(leaguePath(r.league.slug), "league-setup"); else refresh();
     });
   },
+  // Admins & roles: other people who help run the league, which roles may see captains' contact details,
+  // and captain logins (off unless the secretary turns them on).
+  async loadRoles() {
+    const box = $("#roles-panel"); if (!box) return;
+    try { this.roles = await api(`/api/leagues/${S.league.id}/members`); } catch { box.innerHTML = `<h3>Admins &amp; roles</h3><p class="muted">The admins couldn't be loaded.</p>`; return; }
+    this.drawRoles();
+  },
+  drawRoles() {
+    const box = $("#roles-panel"), R = this.roles; if (!box || !R) return;
+    const roleBoxes = (i, m) => Object.entries(ADMIN_ROLES).map(([k, v]) => `<label class="check"><input type="checkbox" data-role-m="${i}" value="${k}"${m.roles.includes(k) ? " checked" : ""}> ${v}</label>`).join("");
+    const teamOpts = sel => `<option value="">Choose a team</option>` + sortedTeams().map(t => `<option${teamKey(t.name) === teamKey(sel || "") ? " selected" : ""}>${esc(t.name)}</option>`).join("")
+      + (sel && !sortedTeams().some(t => teamKey(t.name) === teamKey(sel)) ? `<option selected>${esc(sel)}</option>` : "");
+    box.innerHTML = `<h3>Admins &amp; roles</h3>
+      <p class="muted" style="margin:0 0 8px">Add the people who help run the league. They sign up or log in with the email you give, and see only the pages for their role. You stay the league secretary, with everything.</p>
+      <ul class="roles-help">${Object.entries(ADMIN_ROLES).map(([k, v]) => `<li><strong>${v}:</strong> ${ROLE_HELP[k]}</li>`).join("")}</ul>
+      <ul class="role-grid" id="role-list" style="margin-top:10px">${R.members.map((m, i) => `<li class="role-row"><div class="role-top"><strong>${esc(m.email)}</strong><button type="button" class="btn ghost sm" data-role-del="${i}">Remove</button></div><div class="radios">${roleBoxes(i, m)}</div></li>`).join("") || `<li class="muted">No other admins yet.</li>`}</ul>
+      <div class="row2" style="margin-top:10px"><div class="field"><label for="rl-email">Add an admin by email</label><input type="email" id="rl-email" placeholder="name@example.com"></div>
+        <div class="field"><label for="rl-role">Role</label><select id="rl-role">${Object.entries(ADMIN_ROLES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></div></div>
+      <div class="actions"><button type="button" class="btn sm" data-role-add>Add admin</button></div>
+      <h4 class="look-sub">Captains' addresses and phone numbers</h4>
+      <p class="hint" style="margin:0 0 6px">You always see them. Tick a role to let it see them too, on Fixtures &amp; results.</p>
+      <div class="radios">${Object.entries(ADMIN_ROLES).map(([k, v]) => `<label class="check"><input type="checkbox" data-contact-role="${k}"${R.contactRoles[k] ? " checked" : ""}> ${v}</label>`).join("")}</div>
+      <h4 class="look-sub">Captain logins</h4>
+      <label class="check"><input type="checkbox" id="rl-caplogins"${R.captainLogins ? " checked" : ""}> Let captains log in to send their team's results and keep their players up to date</label>
+      <div id="rl-caps"${R.captainLogins ? "" : " hidden"}>
+        <p class="hint" style="margin:6px 0">Each captain signs up or logs in with the email you give here. They don't need the captains' code.</p>
+        <ul class="role-grid">${R.captains.map((c, i) => `<li class="role-row"><div class="role-top"><strong>${esc(c.email)}</strong><button type="button" class="btn ghost sm" data-cap-del="${i}">Remove</button></div>
+          <div class="field" style="margin:0"><label class="visually-hidden" for="rl-ct-${i}">Team</label><select id="rl-ct-${i}" data-cap-team="${i}">${teamOpts(c.team)}</select></div></li>`).join("") || `<li class="muted">No captains added yet.</li>`}</ul>
+        <div class="row2" style="margin-top:10px"><div class="field"><label for="rc-email">Captain's email</label><input type="email" id="rc-email" placeholder="captain@example.com"></div>
+          <div class="field"><label for="rc-team">Team</label><select id="rc-team">${teamOpts("")}</select></div></div>
+        <div class="actions"><button type="button" class="btn sm" data-cap-add>Add captain</button></div>
+      </div>`;
+  },
+  async saveRoles(body, msg) {
+    const r = await leagueRequest("", "PATCH", body); if (!r) return this.loadRoles();
+    S.league = { ...S.league, ...r.league }; toast(msg); await this.loadRoles();
+  },
+  rolesClick(e) {
+    const R = this.roles; if (!R) return;
+    const del = e.target.closest("[data-role-del]"), cdel = e.target.closest("[data-cap-del]");
+    if (del) { const m = R.members[+del.dataset.roleDel]; return this.saveRoles({ members: R.members.filter((_, i) => i !== +del.dataset.roleDel) }, `${m.email} removed`); }
+    if (cdel) { const c = R.captains[+cdel.dataset.capDel]; return this.saveRoles({ captains: R.captains.filter((_, i) => i !== +cdel.dataset.capDel) }, `${c.email} removed`); }
+    if (e.target.closest("[data-role-add]")) {
+      const email = $("#rl-email").value.trim(); if (!email) return toast("Type the admin's email.");
+      return this.saveRoles({ members: [...R.members, { email, roles: [$("#rl-role").value] }] }, `${email} added as ${ADMIN_ROLES[$("#rl-role").value]}`);
+    }
+    if (e.target.closest("[data-cap-add]")) {
+      const email = $("#rc-email").value.trim(), team = $("#rc-team").value; if (!email || !team) return toast("Type the captain's email and choose their team.");
+      return this.saveRoles({ captains: [...R.captains, { email, team }] }, `${email} added as captain of ${team}`);
+    }
+  },
+  rolesChange(e) {
+    const R = this.roles; if (!R) return; const t = e.target;
+    if (t.dataset.roleM !== undefined) {
+      const i = +t.dataset.roleM, roles = $$(`[data-role-m="${i}"]:checked`).map(x => x.value);
+      if (!roles.length) { t.checked = true; return toast("Keep at least one role, or remove the admin."); }
+      return this.saveRoles({ members: R.members.map((m, j) => j === i ? { ...m, roles } : m) }, "Role saved");
+    }
+    if (t.dataset.contactRole) return this.saveRoles({ contactRoles: Object.fromEntries($$("[data-contact-role]").map(x => [x.dataset.contactRole, x.checked])) }, t.checked ? `${ADMIN_ROLES[t.dataset.contactRole]} can see captains' contact details` : `${ADMIN_ROLES[t.dataset.contactRole]} can't see captains' contact details`);
+    if (t.id === "rl-caplogins") return this.saveRoles({ captainLogins: t.checked }, t.checked ? "Captain logins are on" : "Captain logins are off");
+    if (t.dataset.capTeam !== undefined) return this.saveRoles({ captains: R.captains.map((c, j) => j === +t.dataset.capTeam ? { ...c, team: t.value } : c) }, "Captain's team saved");
+  },
   // A swatch for each colour scheme: the header with the league's name, and a card on the page with text, a link and a chip.
   looks() {
     const now = THEMES.some(t => t.id === S.league.settings?.theme) ? S.league.settings.theme : "baize";
@@ -5794,11 +6794,43 @@ VIEWS["league-setup"] = {
         <span class="look-head">${esc(S.league.name)}</span>
         <span class="look-page"><span class="look-card"><span class="look-text">Results</span> <span class="look-link">Team</span> <span class="look-chip">Cup</span></span></span>
         <span class="look-name">${t.id === now ? "✓ " : ""}${esc(t.name)}</span></button>`; }).join("");
+    // Font styles, each shown in its own fonts.
+    const fnow = FONTS.some(f => f.id === S.league.settings?.font) ? S.league.settings.font : "classic";
+    FONTS.forEach(f => loadFontCss(f.q));
+    $("#font-grid").innerHTML = FONTS.map(f => `<button type="button" class="font-opt" role="radio" aria-checked="${f.id === fnow}" data-font="${f.id}">
+      <span class="font-head">League tables</span><span class="font-body">Fixtures, results and stats</span><span class="font-name">${f.id === fnow ? "✓ " : ""}${f.name}</span></button>`).join("");
+    for (const b of $$("#font-grid [data-font]")) { const f = FONTS.find(x => x.id === b.dataset.font); b.style.setProperty("--fo-head", fontStack(f.display, SERIF_FONTS.has(f.display))); b.style.setProperty("--fo-body", fontStack(f.body, false)); }
     // Each swatch's colours, set the same way as the page's.
     for (const b of $$("#look-grid [data-look]")) {
       const k = themeTokens(THEMES.find(t => t.id === b.dataset.look), "light");
       for (const [n, v] of [["paper", k.paper], ["surface", k.surface], ["ink", k.ink], ["baize", k.baize], ["on", k["on-baize"]], ["link", k["brass-ink"]], ["brass", k.brass], ["on-brass", k["on-brass"]], ["line", k.line]]) b.style.setProperty(`--lk-${n}`, v);
     }
+  },
+  // The league's own web address (the Own domain add-on): the box, its state, and the records to add at the registrar.
+  async domainPanel() {
+    const box = $("#dom-panel"); if (!box) return;
+    if (!S.addons) { try { S.addons = await api(`/api/leagues/${S.league.id}/addons`); } catch {} }
+    const st = S.addons?.domain, d = S.league.domain, price = S.siteAddons?.domain?.price;
+    const rec = (type, name, value) => `<tr><td>${type}</td><td><code>${name}</code></td><td><code>${value}</code> <button type="button" class="btn ghost sm" data-dns-copy="${value}">Copy</button></td></tr>`;
+    box.innerHTML = `<h3>Your own web address</h3>
+      ${!st?.available && !d ? `<p class="muted">Show the league's site on an address you own, such as <strong>yourleague.co.uk</strong>, instead of ${esc(SITE_HOST)}/${esc(S.league.slug)}. ${esc(st?.reason || "It's an add-on to the subscription. Ask the Super Admin to add it.")}</p>`
+      : `<p class="muted" style="margin:0 0 10px">Show the league's site on an address you own. The ${esc(SITE_HOST)}/${esc(S.league.slug)} address keeps working too.</p>
+        <form class="dom-form" id="dom-form" autocomplete="off"><label class="visually-hidden" for="dom-input">Your web address</label>
+          <input type="text" id="dom-input" value="${esc(d || "")}" placeholder="yourleague.co.uk" spellcheck="false" autocapitalize="none">
+          <button class="btn sm" type="submit">${d ? "Change" : "Use this address"}</button>${d ? `<button class="btn ghost sm" type="button" id="dom-clear">Stop using it</button>` : ""}</form>
+        ${d ? `<p><span class="chip ${S.league.domainConnected ? "ok" : "warn"}">${S.league.domainConnected ? "Connected" : "Waiting to be connected"}</span>
+          ${S.league.domainConnected ? ` Your site is at <a href="https://${esc(d)}" target="_blank" rel="noopener">${esc(d)}</a>.` : " We'll connect it and let you know. Meanwhile, add these records:"}</p>
+          ${S.league.domainConnected ? "" : `<p class="hint" style="margin:0 0 6px">At the company you bought <strong>${esc(d)}</strong> from, open its DNS settings and add:</p>
+          <div class="table-scroll"><table class="sc-table dns-table"><thead><tr><th class="pl">Type</th><th class="pl">Name</th><th class="pl">Value</th></tr></thead>
+            <tbody>${rec("A", "@", "75.2.60.5")}${rec("CNAME", "www", MAIN_ORIGIN.replace(/^https:\/\//, ""))}</tbody></table></div>
+          <p class="hint">"@" means the address itself. Remove any other A or CNAME records for @ and www first. Changes can take up to a day to work. Stuck? Ask on ${accountLink("help", "Help &amp; requests")}.</p>`}` : ""}`}`;
+    $("#dom-form")?.addEventListener("submit", e => { e.preventDefault(); this.saveDomain($("#dom-input").value); });
+    $("#dom-clear")?.addEventListener("click", e => { if (arm(e.target, "Confirm: stop using it")) this.saveDomain(""); });
+  },
+  async saveDomain(value) {
+    const r = await leagueRequest("", "PATCH", { domain: value.trim() }); if (!r) return;
+    toast(r.league.domain ? `Saved. ${r.league.domain} is waiting to be connected` : "Your own address is no longer used");
+    this.domainPanel();
   },
   async setLook(id) {
     const r = await leagueRequest("", "PATCH", { settings: { theme: id } });
@@ -5825,6 +6857,10 @@ VIEWS["league-setup"] = {
     const tb = c.tiebreak?.length ? c.tiebreak : ["pd", "apd"]; ["#s-tb1", "#s-tb2", "#s-tb3"].forEach((id, i) => $(id).value = tb[i] || "");
     this.syncTiebreak();
     this.looks();
+    this.domainPanel();
+    const pl = S.league.plan, n = Object.keys(S.teams).length;
+    $("#plan-panel").innerHTML = `<h3>Your plan</h3>${pl ? `<p><strong>${pl.poa ? "Priced on application" : `Up to ${pl.maxTeams} teams`}</strong> · ${planPrice(pl)}</p>
+      <p class="muted">${plural(n, "team")} this season${pl.maxTeams && n <= pl.maxTeams ? `, room for ${plural(pl.maxTeams - n, "more team")}` : ""}. Adding teams beyond your plan moves the league to the next price break; you'll be asked first.</p>` : `<p class="muted">Your plan is set when you first add teams.</p>`}`;
     setTime($("#s-start"), c.startTime);
     if (S.subs?.season === S.seasonId) $("#s-code").value = S.subs.code || ""; else loadSubs();
     $("#s-game").innerHTML = gameFields("s", c); showGameMax("s");
@@ -5967,7 +7003,12 @@ document.addEventListener("click", async e => {
     NAV.go("/", "login");
   }
   if (act === "use-season") { useSeason(id); toast(`Now working on season ${S.league.seasons.find(s => s.id === id)?.name}`); }
-  if (act === "publish-season") { if (await leagueRequest("", "PATCH", { currentSeasonId: id })) { refresh(); toast("The public site now shows this season"); } }
+  if (act === "publish-season") {
+    // A season that has finished, with a later one set up, needs a second click: it would push the current season off the public site.
+    const se = S.league.seasons.find(x => x.id === id), later = se && S.league.seasons.some(x => x.start > se.start);
+    if (se && se.end < today() && later && !arm(b, "Confirm: show this old season instead")) return toast(`Season ${se.name} has finished. Its tables are already on the Past seasons tab. Click again only if the public site should show it instead of the current season.`);
+    if (await leagueRequest("", "PATCH", { currentSeasonId: id })) { refresh(); toast("The public site now shows this season"); }
+  }
   if (act === "edit-season") VIEWS.seasons.edit(id);
   if (act === "cancel-season") VIEWS.seasons.reset();
   if (act === "del-season") {
@@ -6012,10 +7053,23 @@ document.addEventListener("click", async e => {
   if (act === "su-addon-save" || act === "su-addon-year") {
     const k = b.dataset.kind, until = act === "su-addon-year" ? addDays(today(), 365) : $(`#su-${k}-until-${CSS.escape(id)}`).value;
     if (!until) return toast(`Choose the date the ${ADDON_INFO[k].name.toLowerCase()} add-on runs until.`);
-    VIEWS.super.saveAddon(id, k, { until, monthlyLimit: Math.max(0, Math.round(num($(`#su-${k}-limit-${CSS.escape(id)}`).value) || 0)) });
+    VIEWS.super.saveAddon(id, k, { until, monthlyLimit: Math.max(0, Math.round(num($(`#su-${k}-limit-${CSS.escape(id)}`)?.value) || 0)) });
   }
   if (act === "su-addon-remove") { if (!arm(b, "Click again to remove")) return; VIEWS.super.saveAddon(id, b.dataset.kind, null); }
   if (act === "su-addons-save") VIEWS.super.saveAddonModes();
+  if (act === "check-names") openNameCheck(id);
+  if (act === "nc-save") saveNameCheck(id, b);
+  if (act === "nc-close") { $("#nc-panel").hidden = true; $("#nc-panel").innerHTML = ""; }
+  const planRows = () => $$("#plan-rows .plan-row").map(r => ({ maxTeams: Math.round(num($("[id^=pm-]", r).value) || 0), price: Math.max(0, parseFloat($("[id^=pp-]", r).value) || 0) }));
+  if (act === "su-plans-save") {
+    try { const r = await send("/api/super/settings", "PATCH", { plans: planRows() }); VIEWS.super.plans = r.plans; VIEWS.super.render(); toast("Prices saved"); } catch (x) { saveError(x); }
+  }
+  // Adding or removing a break changes the form only; Save prices keeps it.
+  if (act === "su-plan-add") { const rows = planRows(), last = rows.at(-1)?.maxTeams || 0; VIEWS.super.plans = [...rows.map(r => ({ maxTeams: r.maxTeams, price: Math.round(r.price * 100) })), { maxTeams: last + 30, price: 0 }]; VIEWS.super.render(); }
+  if (act === "su-plan-del") { VIEWS.super.plans = planRows().map(r => ({ maxTeams: r.maxTeams, price: Math.round(r.price * 100) })).filter((_, i) => i !== +id); VIEWS.super.render(); }
+  if (act === "su-plan-billed") {
+    try { const r = await send(`/api/super/plans/${b.dataset.league}/${id}`, "PATCH", { billed: b.dataset.to === "1" }); const c = VIEWS.super.moves.find(x => x.id === id); if (c) c.billed = r.billed; VIEWS.super.render(); toast(r.billed ? "Marked as billed" : "Marked as not billed"); } catch (x) { saveError(x); }
+  }
   if (act === "su-reset") {
     if (!arm(b, "Click again to reset")) return;
     try {
@@ -6090,10 +7144,12 @@ async function boot() {
     teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, transfers: {}, committee: {}, contacts: {}, news: [], adminNews: [], media: [], docs: [], addons: null, loaded: { teams: false, venues: false, fixtures: false } });
   S.token = store.get(TOKEN_KEY);
   S.slug = slugFromLocation();
+  if (OWN_HOST) { try { S.slug = (await api(`/api/public-domain/${encodeURIComponent(location.hostname)}`)).slug; } catch { S.slug = null; } }
   // A shared post's address, /<league>/news/<id>, opens that post on the league's site.
   const shared = /^\/[^/]+\/news\/([^/]+)\/?$/.exec(NAV.path());
-  if (shared && S.slug) history.replaceState(null, "", `/${encodeURIComponent(S.slug)}#news/${shared[1]}`);
+  if (shared && S.slug) history.replaceState(null, "", `${OWN_HOST ? "/" : `/${encodeURIComponent(S.slug)}`}#news/${shared[1]}`);
   S.mode = S.slug ? "league" : "account";
+  if (OWN_HOST && !S.slug) { S.mode = "league"; S.status = "missing"; return route(); }
   if (S.mode === "account" && !S.token) return route();
   route();
   await loadMe();
