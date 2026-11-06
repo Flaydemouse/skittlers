@@ -534,6 +534,14 @@ assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "
   r = await sub({ fixtureId: "f", team: "b", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 403, "not their team");
   r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, nobody); assert.equal(r.status, 403);
+  // team logos: the secretary adds one per team; anyone can see it
+  const png = { mediaType: "image/png", data: Buffer.from("fake png bytes ".repeat(20)).toString("base64") };
+  r = await call("PUT", `leagues/${RL.id}/logos`, { team: "Aces", image: png }, res); assert.equal(r.status, 403, "only the secretary");
+  r = await call("PUT", `leagues/${RL.id}/logos`, { team: "Aces", image: { ...png, mediaType: "text/html" } }, own); assert.equal(r.status, 400);
+  r = await call("PUT", `leagues/${RL.id}/logos`, { team: "Aces", image: png }, own); assert.equal(r.status, 200); const logoId = r.body.league.logos.aces; assert.ok(logoId);
+  r = await call("GET", "public/roles-league"); assert.equal(r.body.league.logos.aces, logoId);
+  { const img = await api(new Request(`http://x/api/public/roles-league/logos/${logoId}`)); assert.equal(img.headers.get("content-type"), "image/png"); }
+  r = await call("PUT", `leagues/${RL.id}/logos`, { team: "Aces", image: null }, own); assert.equal(r.body.league.logos.aces, undefined); assert.equal(data.has(`logos/${RL.id}/${logoId}`), false, "the old image is deleted");
   // importing past results is an add-on
   r = await call("POST", `leagues/${RL.id}/seasons`, { name: "2019–20", start: "2019-09-01", end: "2020-05-01", import: true }, own); assert.equal(r.status, 402); assert.match(r.body.error, /Past results import/);
   r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, { base: 0, changes: [{ in: "venues", id: "vx", value: { id: "vx", name: "X" } }], import: true }, own); assert.equal(r.status, 402);

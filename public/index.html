@@ -322,6 +322,12 @@ table.league.mini td.team { overflow: hidden; text-overflow: ellipsis; white-spa
 .pt-honours li { font-size: .92rem; }
 .pt-honours .pt-h-gap { margin-top: 12px; }
 .pt-back { margin: 0 0 12px; }
+.team-logo { width: 1.25em; height: 1.25em; object-fit: contain; vertical-align: -0.28em; margin-right: .35em; border-radius: 3px; }
+.team-logo:not([src]) { visibility: hidden; }
+.team-logo.mid { width: 34px; height: 34px; margin: 0; vertical-align: middle; }
+.team-logo.big { width: 48px; height: 48px; margin: 0; flex: none; }
+.pt-head { display: flex; gap: 12px; align-items: center; }
+.logo-pick { cursor: pointer; }
 body:not(.can-fixtures) [data-need~="fixtures"], body:not(.can-fixtures) :is([data-act="fx-move"], [data-act="edit-fx"], [data-act="del-fx"], [data-act="cup-del"], [data-act="cup-draw"], [data-act="cup-redraw"], [data-act="cup-save-entries"], [data-act="ce-all"], [data-act="ce-none"]),
 body:not(.can-owner) [data-need~="owner"] { display: none !important; }
 .role-grid { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
@@ -466,6 +472,10 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .post-page { max-width: 760px; }
 .past-h { margin: 18px 0 10px; font-size: 1.15rem; }
 .past-champ { margin: 0 0 6px; font-size: .9rem; }
+.past-tools { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 0 0 10px; }
+.past-chart-block { margin: 0 0 14px; }
+.div-card h3 .tv-seg button { font: 600 .74rem var(--font-body); padding: 3px 8px; }
+.past-chart-h { font-size: 1.05rem; margin: 0 0 6px; }
 .past-cups { display: grid; gap: 8px; }
 .past-cup { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
 .past-cup summary { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; padding: 12px 14px; cursor: pointer; list-style: none; }
@@ -591,7 +601,8 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .div-head h3 { margin: 0; }
 .tv-seg button { font-size: .85rem; }
 .pc-wrap { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 6px; }
-.pc-plot { overflow-x: auto; overflow-y: hidden; min-width: 0; }
+.pc-plot { overflow: hidden; min-width: 0; }
+.pc-grid.faint { opacity: .45; }
 .pc-chart { display: block; }
 .pc-grid { stroke: var(--line); stroke-width: 1; }
 .pc-axis { fill: var(--muted); font: 600 12px var(--font-body); font-variant-numeric: tabular-nums; }
@@ -1755,6 +1766,7 @@ function linkTeamNames(root) {
     const t = teamByName(el.textContent); if (!t) { el.classList.add("tn-off"); continue; }
     el.dataset.team = t.id; el.classList.add("tn-link"); el.setAttribute("role", "link"); el.tabIndex = 0;
     el.title = `See ${t.name}'s team page`;
+    const logo = logoFor(el.textContent.trim()); if (logo && !el.previousElementSibling?.matches?.("img.team-logo")) el.insertAdjacentHTML("beforebegin", `<img class="team-logo" data-logo="${esc(logo)}" alt="">`);
   }
 }
 function openTeamPage(id) { if (S.teams[id]) location.hash = `team/${id}`; }
@@ -1766,7 +1778,7 @@ document.addEventListener("keydown", e => {
   const el = e.target.closest?.(".tn-link[data-team]"); if (!el || (e.key !== "Enter" && e.key !== " ")) return;
   e.preventDefault(); e.stopPropagation(); openTeamPage(el.dataset.team);
 }, true);
-new MutationObserver(() => { for (const m of [document.getElementById("main"), document.getElementById("h2h-dlg")]) if (m) linkTeamNames(m); }).observe(document.documentElement, { childList: true, subtree: true });
+new MutationObserver(() => { for (const m of [document.getElementById("main"), document.getElementById("h2h-dlg")]) if (m) { linkTeamNames(m); if (S.league) loadLogos(m); } }).observe(document.documentElement, { childList: true, subtree: true });
 function route() {
   bowlSoon();
   const v = currentView();
@@ -2113,7 +2125,7 @@ function guideHtml(admin) {
       ${guideList("Accounts and billing", ["See every account and league, and open any league with full secretary powers.", "Set each account's yearly subscription and renewal date. Payments are taken by hand for now.", "Set the price breaks by number of teams: add or remove breaks, set prices, or Ask us.", "See leagues that went over their plan's teams, with the extra to bill up to renewal, and mark each one billed."])}
       ${guideList("Extras and messages", ["Set each extra as included in the subscription or sold separately, with its price.", "Give an extra to an account until a date, with a monthly limit where it has one.", "Connect a league's own domain in Netlify, then mark it connected.", "Answer Help &amp; requests from secretaries, and contact-form messages from visitors.", "No limits on your own photo readings or reports."])}</div>`],
     ["secretary", "One per league", "League secretary", "The account holder for a league. Can do everything for their league, and decides who helps and what they can see.", `<div class="gd-cols">
-      ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
+      ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, team logos, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
       ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, the draw, byes and results."])}
       ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
       ${guideList("News and files", ["News posts with photos, pinned posts and drafts.", "Match night reports drafted by Claude (an extra), checked before publishing.", "A photo gallery, with photos linked to cups.", "Downloads: PDFs, Word, Excel, CSV and pictures.", "Help &amp; requests: ask us anything from inside the site."])}</div>`],
@@ -2125,7 +2137,7 @@ function guideHtml(admin) {
       <p class="gd-note">None of these roles can change League setup, seasons, teams, admins or billing. Captains' addresses and phone numbers stay hidden from every role unless the secretary allows it.</p>`],
     ["visitors", "Anyone with your league's address", "What visitors see", "", `<div class="gd-cols">
       ${guideList("This season", ["Home: division tables side by side, the next match night, news, photos and the committee.", "League tables with form and your tie-breaks.", "Fixtures and results, with scorecards and head-to-head form.", "Add to calendar: Google, Apple, or a feed for one team.", "Cups: draws, brackets, finals and results.", "Stats: averages, high scores, spares and records, and each player's own page."])}
-      ${guideList("Teams, history and more", ["Teams in A to Z order. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, and cup winners and runners-up.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
+      ${guideList("Teams, history and more", ["Teams in A to Z order, with their logos. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, and cup winners and runners-up.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
     ["prices", "Prices", "Subscriptions and extras", "A yearly subscription by the number of teams in your league, with extras to add.", `<div id="gd-prices"><p class="muted">Loading prices…</p></div>`],
   ].filter(Boolean);
   return `<div class="gd">
@@ -2416,12 +2428,8 @@ VIEWS.tables = {
     // Table or chart for each division, and picking out one team on a chart.
     el.addEventListener("click", e => {
       const v = e.target.closest("[data-tv]");
-      if (v) { (S.ui.tableViews ||= {})[v.dataset.div] = v.dataset.tv; return this.refresh(); }
-      const k = e.target.closest("[data-pc]"); if (!k) return;
-      const wrap = k.closest(".pc-wrap"), on = wrap.dataset.pick === k.dataset.pc ? "" : k.dataset.pc;
-      wrap.dataset.pick = on;
-      for (const g of $$(".pc-team", wrap)) g.classList.toggle("dim", !!on && g.dataset.team !== on);
-      for (const b of $$("[data-pc]", wrap)) b.classList.toggle("dim", !!on && b.dataset.pc !== on);
+      if (v) { (S.ui.tableViews ||= {})[v.dataset.div] = v.dataset.tv; chartToAnimate = v.dataset.tv === "chart" ? v.dataset.div : null; return this.refresh(); }
+      pickChartTeam(e);
     });
     // Stepping back and forward through the match nights.
     el.addEventListener("click", e => {
@@ -2481,9 +2489,25 @@ VIEWS.tables = {
     if (moving && !matchMedia("(prefers-reduced-motion: reduce)").matches)
       for (const tr of $$("#tables-body tr[data-row]")) { const was = before.get(tr.dataset.row); if (!was) continue;
         const dy = was.top - tr.getBoundingClientRect().top; if (dy) tr.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.3,.7,.2,1)" }); }
-    for (const plot of $$("#tables-body .pc-plot[data-fresh]")) { delete plot.dataset.fresh; const svg = buildChart(plot); if (svg) drawChart(svg); }
+    drawNewCharts($("#tables-body"));
   }
 };
+// Tapping a team's name on a chart picks out its line; tapping it again shows them all.
+function pickChartTeam(e) {
+  const k = e.target.closest("[data-pc]"); if (!k) return;
+  const wrap = k.closest(".pc-wrap"), on = wrap.dataset.pick === k.dataset.pc ? "" : k.dataset.pc;
+  wrap.dataset.pick = on;
+  for (const g of $$(".pc-team", wrap)) g.classList.toggle("dim", !!on && g.dataset.team !== on);
+  for (const b of $$("[data-pc]", wrap)) b.classList.toggle("dim", !!on && b.dataset.pc !== on);
+}
+// Draws the charts that have just been put on the page.
+// Only the division whose Chart button was just pressed animates; the others are drawn straight away.
+let chartToAnimate = null;
+function drawNewCharts(root) {
+  for (const plot of $$(".pc-plot[data-fresh]", root)) { delete plot.dataset.fresh; const svg = buildChart(plot);
+    if (svg && chartToAnimate && plot.dataset.chart.endsWith(`|${chartToAnimate}`)) drawChart(svg); }
+  chartToAnimate = null;
+}
 // Team colours for the positions chart: distinct hues that read on light and dark pages.
 const CHART_COLOURS = ["#D62F5F", "#2F7FD6", "#E89A1C", "#3E9E4A", "#8A4FC4", "#00A3B4", "#C0532B", "#7FA32B", "#E05FB0", "#5B6BE0", "#8C6239", "#C9A800", "#4FB389", "#B23A3A", "#6E8FA6", "#A67CE0"];
 // Each team's position after every match night (for this division), as a line chart: 1st at the top.
@@ -2499,24 +2523,31 @@ function positionsChart(g, nights) {
   const dk = g.division?.id || "all";
   const pos = dates.map(d => { const grp = standings(f => !!f.date && f.date <= d).find(x => (x.division?.id || "all") === dk); return Object.fromEntries((grp?.rows || []).map((r, i) => [r.t.id, i + 1])); });
   const order = [...ids].sort((a, b) => S.teams[a].name.localeCompare(S.teams[b].name));
-  CHART_DATA.set(dk, { dates, pos, order, n: ids.length });
+  const key = `${S.chartSeason || "now"}|${dk}`;
+  CHART_DATA.set(key, { dates, pos, order, n: ids.length, names: Object.fromEntries(ids.map(id => [id, S.teams[id].name])) });
   const colour = id => CHART_COLOURS[order.indexOf(id) % CHART_COLOURS.length];
-  return `<div class="pc-wrap"><div class="pc-plot" data-chart="${esc(dk)}" data-fresh="1" style="height:${pcHeight(ids.length)}px" role="img" aria-label="League positions after each match night. Tap a team's name to pick out its line."></div></div>`;
+  return `<div class="pc-wrap"><div class="pc-plot" data-chart="${esc(key)}" data-fresh="1" style="height:${pcHeight(ids.length)}px" role="img" aria-label="League positions after each match night. Tap a team's name to pick out its line."></div></div>`;
 }
 // Draws a chart into its place at the width it has now.
 function buildChart(plot) {
   const c = CHART_DATA.get(plot.dataset.chart); if (!c) return null;
   const { dates, pos, order, n } = c, H = pcHeight(n);
   // Names beside the positions: where each team started on the left, where it is now on the right.
-  const nameW = Math.min(170, 7 * Math.max(...order.map(id => S.teams[id].name.length))), first = {}, last = {};
+  // Always the width of the page: the nights squeeze closer together, long names are shortened, and on a crowded
+  // chart only every few dates are labelled and the dots get smaller.
+  const W = Math.max(280, plot.clientWidth), longest = Math.max(...order.map(id => c.names[id].length));
+  // On a phone the names only go on the right (where teams are now), leaving room for the lines.
+  const narrow = W < 560, nameW = Math.min(narrow ? 90 : W < 760 ? 116 : 160, 7.4 * longest + 4), fit = Math.floor((nameW - 4) / 7.4), first = {}, last = {};
+  const short = id => c.names[id].length > fit ? c.names[id].slice(0, fit - 1).trimEnd() + "…" : c.names[id];
   for (const id of order) { const ps = pos.map(p => p[id]).filter(Boolean); first[id] = ps[0]; last[id] = ps.at(-1); }
-  const W = Math.max(plot.clientWidth, 58 * (dates.length - 1) + 2 * nameW + 70);
-  const L = 30 + nameW + 12, R = nameW + 18, X = i => L + i * (W - L - R) / (dates.length - 1), Y = p => 14 + (p - 1) * PC_ROW;
+  const L = narrow ? 34 : 26 + nameW + 10, R = nameW + 14, step = (W - L - R) / (dates.length - 1), X = i => L + i * step, Y = p => 14 + (p - 1) * PC_ROW;
+  const dotR = step < 14 ? 2.5 : step < 26 ? 3.5 : 4.5, every = Math.ceil(52 / step);
   const colour = id => CHART_COLOURS[order.indexOf(id) % CHART_COLOURS.length];
-  const label = (id, x, y, side) => `<text class="pc-name pc-${side}" data-pc="${esc(id)}" x="${x}" y="${y + 4}" text-anchor="${side === "start" ? "end" : "start"}"${side === "end" ? ` style="--c:${colour(id)}"` : ""}>${esc(S.teams[id].name)}</text>`;
-  const names = order.map(id => (first[id] ? label(id, L - 12, Y(first[id]), "start") : "") + (last[id] ? label(id, W - R + 10, Y(last[id]), "end") : "")).join("");
+  const label = (id, x, y, side) => `<text class="pc-name pc-${side}" data-pc="${esc(id)}" x="${x}" y="${y + 4}" text-anchor="${side === "start" ? "end" : "start"}"${side === "end" ? ` style="--c:${colour(id)}"` : ""}>${esc(short(id))}<title>${esc(c.names[id])}</title></text>`;
+  const names = order.map(id => (first[id] && !narrow ? label(id, L - 12, Y(first[id]), "start") : "") + (last[id] ? label(id, W - R + 10, Y(last[id]), "end") : "")).join("");
   const grid = Array.from({ length: n }, (_, i) => `<line class="pc-grid" x1="${L}" x2="${W - R}" y1="${Y(i + 1)}" y2="${Y(i + 1)}"/><text class="pc-axis" x="22" y="${Y(i + 1) + 4}" text-anchor="end">${i + 1}</text>`).join("")
-    + dates.map((d, i) => `<line class="pc-grid" x1="${X(i)}" x2="${X(i)}" y1="${Y(1)}" y2="${Y(n)}"/><text class="pc-axis" x="${X(i)}" y="${Y(n) + 22}" text-anchor="${i === 0 ? "start" : i === dates.length - 1 ? "end" : "middle"}">${d.slice(8, 10)}/${d.slice(5, 7)}</text>`).join("");
+    + dates.map((d, i) => { const show = i === dates.length - 1 || (i % every === 0 && dates.length - 1 - i >= every);
+      return `<line class="pc-grid${show ? "" : " faint"}" x1="${X(i).toFixed(1)}" x2="${X(i).toFixed(1)}" y1="${Y(1)}" y2="${Y(n)}"/>${show ? `<text class="pc-axis" x="${X(i).toFixed(1)}" y="${Y(n) + 22}" text-anchor="${i === 0 ? "start" : i === dates.length - 1 ? "end" : "middle"}">${d.slice(8, 10)}/${d.slice(5, 7)}</text>` : ""}`; }).join("");
   const lines = order.map(id => {
     const pts = pos.map((p, i) => p[id] ? [X(i), Y(p[id]), i] : null).filter(Boolean);
     if (!pts.length) return "";
@@ -2526,8 +2557,8 @@ function buildChart(plot) {
     const tan = pts.map((_, i) => i === 0 ? sl[0] : i === pts.length - 1 ? sl[i - 1] : sl[i - 1] * sl[i] <= 0 ? 0 : 2 / (1 / sl[i - 1] + 1 / sl[i]));
     const d = pts.map(([x, y], i) => { if (!i) return `M${x},${y}`; const [x0, y0] = pts[i - 1], h = (x - x0) / 3;
       return `C${(x0 + h).toFixed(1)},${(y0 + tan[i - 1] * h).toFixed(1)} ${(x - h).toFixed(1)},${(y - tan[i] * h).toFixed(1)} ${x.toFixed(1)},${y}`; }).join(" ");
-    const name = S.teams[id].name;
-    return `<g class="pc-team" data-team="${esc(id)}" style="--c:${colour(id)}"><path class="pc-line" d="${d}"/>${pts.map(([x, y, i]) => `<circle class="pc-dot" cx="${x.toFixed(1)}" cy="${y}" r="4.5"><title>${esc(name)}: ${ordinal(pos[i][id])} after ${esc(fmtDate(dates[i]))}</title></circle>`).join("")}</g>`;
+    const name = c.names[id];
+    return `<g class="pc-team" data-team="${esc(id)}" style="--c:${colour(id)}"><path class="pc-line" d="${d}"/>${pts.map(([x, y, i]) => `<circle class="pc-dot" cx="${x.toFixed(1)}" cy="${y}" r="${dotR}"><title>${esc(name)}: ${ordinal(pos[i][id])} after ${esc(fmtDate(dates[i]))}</title></circle>`).join("")}</g>`;
   }).join("");
   plot.innerHTML = `<svg class="pc-chart" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" data-l="${L}" data-r="${W - R}">${grid}${lines}${names}</svg>`;
   const pick = plot.closest(".pc-wrap")?.dataset.pick;
@@ -2545,7 +2576,7 @@ function drawChart(svg) {
     path.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: total, easing: "cubic-bezier(.4,0,.2,1)", fill: "backwards" });
   }
   for (const t of svg.querySelectorAll(".pc-end")) t.animate([{ opacity: 0, transform: "translateX(-6px)" }, { opacity: 1, transform: "none" }], { duration: 400, delay: total - 100 + 40 * [...t.parentNode.querySelectorAll(".pc-end")].indexOf(t), easing: "ease-out", fill: "backwards" });
-  for (const dot of svg.querySelectorAll(".pc-dot")) dot.animate([{ opacity: 0, r: 0 }, { opacity: 1, r: 4.5 }], { duration: 300, delay: total * Math.max(0, (dot.cx.baseVal.value - +svg.dataset.l) / (+svg.dataset.r - +svg.dataset.l)), fill: "backwards" });
+  for (const dot of svg.querySelectorAll(".pc-dot")) dot.animate([{ opacity: 0, r: 0 }, { opacity: 1, r: dot.getAttribute("r") }], { duration: 300, delay: total * Math.max(0, (dot.cx.baseVal.value - +svg.dataset.l) / (+svg.dataset.r - +svg.dataset.l)), fill: "backwards" });
 }
 
 /* ---------- public: fixtures ---------- */
@@ -2731,6 +2762,44 @@ VIEWS.submit = {
     } catch (e) { msg.textContent = e.status ? e.message : "Couldn't send. Check your connection and try again."; btn.disabled = false; btn.textContent = "Send result"; }
   }
 };
+
+/* ---------- team logos ---------- */
+// A team's logo, found by its name now or any name it had before; shown small beside its name on the public pages
+// (`linkTeamNames` adds it) and larger on the Teams page. Loaded like photos, from memory in the preview.
+function logoFor(name) {
+  const logos = S.league?.logos || {}, k = teamKey(name || "");
+  if (logos[String(name || "").toLowerCase()]) return logos[String(name).toLowerCase()];
+  for (const [n, id] of Object.entries(logos)) if (teamKey(n) === k) return id;
+  return null;
+}
+const logoImg = (name, cls = "") => { const id = logoFor(name); return id ? `<img class="team-logo${cls ? " " + cls : ""}" data-logo="${esc(id)}" alt="">` : ""; };
+function loadLogos(root) {
+  for (const img of $$("img[data-logo]:not([src])", root)) {
+    const url = `/api/public/${encodeURIComponent(S.league.slug)}/logos/${img.dataset.logo}`;
+    if (!window.SKITTLERS_NAV) { img.src = url; continue; }
+    if (!photoBlobs.has(url)) photoBlobs.set(url, fetch(url).then(r => r.ok ? r.blob() : null).then(b => b && URL.createObjectURL(b)).catch(() => null));
+    photoBlobs.get(url).then(src => { if (src) img.src = src; });
+  }
+}
+// Makes a logo small enough to keep: at most 160 pixels across, as a PNG so a see-through background stays see-through.
+async function logoData(file) {
+  if (!/^image\//.test(file.type)) throw new Error(`${file.name} isn't a picture.`);
+  const img = await createImageBitmap(file).catch(() => { throw new Error(`${file.name} couldn't be opened. Try a PNG or JPEG picture.`); });
+  const scale = Math.min(1, 160 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(img.width * scale)); c.height = Math.max(1, Math.round(img.height * scale));
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); img.close?.();
+  let url = c.toDataURL("image/png"); if (url.length > 380_000) url = c.toDataURL("image/webp", .9);
+  return { mediaType: url.slice(5, url.indexOf(";")), data: url.slice(url.indexOf(",") + 1) };
+}
+async function setTeamLogo(team, file) {
+  try {
+    const image = file ? await logoData(file) : null;
+    const r = await send(`/api/leagues/${S.league.id}/logos`, "PUT", { team, image });
+    S.league = { ...S.league, logos: r.league.logos }; toast(file ? `Logo added for ${team}` : `Logo removed from ${team}`); refresh();
+  } catch (e) { e.message ? toast(e.message) : saveError(e); }
+}
+
+document.addEventListener("change", e => { const i = e.target.closest?.("input[data-logo-for]"); if (!i) return; const f = i.files[0]; i.value = ""; if (f) setTeamLogo(i.dataset.logoFor, f); });
 
 /* ---------- photos ---------- */
 // Photos are served by the API as images. The preview can't load images from its own API directly,
@@ -2966,33 +3035,72 @@ VIEWS.past = {
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">History</div><h2>Past seasons</h2><p>Final league tables, cup draws and results from earlier seasons.</p></div></div>
       <div class="cup-jump" id="past-pick" role="group" aria-label="Season"></div><div id="past-body"></div>`;
-    $("#past-pick").addEventListener("click", e => { const b = e.target.closest("[data-past]"); if (b) { S.ui.past = b.dataset.past; this.refresh(); } });
+    $("#past-pick").addEventListener("click", e => { const b = e.target.closest("[data-past]"); if (b) { S.ui.past = b.dataset.past; this.at = null; this.refresh(); } });
+    // Stepping through the season night by night, switching between tables and charts, picking out a team.
+    $("#past-body").addEventListener("click", e => {
+      const v = e.target.closest("[data-pv]"); if (v) { (S.ui.pastViews ||= {})[v.dataset.div] = v.dataset.pv; chartToAnimate = v.dataset.pv === "chart" ? v.dataset.div : null; return this.refresh(); }
+      const b = e.target.closest("[data-pt]");
+      if (b) { const n = this.nightList || [], i = this.at ? n.indexOf(this.at) : n.length - 1, to = b.dataset.pt === "back" ? i - 1 : b.dataset.pt === "fwd" ? i + 1 : n.length - 1;
+        if (to < 0 || to >= n.length) return; this.at = to === n.length - 1 ? null : n[to]; this.animate = true; return this.refresh(); }
+      pickChartTeam(e);
+    });
   },
+  at: null,
   async refresh() {
     const list = pastSeasons(), pick = $("#past-pick"), body = $("#past-body"); if (!pick) return;
     if (!list.length) { pick.innerHTML = ""; return body.innerHTML = `<div class="empty"><strong>No past seasons yet</strong>Earlier seasons appear here.</div>`; }
     if (!list.some(x => x.id === S.ui.past)) S.ui.past = list[0].id;
     pick.innerHTML = list.map(x => `<button type="button" data-past="${esc(x.id)}" aria-pressed="${x.id === S.ui.past}">${esc(x.name)}</button>`).join("");
     const sid = S.ui.past, season = list.find(x => x.id === sid);
-    body.innerHTML = `<p class="muted">Loading season ${esc(season.name)}…</p>`;
+    if (!body.querySelector(`[data-season="${CSS.escape(sid)}"]`)) body.innerHTML = `<p class="muted">Loading season ${esc(season.name)}…</p>`;
     const data = await seasonFor(sid);
     if (S.ui.past !== sid || !$("#past-body")) return;
+    // Where each team was before this step, so the rows can slide.
+    const before = new Map($$("#past-body tr[data-row]").map(tr => [tr.dataset.row, { top: tr.getBoundingClientRect().top, pos: +tr.dataset.pos }]));
+    const moving = this.animate && before.size; this.animate = false;
+    S.chartSeason = sid;
     body.innerHTML = withSeason(data, () => {
-      // League tables, side by side in division order, with each division's winners.
-      const groups = standings().filter(g => !g.loose && g.rows.some(r => r.P)).sort(byDivisionName);
-      const tables = !groups.length ? `<p class="muted">No league results for this season.</p>` : `<div class="div-strip past-strip" tabindex="0" aria-label="Division tables, scroll sideways for more">${groups.map(g => `<div class="div-card">
-        <h3>${esc(g.division?.name || "League table")}</h3>
-        ${g.rows[0]?.P ? `<p class="past-champ">🏆 Champions: <strong class="tn">${esc(g.rows[0].t.name)}</strong></p>` : ""}
+      // The season's match nights with a league result; the tables as they stood after the chosen one (or at the end).
+      const nights = [...new Set(Object.values(S.fixtures).filter(f => f.comp === "league" && f.date && decided(f)).map(f => f.date))].sort();
+      this.nightList = nights;
+      if (this.at && !nights.includes(this.at)) this.at = null;
+      const at = this.at, ix = at ? nights.indexOf(at) : nights.length - 1, views = S.ui.pastViews ||= {}, charted = g => nights.length >= 2 && views[g.division?.id || "all"] === "chart";
+      const seg = g => nights.length < 2 ? "" : `<div class="seg tv-seg" role="group" aria-label="Show ${esc(g.division?.name || "the league")} as"><button type="button" data-pv="table" data-div="${esc(g.division?.id || "all")}" aria-pressed="${!charted(g)}">Table</button><button type="button" data-pv="chart" data-div="${esc(g.division?.id || "all")}" aria-pressed="${charted(g)}">Chart</button></div>`;
+      const bar = nights.length < 2 ? "" : `<div class="past-tools"><span class="tt-nav" role="group" aria-label="Step through the season">
+          <button type="button" class="tt-arrow" data-pt="back"${ix <= 0 ? " disabled" : ""} aria-label="Previous match night">‹ Previous</button>
+          ${at ? `<button type="button" class="tt-when" data-pt="end" title="Back to the final tables">After ${esc(fmtDate(at))}</button>` : `<span class="tt-when tt-now">Final tables</span>`}
+          <button type="button" class="tt-arrow" data-pt="fwd"${ix >= nights.length - 1 ? " disabled" : ""} aria-label="Next match night">Next ›</button></span>
+        </div>`;
+      // League tables, side by side in division order, with each division's winners (or leaders, part way through).
+      const groups = standings(at ? f => !!f.date && f.date <= at : undefined).filter(g => !g.loose && g.rows.some(r => r.P)).sort(byDivisionName);
+      // A division shown as a chart takes the full width; the ones shown as tables sit side by side, in division order.
+      const card = g => `<div class="div-card">
+        <h3>${esc(g.division?.name || "League table")}${seg(g)}</h3>
+        ${g.rows[0]?.P ? `<p class="past-champ">${at ? `Leaders after ${esc(fmtDate(at))}` : "🏆 Champions"}: <strong class="tn">${esc(g.rows[0].t.name)}</strong></p>` : ""}
         <table class="league mini"><thead><tr><th class="pos">#</th><th class="team">Team</th><th><abbr title="Played">P</abbr></th><th><abbr title="Won">W</abbr></th><th><abbr title="Drawn">D</abbr></th><th><abbr title="Lost">L</abbr></th><th><abbr title="Pin difference">PD</abbr></th><th class="pts"><abbr title="Points">Pts</abbr></th></tr></thead>
-        <tbody>${g.rows.map((r, i) => `<tr><td class="pos">${i + 1}</td><td class="team" title="${esc(r.t.name)}"><span class="tn">${esc(r.t.name)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.pf - r.pa > 0 ? "+" : ""}${r.pf - r.pa}</td><td class="pts">${r.pts}</td></tr>`).join("")}</tbody></table></div>`).join("")}</div>`;
+        <tbody>${g.rows.map((r, i) => { const key = `${g.division?.id || ""}|${r.t.id}`, was = moving ? before.get(key) : null;
+          const mv = was && was.pos !== i + 1 ? `<span class="tt-move ${was.pos > i + 1 ? "up" : "down"}">${was.pos > i + 1 ? "▲" : "▼"}</span>` : "";
+          return `<tr data-row="${esc(key)}" data-pos="${i + 1}"><td class="pos">${mv}${i + 1}</td><td class="team" title="${esc(r.t.name)}"><span class="tn">${esc(r.t.name)}</span></td><td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td><td>${r.pf - r.pa > 0 ? "+" : ""}${r.pf - r.pa}</td><td class="pts">${r.pts}</td></tr>`; }).join("")}</tbody></table></div>`;
+      const blocks = [];
+      for (const g of groups) {
+        if (charted(g)) blocks.push(`<section class="past-chart-block"><div class="div-head"><h3 class="past-chart-h">${esc(g.division?.name || "League table")}</h3>${seg(g)}</div>${positionsChart(g, nights.slice(0, ix + 1))}</section>`);
+        else { if (!Array.isArray(blocks.at(-1))) blocks.push([]); blocks.at(-1).push(card(g)); }
+      }
+      const tables = !groups.length ? `<p class="muted">No league results for this season.</p>`
+        : blocks.map(b => Array.isArray(b) ? `<div class="div-strip past-strip" tabindex="0" aria-label="Division tables, scroll sideways for more">${b.join("")}</div>` : b).join("");
       const results = seasonCupResults();
       const cupList = !results.length ? "" : `<h3 class="past-h">Cups · ${esc(season.name)}</h3><div class="past-cups">${results.map(r => `<details class="past-cup">
         <summary><span class="past-cup-name">${esc(r.name)}</span>
           <span class="past-cup-who">${r.win ? `<span>🏆 <strong class="tn">${esc(r.win)}</strong></span>` : `<span class="muted">No winner recorded</span>`}${r.runner ? `<span class="muted">Runner-up <span class="tn">${esc(r.runner)}</span></span>` : ""}</span>
           <span class="past-cup-open">Results</span></summary>
         <div class="past-cup-body">${r.body}</div></details>`).join("")}</div>`;
-      return `<h3 class="past-h">League tables · ${esc(season.name)}</h3>${tables}${cupList}`;
+      return `<div data-season="${esc(sid)}"></div><h3 class="past-h">League tables · ${esc(season.name)}</h3>${bar}${tables}${cupList}`;
     });
+    S.chartSeason = null;
+    drawNewCharts(body);
+    if (moving && !matchMedia("(prefers-reduced-motion: reduce)").matches)
+      for (const tr of $$("#past-body tr[data-row]")) { const was = before.get(tr.dataset.row); if (!was) continue;
+        const dy = was.top - tr.getBoundingClientRect().top; if (dy) tr.animate([{ transform: `translateY(${dy}px)` }, { transform: "none" }], { duration: 650, easing: "cubic-bezier(.3,.7,.2,1)" }); }
   }
 };
 
@@ -4189,8 +4297,8 @@ VIEWS["league-teams"] = {
       const v = S.venues[t.venue], players = playersOf(t), cap = players.find(p => p.captain);
       const search = [t.name, v?.name, divisionName(t.division), ...players.map(playerLabel)].join(" ");
       return `<article class="card pt-card" data-team-card="${esc(t.id)}" data-search="${esc(searchText(search))}">
-        <div class="card-head"><div><h3><button type="button" class="card-toggle tn" data-pt="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="ptb-${esc(t.id)}">${esc(t.name)}</button></h3>
-          <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `<a href="#league-venues">${esc(v.name)}</a>${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${plural(players.length, "player")}</div></div></div>
+        <div class="card-head"><div class="pt-head">${logoImg(t.name, "big")}<div><h3><button type="button" class="card-toggle tn" data-pt="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="ptb-${esc(t.id)}">${esc(t.name)}</button></h3>
+          <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `<a href="#league-venues">${esc(v.name)}</a>${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${plural(players.length, "player")}</div></div></div></div>
         <div class="card-body" id="ptb-${esc(t.id)}"${this.open.has(t.id) ? "" : " hidden"}>
           ${previousNames(t.name).length ? `<p class="muted pt-was">Previously ${esc(previousNames(t.name).join(", then "))}</p>` : ""}
           <dl class="kv">${role("Captain", cap)}${role("Vice captain", viceOf(t))}${role("Sticker up", stickerOf(t))}</dl>
@@ -5745,7 +5853,7 @@ VIEWS.teams = {
       return `<article class="card${t.id === editing ? " editing" : ""}" data-id="${esc(t.id)}" data-search="${esc(searchText(search))}">
         <div class="card-head"><div><h3><button type="button" class="card-toggle tn" data-act="toggle-team" data-id="${esc(t.id)}" aria-expanded="${this.open.has(t.id)}" aria-controls="tb-${esc(t.id)}">${esc(t.name)}</button></h3>
           <div class="sub">${divisionName(t.division) ? `${esc(divisionName(t.division))} · ` : ""}${v ? `${esc(v.name)}${v.alleys > 1 ? ` · Alley ${t.alley || 1}` : ""}` : "No home venue"} · ${players.length} player${players.length === 1 ? "" : "s"}</div></div>
-          <div class="actions"><button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
+          <div class="actions">${logoImg(t.name, "mid")}<label class="btn ghost sm logo-pick">${logoFor(t.name) ? "Change logo" : "Add logo"}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-logo-for="${esc(t.name)}" hidden></label>${logoFor(t.name) ? `<button class="btn ghost sm" data-act="logo-remove" data-team="${esc(t.name)}">Remove logo</button>` : ""}<button class="btn ghost sm" data-act="edit-team" data-id="${esc(t.id)}">Edit</button><button class="btn danger sm" data-act="del-team" data-id="${esc(t.id)}">Delete</button></div></div>
         <div class="card-body" id="tb-${esc(t.id)}"${this.open.has(t.id) ? "" : " hidden"}><dl class="kv"><dt>Captain</dt><dd>${(() => { const cp = playersOf(t).find(p => p.captain); return cp ? playerHtml(cp) : esc(fullName(captainOf(t)) || "—"); })()}</dd>
           <dt>Vice captain</dt><dd>${viceOf(t) ? playerHtml(viceOf(t)) : "—"}</dd><dt>Sticker up</dt><dd>${stickerOf(t) ? playerHtml(stickerOf(t)) : "—"}</dd>
           <dt>Pairs Cup</dt><dd>${pairsOf(t).map(playerHtml).join(", ") || "—"}</dd>
@@ -7643,6 +7751,7 @@ document.addEventListener("click", async e => {
     VIEWS.teams.checkDuplicates(); VIEWS.teams.showCaptain();
   }
   if (act === "edit-team") VIEWS.teams.edit(id);
+  if (act === "logo-remove") { if (!arm(b, "Confirm remove")) return; setTeamLogo(b.dataset.team, null); }
   if (act === "bk-download") downloadBackup();
   if (act === "bk-restore") VIEWS["league-setup"].restoreCopy(id, b);
   if (act === "bk-restore-file") VIEWS["league-setup"].restoreFile(b);
