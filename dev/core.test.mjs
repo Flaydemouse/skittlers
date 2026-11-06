@@ -1,7 +1,7 @@
 // Checks the API in lib/core.mjs: accounts, leagues, seasons, permissions, subscriptions and the overall admin.
 import { webcrypto } from "node:crypto";
 import assert from "node:assert/strict";
-import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt, newsSharePage } from "../lib/core.mjs";
+import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt, newsSharePage, sheetMatch, sheetPrompt, parseSheet } from "../lib/core.mjs";
 const data = new Map();
 const store = { get: async k => data.has(k) ? JSON.parse(data.get(k)) : null, set: async (k, v) => data.set(k, JSON.stringify(v)), del: async k => data.delete(k), list: async p => [...data.keys()].filter(k => k.startsWith(p)) };
 let day = "2026-10-29", clock = Date.parse("2026-10-29T19:00:00Z");
@@ -534,6 +534,24 @@ assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "
   r = await sub({ fixtureId: "f", team: "b", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 403, "not their team");
   r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, cap); assert.equal(r.status, 200, JSON.stringify(r.body));
   r = await sub({ fixtureId: "f", team: "a", cards: { home: card("A"), away: card("B") } }, nobody); assert.equal(r.status, 403);
+  // importing past results is an add-on
+  r = await call("POST", `leagues/${RL.id}/seasons`, { name: "2019–20", start: "2019-09-01", end: "2020-05-01", import: true }, own); assert.equal(r.status, 402); assert.match(r.body.error, /Past results import/);
+  r = await call("PATCH", `leagues/${RL.id}/seasons/${RS.id}/data`, { base: 0, changes: [{ in: "venues", id: "vx", value: { id: "vx", name: "X" } }], import: true }, own); assert.equal(r.status, 402);
+  r = await call("GET", `leagues/${RL.id}/addons`, null, own); assert.equal(r.body.history.available, false); assert.equal(r.body.batch.available, false);
   r = await call("DELETE", `leagues/${RL.id}`, null, own); assert.equal(r.status, 200);
+}
+// reading a batch of photos: the game is found from the list, and a results-book page gives the other side's hand totals
+{
+  const m = sheetMatch({ kind: "sheet", game: "rough", hands: 6, balls: 3, rows: 6, teams: [{ name: "Aces", venue: "Duke of York", players: [{ key: "paul best", name: "Paul Best", nick: "Besty" }] }, { name: "Headhunters" }],
+    fixtures: [{ id: "f1", date: "2026-10-01", home: 0, away: 1 }, { id: "bad", home: 0, away: 0 }] });
+  assert.equal(m.fixtures.length, 1, "a team can't play itself");
+  assert.match(sheetPrompt(m), /f1 \| 2026-10-01 \| home T0 Aces v away T1 Headhunters/);
+  assert.equal(sheetMatch({ kind: "sheet", hands: 6, balls: 3, rows: 6, teams: [], fixtures: [] }), null);
+  const got = parseSheet({ fixtureId: "f1", sides: [{ side: "home", rows: [{ boardName: "Besty", playerKey: "paul best", hands: [6, 7, 16, 16, 7, 99], spares: [false, false, true, true, false, false], unsure: [], writtenTotal: 60 }], handTotals: [40, 43, 55, 53, 40, 53], writtenTotal: 284 },
+    { side: "away", rows: [], handTotals: [38, 42, 40, 50, 48, 37], writtenTotal: 255 }, { side: "away", rows: [] }], notes: "" }, m);
+  assert.equal(got.sides.length, 2, "each side once");
+  assert.deepEqual(got.sides[0].rows[0].hands, [6, 7, 16, 16, 7, null]); assert.deepEqual(got.sides[0].rows[0].unsure, [5], "an impossible score is left for checking");
+  assert.equal(got.sides[0].rows[0].key, "paul best"); assert.equal(got.sides[1].writtenTotal, 255);
+  assert.equal(parseSheet({ fixtureId: "nope", sides: [] }, m).fixtureId, "", "only games from the list");
 }
 console.log("all API checks passed");

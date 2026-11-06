@@ -328,6 +328,16 @@ body:not(.can-owner) [data-need~="owner"] { display: none !important; }
 .role-row .radios { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .roles-help { margin: 0; padding-left: 18px; font-size: .88rem; color: var(--muted); }
 .mf-contacts { margin-bottom: 14px; }
+.batch-panel { margin-bottom: 14px; display: grid; gap: 10px; }
+.bt-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.bt-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.bt-item { display: grid; grid-template-columns: 72px 1fr; gap: 10px; border: 1px solid var(--line); border-left-width: 4px; border-radius: 10px; padding: 10px; background: var(--surface); }
+.bt-item.ok { border-left-color: var(--win); } .bt-item.warn { border-left-color: var(--brass); } .bt-item.stop { border-left-color: var(--loss); }
+.bt-thumb { width: 72px; height: 96px; object-fit: cover; border-radius: 6px; border: 1px solid var(--line); }
+.bt-body { display: grid; gap: 6px; min-width: 0; }
+.bt-name { font-size: .8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-score { margin: 0; font-size: 1rem; } .bt-from { margin: 0; font-size: .82rem; }
+.bt-checks { margin: 0; padding-left: 18px; font-size: .86rem; }
 .mf-contacts table { width: 100%; }
 .my-players { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; }
 .my-players li { display: flex; gap: 8px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
@@ -411,7 +421,8 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .bg-opt:hover { border-color: var(--muted); }
 .bg-opt[aria-checked="true"] { border-color: var(--brass); box-shadow: 0 0 0 2px color-mix(in srgb, var(--brass) 35%, transparent); }
 .bg-sw { display: block; background: var(--bo-paper); padding: 10px; border-bottom: 1px solid var(--bo-line); }
-.bg-card { display: block; height: 18px; background: #FFFFFF; border: 1px solid var(--bo-line); border-radius: 4px; }
+.bg-card { display: block; height: 18px; background: var(--bo-card, #FFFFFF); border: 1px solid var(--bo-line); border-radius: 4px; }
+.look-off::after { content: " (not used while the site is always " attr(data-off) ")"; font-weight: 400; color: var(--muted); }
 .bg-name { padding: 0 8px; font-size: .8rem; font-weight: 600; }
 .font-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .font-opt { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--ink); cursor: pointer; }
@@ -921,6 +932,18 @@ const BACKGROUNDS = [
   { id: "blush", name: "Blush", bg: "#FBEFEE" },
   { id: "lilac", name: "Lilac", bg: "#F3EFFA" },
 ];
+// Page backgrounds for dark mode. "scheme" (the default) is a very dark shade of the header colour.
+const DARK_BACKGROUNDS = [
+  { id: "scheme", name: "Matches the scheme", bg: null },
+  { id: "charcoal", name: "Charcoal", bg: "#16181B" },
+  { id: "black", name: "Black", bg: "#0B0B0C" },
+  { id: "navy", name: "Midnight blue", bg: "#0D1524" },
+  { id: "green", name: "Deep green", bg: "#0C1912" },
+  { id: "plum", name: "Plum", bg: "#1A1221" },
+  { id: "brown", name: "Dark oak", bg: "#1A140E" },
+];
+// Light or dark: follow each visitor's device (the default), or always one or the other.
+const LOOK_MODES = [["auto", "Follow each visitor's phone or computer"], ["light", "Always light"], ["dark", "Always dark"]];
 const hexRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
 const rgbHex = c => "#" + c.map(v => Math.round(Math.min(1, Math.max(0, v)) * 255).toString(16).padStart(2, "0")).join("").toUpperCase();
 function rgbHsl([r, g, b]) {
@@ -949,7 +972,7 @@ function filled(bg, light, dark) {
   const text = contrast(light, bg) >= contrast(dark, bg) ? light : dark;
   return [readable(bg, [text]), text];
 }
-function themeTokens(t, mode, bgId) {
+function themeTokens(t, mode, bgId, darkId) {
   const [hh, hs, hl] = rgbHsl(hexRgb(t.header)), [ah, as, al] = rgbHsl(hexRgb(t.accent)), tint = Math.min(hs, 40);
   const k = {};
   if (mode === "light") {
@@ -967,6 +990,14 @@ function themeTokens(t, mode, bgId) {
     const hd = Math.min(Math.max(hl, 15), 18);
     Object.assign(k, { paper: hsl(hh, tint * 0.4, 6.5), surface: hsl(hh, tint * 0.4, 10.5), sunk: hsl(hh, tint * 0.4, 14), line: hsl(hh, tint * 0.35, 22),
       baize: hsl(hh, hs * 0.85, hd), "baize-2": hsl(hh, hs * 0.85, hd + 7), brass: hsl(ah, as, Math.max(al, 56)), "warn-bg": hsl(ah, Math.min(as, 45), 15) });
+    // A chosen dark background: the page, with the boxes a little lighter and the lines lighter again.
+    const D = DARK_BACKGROUNDS.find(x => x.id === darkId)?.bg;
+    if (D) {
+      const [dh, ds, dl] = rgbHsl(hexRgb(D));
+      Object.assign(k, { paper: D, surface: hsl(dh, ds, dl + 4), sunk: hsl(dh, ds, dl + 7.5), line: hsl(dh, Math.min(ds, 30), dl + 15) });
+      // The header needs to stand apart from a near-black page.
+      if (contrast(k.baize, k.paper) < 1.25) Object.assign(k, { baize: hsl(hh, hs * 0.85, hd + 6), "baize-2": hsl(hh, hs * 0.85, hd + 13) });
+    }
     k.ink = readable(hsl(hh, tint * 0.3, 90), [k.paper, k.surface, k.sunk, k["warn-bg"]], 10);
     k.muted = readable(hsl(hh, tint * 0.25, 63), [k.paper, k.surface, k.sunk]);
   }
@@ -982,10 +1013,10 @@ function themeTokens(t, mode, bgId) {
   return k;
 }
 // The CSS for a scheme, light and dark. The default scheme is the page's own colours, so it needs none.
-function themeCss(id, bgId) {
+function themeCss(id, bgId, darkId) {
   const t = THEMES.find(x => x.id === id);
-  if (!t || (t.id === "baize" && !BACKGROUNDS.find(x => x.id === bgId)?.bg)) return "";
-  const block = mode => Object.entries(themeTokens(t, mode, bgId)).map(([n, v]) => `--${n}: ${v};`).join(" ");
+  if (!t || (t.id === "baize" && !BACKGROUNDS.find(x => x.id === bgId)?.bg && !DARK_BACKGROUNDS.find(x => x.id === darkId)?.bg)) return "";
+  const block = mode => Object.entries(themeTokens(t, mode, bgId, darkId)).map(([n, v]) => `--${n}: ${v};`).join(" ");
   return `:root { ${block("light")} }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { ${block("dark")} } }
 :root[data-theme="dark"] { ${block("dark")} }`;
@@ -1326,7 +1357,7 @@ function saveError(e) {
 // copy (homePins, awayPins, cards, note) is what admins edit. `ready` is the "checked, can go live" tick and
 // `notePublic` says whether the note goes on the live site. Fixtures with no `pub` predate publishing and are live as they are.
 const resultSig = f => JSON.stringify([f?.homePins ?? null, f?.awayPins ?? null, f?.cards ?? null]);
-const snapResult = f => played(f) ? { homePins: f.homePins, awayPins: f.awayPins, ...(f.cards ? { cards: f.cards } : {}) } : { homePins: null, awayPins: null, ...(walkover(f) ? { walkover: walkover(f) } : {}) };
+const snapResult = f => played(f) ? { homePins: f.homePins, awayPins: f.awayPins, ...(f.cards ? { cards: f.cards } : {}), ...(f.hands ? { hands: f.hands } : {}) } : { homePins: null, awayPins: null, ...(walkover(f) ? { walkover: walkover(f) } : {}) };
 const pubNote = f => f.notePublic && f.note?.trim() ? f.note.trim() : null;
 // When an edit changes a result, the live site keeps showing what it showed before, and the tick comes off.
 function holdBack(before, after) {
@@ -1513,7 +1544,7 @@ function standings(keep = () => true) {
     a.apd += ap - hp;
     if (hp > ap) { h.W++; a.L++; } else if (hp < ap) { a.W++; h.L++; } else { h.D++; a.D++; }
     // Points for each hand, when the league gives them and both scorecards are hand by hand.
-    const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away);
+    const H = sideHands(f, "home"), A = sideHands(f, "away");
     if (H && A) H.forEach((x, i) => { if (x > A[i]) h.hpts += c.handWin; else if (x < A[i]) a.hpts += c.handWin; else { h.hpts += c.handDraw; a.hpts += c.handDraw; } });
   }
   for (const r of Object.values(rows)) { r.pd = r.pf - r.pa; r.pts = r.W * c.win + r.D * c.draw + r.L * c.loss + r.hpts; }
@@ -1526,7 +1557,7 @@ function standings(keep = () => true) {
       const w = winnerSide(f), hw = w === "home", aw = w === "away";
       pts[f.home] = (pts[f.home] || 0) + (hw ? c.win : aw ? c.loss : c.draw);
       pts[f.away] = (pts[f.away] || 0) + (aw ? c.win : hw ? c.loss : c.draw);
-      const H = handTotals(f.cards?.home), A = handTotals(f.cards?.away);
+      const H = sideHands(f, "home"), A = sideHands(f, "away");
       if (H && A) H.forEach((x, i) => { if (x > A[i]) pts[f.home] += c.handWin; else if (x < A[i]) pts[f.away] += c.handWin; else { pts[f.home] += c.handDraw; pts[f.away] += c.handDraw; } });
     }
     return r => pts[r.t.id] || 0;
@@ -1603,19 +1634,25 @@ document.addEventListener("click", e => { if (document.body.classList.contains("
 // light or dark mode as the device is set. The account area keeps the default.
 const darkQuery = matchMedia("(prefers-color-scheme: dark)");
 let themeNow = null;
-let bgNow = null;
-function applyTheme(id = themeNow, bgId = bgNow) {
-  themeNow = id; bgNow = bgId;
-  const custom = BACKGROUNDS.find(x => x.id === bgId)?.bg, t = THEMES.find(x => x.id === id) || (custom ? THEMES[0] : null), root = document.documentElement.style;
-  const forced = document.documentElement.dataset.theme, mode = forced === "dark" || (forced !== "light" && darkQuery.matches) ? "dark" : "light";
-  const tokens = t && (t.id !== "baize" || (custom && mode === "light")) ? themeTokens(t, mode, bgId) : null;
+let lookNow = {};
+// look: { background, darkBackground, mode } from the league's settings. A league set to always light or always dark
+// gets its colours set for that whatever the device says; otherwise the device (or the host page) decides.
+function applyTheme(id = themeNow, look = lookNow) {
+  themeNow = id; lookNow = look || {};
+  const fixed = ["light", "dark"].includes(lookNow.mode) ? lookNow.mode : null, root = document.documentElement.style;
+  const forced = document.documentElement.dataset.theme, mode = fixed || (forced === "dark" || (forced !== "light" && darkQuery.matches) ? "dark" : "light");
+  const custom = mode === "light" ? BACKGROUNDS.find(x => x.id === lookNow.background)?.bg : DARK_BACKGROUNDS.find(x => x.id === lookNow.darkBackground)?.bg;
+  const t = THEMES.find(x => x.id === id) || (custom || fixed ? THEMES[0] : null);
+  const tokens = t && (t.id !== "baize" || custom || fixed) ? themeTokens(t, mode, lookNow.background, lookNow.darkBackground) : null;
+  if (fixed) root.setProperty("color-scheme", fixed); else root.removeProperty("color-scheme");
   for (const n of THEME_TOKENS) { if (tokens) root.setProperty(`--${n}`, tokens[n]); else root.removeProperty(`--${n}`); }
 }
 darkQuery.addEventListener?.("change", () => applyTheme());
 // The host page can switch light and dark itself with data-theme on the root element.
 new MutationObserver(() => applyTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 function renderBrand() {
-  applyTheme(S.mode === "league" ? S.league?.settings?.theme : "", S.mode === "league" ? S.league?.settings?.background : "");
+  const ls = S.mode === "league" ? S.league?.settings || {} : {};
+  applyTheme(S.mode === "league" ? ls.theme : "", { background: ls.background, darkBackground: ls.darkBackground, mode: ls.mode });
   applyFont(S.mode === "league" ? S.league?.settings?.font : "");
   const name = $("#league-name"), sub = $("#league-season");
   if (S.mode === "account") {
@@ -1703,7 +1740,7 @@ function refresh() {
 }
 // Add-ons: reading scores from a photo of the board, and match night reports written by Claude. The overall
 // admin decides whether each is included in the basic subscription or an extra given to chosen accounts.
-const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" }, domain: { name: "Own domain", unit: "", plain: true } };
+const ADDON_INFO = { photos: { name: "Photo reading", unit: "photos" }, reports: { name: "Match night reports", unit: "reports" }, domain: { name: "Own domain", unit: "", plain: true }, batch: { name: "Batch photo reading", unit: "", plain: true }, history: { name: "Past results import", unit: "", plain: true } };
 const money = pence => `£${(pence / 100).toFixed(2)}`;
 const addonActive = (u, k) => !!u[k]?.until && u[k].until >= today();
 function addonNote(u, k, mode) {
@@ -4334,6 +4371,9 @@ VIEWS.cups = {
 // A totals-only row can also list the spares the player hit: spareScores: [12, 14]. Older totals rows have none.
 // A hand of 10 or more must include a spare; at 9 or under a spare is marked by hand. Spares are circled.
 const upTo = n => Array.from({ length: n }, (_, i) => i);
+// A side's hand totals: from its scorecard, or kept on their own when only the totals are known (a results-book page
+// from the other team gives them through its Up/Down row).
+const sideHands = (f, side) => handTotals(f.cards?.[side]) || (Array.isArray(f.hands?.[side]) && f.hands[side].length && f.hands[side].every(Number.isFinite) ? f.hands[side] : null);
 const cardTotal = card => card.rows.reduce((n, r) => n + (r.total || 0), 0);
 // The scores of the spares a player hit, from either kind of card, or null when the card doesn't say.
 const rowSpares = (card, r) => card?.mode === "hands" ? r.hands.filter((_, h) => r.spares?.[h]) : Array.isArray(r.spareScores) ? r.spareScores : null;
@@ -4662,8 +4702,8 @@ function scRead() {
         rows.push({ ...base, total, spareScores });
       }
     });
-    if (!rows.length) errs.push(`${s.title}: enter at least one player's score.`);
-    cards.push({ mode, rows });
+    if (!rows.length && !s.optional) errs.push(`${s.title}: enter at least one player's score.`);
+    cards.push(rows.length ? { mode, rows } : null);
   });
   return { cards, errs };
 }
@@ -5708,6 +5748,184 @@ function contactsPanel() {
   return `<details class="panel mf-contacts"><summary><strong>Captains' contact details</strong> <span class="muted">· for arranging games only</span></summary>
     ${rows ? `<div class="table-scroll"><table class="sc-table"><thead><tr><th class="pl">Team</th><th class="pl">Captain</th><th class="pl">Mobile</th><th class="pl">Email</th><th class="pl">Address</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="muted">No contact details have been added yet.</p>`}</details>`;
 }
+/* ---------- reading a batch of photos ---------- */
+// The secretary picks a match night (or any game this season, for results-book pages) and a pile of photos. Each is
+// read on its own (two at a time), and Claude works out which game it is. Readings wait in a list here, kept in this
+// browser, until each is accepted (saved to its game, ticked as checked) or discarded.
+const BATCH = { items: [], for: null, running: 0, files: {} };
+const batchKey = () => `skittlers-batch-${S.league?.id}-${S.seasonId}`;
+function batchLoad() { if (BATCH.for === batchKey()) return; BATCH.for = batchKey(); BATCH.files = {}; try { BATCH.items = JSON.parse(localStorage.getItem(batchKey()) || "[]"); } catch { BATCH.items = []; } }
+function batchSave() { try { localStorage.setItem(batchKey(), JSON.stringify(BATCH.items.filter(i => i.status === "done"))); } catch {} }
+// The games a photo could be, and their teams with their players, as Claude is told them.
+function sheetCandidates(date) {
+  const fx = Object.values(S.fixtures).filter(f => f.home && f.away && S.teams[f.home] && S.teams[f.away] && (!date || f.date === date)).sort(fxSort).slice(0, 800);
+  const ids = [...new Set(fx.flatMap(f => [f.home, f.away]))], n = Object.fromEntries(ids.map((id, i) => [id, i]));
+  return { kind: "sheet", title: `${cfg().name}, season ${cfg().season}`, game: cfg().game, hands: cfg().hands, balls: cfg().balls, rows: cfg().players,
+    teams: ids.map(id => ({ name: S.teams[id].name, venue: S.venues[S.teams[id].venue]?.name || "", players: cardPlayers(id).map(p => ({ key: p.key, name: p.name, nick: p.nick })) })),
+    fixtures: fx.map(f => ({ id: f.id, date: f.date || "", home: n[f.home], away: n[f.away], what: f.comp === "cup" ? (f.round || "Cup") : divisionName(S.teams[f.home]?.division) || "League" })) };
+}
+const fxLabel = f => `${f.date ? fmtDate(f.date) + ": " : ""}${teamName(f.home)} v ${teamName(f.away)}${f.comp === "cup" ? ` (${f.round || "Cup"})` : ""}`;
+async function batchStart() {
+  const files = [...$("#bt-files").files]; if (!files.length) return toast("Choose the photos first.");
+  if (files.length > 40) return toast("Choose up to 40 photos at a time.");
+  const date = $("#bt-date").value, match = sheetCandidates(date);
+  if (!match.fixtures.length) return toast(date ? "There are no games on that night." : "There are no games in this season yet.");
+  for (const file of files) {
+    const id = newId();
+    let thumb = ""; try { const t = await shrinkImage(file, 360, 0.6, 80_000); thumb = `data:${t.mediaType};base64,${t.data}`; } catch {}
+    BATCH.files[id] = file;
+    BATCH.items.push({ id, name: file.name, thumb, status: "waiting", date, match: null });
+    BATCH.match = match;
+  }
+  $("#bt-files").value = ""; $("#bt-go").textContent = "Read the photos"; batchRender(); batchPump();
+}
+// Keeps two readings going at a time.
+function batchPump() {
+  while (BATCH.running < 2) {
+    const it = BATCH.items.find(i => i.status === "waiting"); if (!it) break;
+    BATCH.running++; it.status = "reading"; batchRead(it).finally(() => { BATCH.running--; batchSave(); batchRender(); batchPump(); });
+  }
+  batchRender();
+}
+async function batchRead(it) {
+  const file = BATCH.files[it.id]; if (!file) { it.status = "failed"; it.error = "The photo is no longer here. Add it again."; return; }
+  try {
+    const image = await photoData(file), match = sheetCandidates(it.date);
+    const r = await send(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/read-board`, "POST", { images: [image], match });
+    if (PHOTO.status) PHOTO.status.used = r.used;
+    for (let tries = 0; tries < 160; tries++) {
+      await new Promise(res => setTimeout(res, 2500));
+      const res = await api(`/api/leagues/${S.league.id}/seasons/${S.seasonId}/read-board/${r.job}`);
+      if (res.status === "reading") continue;
+      if (res.status === "failed") throw new Error(res.error);
+      Object.assign(it, { status: "done", result: res.result, fixtureId: res.result.fixtureId || "", cards: null }); delete BATCH.files[it.id];
+      return;
+    }
+    throw new Error("Reading the photo took too long. Try again.");
+  } catch (e) { it.status = "failed"; it.error = e.message || "The photo couldn't be read."; }
+}
+// What a reading would save to its game: a card for each side read player by player, the pins for both sides,
+// hand totals for a side known only as totals, and what to check. `stop` lists what has to be fixed first.
+function batchPlan(it) {
+  const f = S.fixtures[it.fixtureId], out = { f, cards: {}, pins: {}, hands: {}, checks: [], stop: [], from: [] };
+  if (!f) { out.stop.push("Choose which game this is."); return out; }
+  const c = cfg();
+  for (const side of ["home", "away"]) {
+    const team = teamName(f[side]), players = cardPlayers(f[side]), sd = it.result.sides.find(x => x.side === side);
+    let card = it.cards ? it.cards[side] : null;
+    if (!card && !it.cards?.[side + "Edited"] && sd?.rows.length) {
+      const used = new Set();
+      card = { mode: "hands", rows: sd.rows.map((r, i) => {
+        const p = players.find(x => x.key === r.key), name = p ? p.name : r.boardName || `Player ${i + 1}`;
+        let key = p ? p.key : searchText(name) || `player-${i + 1}`; while (used.has(key)) key += "-2"; used.add(key);
+        if (!p && players.length) out.checks.push(`${team}: “${name}” isn't on their player list, so it's saved as written.`);
+        if (r.hands.some(v => v == null)) out.stop.push(`${team}: a hand for ${name} couldn't be read. Use Check and edit.`);
+        else if (r.unsure.length) out.checks.push(`${team}: check ${name}'s hand${r.unsure.length > 1 ? "s" : ""} ${r.unsure.map(h => h + 1).join(", ")}.`);
+        const hands = r.hands.map(v => v ?? 0), total = hands.reduce((a, b) => a + b, 0);
+        if (r.writtenTotal != null && r.writtenTotal !== total) out.checks.push(`${team}: ${name}'s hands add up to ${total}, but the photo says ${r.writtenTotal}.`);
+        return { key, name, nick: p?.nick || "", hands, spares: hands.map((v, h) => !!r.spares[h] || v >= 10), total };
+      }) };
+      const T = handTotals(card);
+      sd.handTotals.forEach((t, h) => { if (t != null && T && T[h] !== t) out.checks.push(`${team}: hand ${h + 1} adds up to ${T[h]}, but the photo says ${t}.`); });
+      if (sd.writtenTotal != null && cardTotal(card) !== sd.writtenTotal) out.checks.push(`${team}: the scores add up to ${cardTotal(card)}, but the photo's total is ${sd.writtenTotal}.`);
+    }
+    if (card) {
+      if (f.cards?.[side]) out.checks.push(`${team} already have a scorecard for this game. Accepting replaces it.`);
+      out.cards[side] = card; out.pins[side] = cardTotal(card); out.from.push(`${team}: ${plural(card.rows.length, "player")}`);
+      continue;
+    }
+    // Known only as totals: from the other team's results-book page, or the board's totals.
+    const tot = sd ? (sd.writtenTotal ?? (sd.handTotals.length && sd.handTotals.every(v => v != null) ? sd.handTotals.reduce((a, b) => a + b, 0) : null)) : null;
+    if (f.cards?.[side]) { out.pins[side] = cardTotal(f.cards[side]); out.from.push(`${team}: scorecard already saved`);
+      if (tot != null && tot !== out.pins[side]) out.checks.push(`${team}'s saved scorecard comes to ${out.pins[side]}, but this photo makes them ${tot}.`); continue; }
+    if (tot == null) { if (Number.isFinite(f[side + "Pins"])) { out.pins[side] = f[side + "Pins"]; out.from.push(`${team}: pins already saved`); } else out.stop.push(`There's no score for ${team} on this photo.`); continue; }
+    out.pins[side] = tot; out.from.push(`${team}: total only`);
+    const ht = sd.handTotals;
+    if (ht.length === c.hands && ht.every(v => v != null)) {
+      out.hands[side] = ht;
+      if (ht.reduce((a, b) => a + b, 0) !== tot) out.checks.push(`${team}'s hand totals add up to ${ht.reduce((a, b) => a + b, 0)}, but their total is ${tot}.`);
+    }
+  }
+  if (!out.cards.home && !out.cards.away) out.stop.push("No player's scores were read from this photo.");
+  if (played(f) && out.pins.home != null && out.pins.away != null && (f.homePins !== out.pins.home || f.awayPins !== out.pins.away))
+    out.checks.push(`The result saved is ${f.homePins}–${f.awayPins}, but this photo says ${out.pins.home}–${out.pins.away}. Accepting changes it.`);
+  if (it.result.notes) out.checks.push(it.result.notes);
+  return out;
+}
+async function batchAccept(ids) {
+  const plans = ids.map(id => BATCH.items.find(i => i.id === id)).filter(Boolean).map(it => [it, batchPlan(it)]).filter(([, p]) => !p.stop.length);
+  if (!plans.length) return;
+  const ok = await commit(d => {
+    for (const [, p] of plans) {
+      const fx = d.fixtures[p.f.id]; if (!fx) continue;
+      fx.cards = { ...(fx.cards || {}) }; for (const side of ["home", "away"]) if (p.cards[side]) fx.cards[side] = p.cards[side];
+      const hands = { ...(fx.hands || {}) }; for (const side of ["home", "away"]) { if (p.cards[side]) delete hands[side]; else if (p.hands[side]) hands[side] = p.hands[side]; }
+      if (Object.keys(hands).length) fx.hands = hands; else delete fx.hands;
+      Object.assign(fx, { homePins: p.pins.home, awayPins: p.pins.away, ready: true }); delete fx.walkover;
+    }
+  });
+  if (!ok) return;
+  const done = new Set(plans.map(([it]) => it.id));
+  BATCH.items = BATCH.items.filter(i => !done.has(i.id)); batchSave(); batchRender();
+  toast(plans.length === 1 ? `Saved: ${fxLabel(plans[0][1].f)} ${plans[0][1].pins.home}–${plans[0][1].pins.away}` : `${plural(plans.length, "result")} saved and ticked as checked`);
+}
+// Opens the reading in the scorecard to correct it. A side known only as totals can stay empty.
+function batchEdit(it) {
+  const p = batchPlan(it), f = p.f; if (!f) return toast("Choose which game this is first.");
+  const game = f.comp === "league" ? gameOf(S.divisions[S.teams[f.home]?.division]) : cfg().game;
+  const side = (k, t) => ({ ...teamSide(f[k], teamName(f[k]), game, p.cards[k] || null), optional: true });
+  openScorecard({ title: `${teamName(f.home)} v ${teamName(f.away)} · from ${it.name}`, sides: [side("home"), side("away")],
+    onSave: cards => {
+      if (!cards) { BATCH.items = BATCH.items.filter(i => i.id !== it.id); batchSave(); batchRender(); return toast("Reading discarded"); }
+      it.cards = { home: cards[0], away: cards[1], homeEdited: true, awayEdited: true };
+      // An emptied side goes back to the totals the photo gave, if it gave any.
+      for (const [i, k] of [[0, "home"], [1, "away"]]) if (!cards[i]) it.cards[k + "Edited"] = !(it.result.sides.find(x => x.side === k)?.rows.length);
+      batchSave(); batchRender(); toast("Changes kept. Accept it when it's right.");
+    } });
+}
+async function batchRender() {
+  const panel = $("#mf-batch"); if (!panel) return;
+  batchLoad();
+  // Nights with games, newest first, then any game (for results books).
+  const sel = $("#bt-date"), keep = sel.value, dates = [...new Set(Object.values(S.fixtures).filter(f => f.date && f.home && f.away).map(f => f.date))].sort().reverse();
+  const opts = `<option value="">Any game this season (results-book pages)</option>` + dates.map(d => `<option value="${d}">${esc(fmtDate(d, true))}</option>`).join("");
+  if (sel.dataset.opts !== opts) { const first = !sel.dataset.opts; sel.innerHTML = opts; sel.dataset.opts = opts; sel.value = !first && (keep === "" || dates.includes(keep)) ? keep : (dates.find(d => d <= today()) || ""); }
+  let st = null; try { st = await photoStatus(); } catch {}
+  if (!$("#mf-batch")) return;
+  // Needs both add-ons: Batch photo reading, and Photo reading for the readings themselves.
+  const bs = S.addons?.batch, ok = st?.available && bs?.available;
+  $("#bt-go").disabled = !ok; $("#bt-use").textContent = !st ? "" : !bs?.available ? (bs?.reason || "") : st.available ? photoUse(st) : st.reason;
+  const items = BATCH.items, done = items.filter(i => i.status === "done"), plans = Object.fromEntries(done.map(i => [i.id, batchPlan(i)]));
+  const clear = done.filter(i => !plans[i.id].stop.length && !plans[i.id].checks.length);
+  const fxOpts = sel2 => `<option value="">Choose the game</option>` + Object.values(S.fixtures).filter(f => f.home && f.away).sort(fxSort).map(f => `<option value="${esc(f.id)}"${f.id === sel2 ? " selected" : ""}>${esc(fxLabel(f))}</option>`).join("");
+  $("#bt-list").innerHTML = !items.length ? "" : `<div class="bt-head"><strong>${plural(done.length, "reading")} to check</strong>${items.length > done.length ? ` <span class="muted">· ${items.filter(i => i.status === "reading" || i.status === "waiting").length} still reading</span>` : ""}
+      ${clear.length ? `<button type="button" class="btn sm" data-bt="accept-clear">Accept the ${plural(clear.length, "clear one")}</button>` : ""}</div>
+    <ul class="bt-items">${items.map(it => {
+      const head = `<img class="bt-thumb" alt="" src="${esc(it.thumb || "")}"${it.thumb ? "" : " hidden"}><div class="bt-body"><div class="bt-name">${esc(it.name)}</div>`;
+      if (it.status !== "done") return `<li class="bt-item" data-bi="${esc(it.id)}">${head}<p class="${it.status === "failed" ? "bad" : "muted"}">${it.status === "failed" ? esc(it.error) : it.status === "reading" ? `<span class="spin" aria-hidden="true"></span> Reading…` : "Waiting…"}</p>
+        ${it.status === "failed" ? `<div class="actions">${BATCH.files[it.id] ? `<button type="button" class="btn ghost sm" data-bt="retry">Try again</button>` : ""}<button type="button" class="btn ghost sm" data-bt="drop">Remove</button></div>` : ""}</div></li>`;
+      const p = plans[it.id];
+      return `<li class="bt-item${p.stop.length ? " stop" : p.checks.length ? " warn" : " ok"}" data-bi="${esc(it.id)}">${head}
+        <div class="field" style="margin:0"><label class="visually-hidden" for="bt-fx-${esc(it.id)}">Game</label><select id="bt-fx-${esc(it.id)}" data-bt-fx>${fxOpts(it.fixtureId)}</select></div>
+        ${p.f && p.pins.home != null && p.pins.away != null ? `<p class="bt-score"><span class="tn">${esc(teamName(p.f.home))}</span> <strong>${p.pins.home}–${p.pins.away}</strong> <span class="tn">${esc(teamName(p.f.away))}</span></p><p class="muted bt-from">${esc(p.from.join(" · "))}</p>` : ""}
+        ${p.stop.length || p.checks.length ? `<ul class="bt-checks">${p.stop.map(x => `<li class="bad">${esc(x)}</li>`).join("")}${p.checks.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : `<p class="good" style="margin:0">Everything adds up.</p>`}
+        <div class="actions"><button type="button" class="btn sm" data-bt="accept"${p.stop.length ? " disabled" : ""}>Accept</button><button type="button" class="btn ghost sm" data-bt="edit"${p.f ? "" : " disabled"}>Check and edit</button><button type="button" class="btn ghost sm" data-bt="drop">Discard</button></div></div></li>`;
+    }).join("")}</ul>`;
+}
+function batchWire(el) {
+  $("#bt-go").addEventListener("click", () => batchStart());
+  $("#bt-files").addEventListener("change", e => $("#bt-go").textContent = e.target.files.length ? `Read ${plural(e.target.files.length, "photo")}` : "Read the photos");
+  $("#bt-list").addEventListener("change", e => { const s = e.target.closest("[data-bt-fx]"); if (!s) return; const it = BATCH.items.find(i => i.id === s.closest("[data-bi]").dataset.bi); if (it) { it.fixtureId = s.value; it.cards = null; batchSave(); batchRender(); } });
+  $("#bt-list").addEventListener("click", e => {
+    const b = e.target.closest("[data-bt]"); if (!b) return;
+    if (b.dataset.bt === "accept-clear") return batchAccept(BATCH.items.filter(i => i.status === "done").filter(i => { const p = batchPlan(i); return !p.stop.length && !p.checks.length; }).map(i => i.id));
+    const it = BATCH.items.find(i => i.id === b.closest("[data-bi]")?.dataset.bi); if (!it) return;
+    if (b.dataset.bt === "accept") batchAccept([it.id]);
+    if (b.dataset.bt === "edit") batchEdit(it);
+    if (b.dataset.bt === "retry") { it.status = "waiting"; delete it.error; batchPump(); }
+    if (b.dataset.bt === "drop") { BATCH.items = BATCH.items.filter(i => i.id !== it.id); delete BATCH.files[it.id]; batchSave(); batchRender(); }
+  });
+}
 VIEWS["manage-fixtures"] = {
   mount(el) {
     el.innerHTML = `<div class="view-head"><div><div class="eyebrow">Admin</div><h2>Fixtures &amp; results</h2>
@@ -5715,6 +5933,16 @@ VIEWS["manage-fixtures"] = {
       <div class="split">
         <div>
           <div id="mf-contacts"></div>
+          <section class="panel batch-panel" id="mf-batch">
+            <h3>Read a batch of photos</h3>
+            <p class="muted" style="margin:0">Photos of the boards from a match night, or pages from teams' results books for old seasons. Claude works out which game each one is and fills in the scorecards, for you to check here before anything is saved. Each photo counts as one photo reading.</p>
+            <div class="row2">
+              <div class="field"><label for="bt-date">Which games are on them</label><select id="bt-date"></select><span class="hint">For an earlier season, choose Work on this season on the Seasons page first.</span></div>
+              <div class="field"><label for="bt-files">Photos</label><input type="file" id="bt-files" accept="image/jpeg,image/png,image/webp" multiple></div>
+            </div>
+            <div class="actions"><button type="button" class="btn" id="bt-go" disabled>Read the photos</button><span class="lookup-note" id="bt-use"></span></div>
+            <div id="bt-list"></div>
+          </section>
           <div id="mf-subs"></div>
           <div class="toolbar" style="margin-bottom:14px">
             <div class="seg" role="group" aria-label="Competition"><button type="button" data-comp="all">All</button><button type="button" data-comp="league">League</button><button type="button" data-comp="cup">Cup</button></div>
@@ -5769,6 +5997,7 @@ VIEWS["manage-fixtures"] = {
       </div>`;
     this.reset();
     $("#fx-form").addEventListener("submit", e => { e.preventDefault(); this.save(); });
+    batchWire(el);
     $("#gen-form").addEventListener("submit", e => { e.preventDefault(); this.generate(); });
     $("#f-comp").addEventListener("change", () => $("#f-round-wrap").hidden = $("#f-comp").value !== "cup");
     $("#f-home").addEventListener("change", () => {
@@ -6007,6 +6236,7 @@ VIEWS["manage-fixtures"] = {
   },
   refresh() {
     $("#mf-contacts").innerHTML = contactsPanel();
+    batchRender();
     $("#mf-subs").innerHTML = subsHtml() + readyHtml();
     this.fillSelects();
     $$(".seg button[data-comp]").forEach(b => b.setAttribute("aria-pressed", b.dataset.comp === S.ui.adminComp));
@@ -6197,6 +6427,7 @@ VIEWS.seasons = {
         <div class="panel form" id="ri-panel">
           <h3>Import a past season's results</h3>
           <p class="muted" style="margin:0">One row per game, with the columns Date, Home Team, Away Team, Home Pins and Away Pins. Competition (League, or the cup's name), Division, Round and Venue are optional. For a game that wasn't played, put Home Walkover or Away Walkover in the pins columns: that side gets the win. For a singles or pairs final where the highest pins wins, put one row per entry with the name under Home Team, their pins under Home Pins, no Away Team, and Final as the Round. Import a whole season at once, or a part at a time (the league games, then each cup) into a season you've already imported. Teams, divisions and venues are added to that season only, so old teams don't appear in this season. The results go straight on the public site, under that season.</p>
+          <p class="warn-text" id="ri-lock" hidden style="margin:0"></p>
           <p style="margin:0"><a class="btn ghost sm" href="/templates/results-template.csv" download="results-template.csv">Download the CSV template</a></p>
           <div class="field"><label for="ri-file">CSV file</label><input type="file" id="ri-file" accept=".csv,text/csv"></div>
           <div class="field"><label for="ri-into">Import into</label><select id="ri-into"></select><span class="hint">Adding to a season keeps its games and matches its teams, divisions and venues by name. Games already in it are left out.</span></div>
@@ -6221,6 +6452,9 @@ VIEWS.seasons = {
   // The seasons a file can be added to, newest first; keeps the choice when the list is redrawn.
   importTargets() {
     const sel = $("#ri-into"); if (!sel) return;
+    // Importing past results is an add-on.
+    const lock = st => { this.importLocked = !st?.available; const n = $("#ri-lock"); if (n) { n.hidden = !this.importLocked; n.textContent = st?.reason || ""; } if (this.importText) this.importCheck(); };
+    if (S.addons?.history) lock(S.addons.history); else api(`/api/leagues/${S.league.id}/addons`).then(a => { S.addons = a; lock(a.history); }).catch(() => {});
     const keep = sel.value, list = [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start));
     sel.innerHTML = `<option value="">A new season</option>` + list.map(x => `<option value="${esc(x.id)}">Season ${esc(x.name)}${x.id === S.league.currentSeasonId ? " (on the public site)" : ""}</option>`).join("");
     if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
@@ -6251,7 +6485,7 @@ VIEWS.seasons = {
       ${plan.problems.length ? `<p class="warn-text">${plural(plan.problems.length, "row")} will be left out:</p><ul class="imp-problems">${plan.problems.slice(0, 10).map(x => `<li>${esc(x)}</li>`).join("")}${plan.problems.length > 10 ? `<li>…and ${plan.problems.length - 10} more</li>` : ""}</ul>` : ""}
       ${clash ? `<p class="bad">There's already a season called ${esc(clash.name)}. Give this one a different name, or delete that season first.</p>` : ""}`;
     this.importPlan = plan;
-    go.disabled = !!clash || (!target && !name.value.trim());
+    go.disabled = !!clash || (!target && !name.value.trim()) || this.importLocked;
   },
   // Creates the season with its teams, divisions, venues and results, and leaves the public site on its current season.
   async importSeason(btn) {
@@ -6261,7 +6495,7 @@ VIEWS.seasons = {
     btn.disabled = true; btn.textContent = "Importing…";
     const first = plan.dates[0], last = plan.dates.at(-1), current = S.league.currentSeasonId;
     try {
-      const r = await send(`/api/leagues/${S.league.id}/seasons`, "POST", { name, start: first, end: last > first ? last : addDays(first, 1) });
+      const r = await send(`/api/leagues/${S.league.id}/seasons`, "POST", { name, start: first, end: last > first ? last : addDays(first, 1), import: true });
       const sid = r.season.id, data = { teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {} };
       const divId = {}; [...plan.divisions].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).forEach((d, i) => { const id = newId() + "d" + i; divId[d] = id; data.divisions[id] = { id, name: d, order: i + 1 }; });
       const venueId = {}; [...plan.venues].forEach((v, i) => { const id = newId() + "v" + i; venueId[v] = id; data.venues[id] = { id, name: v, address1: "", address2: "", address3: "", postcode: "", phone: "", alleys: 1, lat: null, lng: null }; });
@@ -6271,7 +6505,7 @@ VIEWS.seasons = {
         data.fixtures[id] = { id, comp: g.cup ? "cup" : "league", round: g.cup ? (g.round ? `${g.cup} · ${g.round}` : g.cup) : null, date: g.date, time: "",
           home: teamId[g.home.toLowerCase()], away: teamId[g.away.toLowerCase()], venue: g.venue ? venueId[g.venue] : null, alley: null, homePins: g.hp, awayPins: g.ap, ...(g.wo ? { walkover: g.wo } : {}) }; });
       for (const f of plan.finals.values()) { const c = importedFinalCup(f, venueId); data.cups[c.id] = c; }
-      await send(`/api/leagues/${S.league.id}/seasons/${sid}`, "PUT", { version: 0, data, contacts: {} });
+      await send(`/api/leagues/${S.league.id}/seasons/${sid}`, "PUT", { version: 0, data, contacts: {}, import: true });
       if (current && S.league.currentSeasonId !== current) await send(`/api/leagues/${S.league.id}`, "PATCH", { currentSeasonId: current });
       const lr = await api(`/api/public/${encodeURIComponent(S.league.slug)}`); if (lr.league) S.league = { ...S.league, seasons: lr.league.seasons, currentSeasonId: lr.league.currentSeasonId };
       toast(`Season ${name} imported: ${importSize(plan)}${plan.teams.size ? `, ${plural(plan.teams.size, "team")}` : ""}. It shows on the Past seasons tab.`);
@@ -6323,7 +6557,7 @@ VIEWS.seasons = {
         c.entries = c.entrants.length; c.final.date ||= f.date; changes.push({ in: "cups", id: c.id, value: c }); finals++;
       }
       if (!games && !finals) { toast(`Nothing to add: everything in the file is already in season ${season.name}.`); btn.disabled = false; return this.importCheck(); }
-      const save = extra => send(`/api/leagues/${S.league.id}/seasons/${sid}/data`, "PATCH", { base: data.version, changes, ...extra });
+      const save = extra => send(`/api/leagues/${S.league.id}/seasons/${sid}/data`, "PATCH", { base: data.version, changes, import: true, ...extra });
       const r = await save().catch(async e => { if (!e.body?.planNeeded) throw e; if (!(await planDialog(e.body.planNeeded))) return null; return save({ acceptPlan: true }); });
       if (r) {
         // Stretch the season's dates to take in the new games.
@@ -6692,9 +6926,14 @@ VIEWS["league-setup"] = {
             <h3>Look of your site</h3>
             <p class="muted" style="margin:0 0 10px">Choose a colour scheme. Each one is checked so text stays easy to read, in light and dark mode. The change shows straight away for everyone.</p>
             <div class="look-grid" id="look-grid" role="radiogroup" aria-label="Colour scheme"></div>
-            <h4 class="look-sub">Page background</h4>
-            <p class="muted" style="margin:0 0 8px">The colour behind the boxes on every page, in light mode. Dark mode keeps its dark background.</p>
-            <div class="bg-grid" id="bg-grid" role="radiogroup" aria-label="Page background"></div>
+            <h4 class="look-sub">Light or dark</h4>
+            <div class="radios" id="mode-pick" role="radiogroup" aria-label="Light or dark">${LOOK_MODES.map(([k, v]) => `<label class="check"><input type="radio" name="look-mode" value="${k}"> ${v}</label>`).join("")}</div>
+            <h4 class="look-sub">Light page background</h4>
+            <p class="muted" style="margin:0 0 8px">The colour behind the boxes on every page when the site is light.</p>
+            <div class="bg-grid" id="bg-grid" role="radiogroup" aria-label="Light page background"></div>
+            <h4 class="look-sub">Dark page background</h4>
+            <p class="muted" style="margin:0 0 8px">The same when the site is dark.</p>
+            <div class="bg-grid" id="dbg-grid" role="radiogroup" aria-label="Dark page background"></div>
             <h4 class="look-sub">Font style</h4>
             <div class="font-grid" id="font-grid" role="radiogroup" aria-label="Font style"></div>
           </div>
@@ -6729,7 +6968,16 @@ VIEWS["league-setup"] = {
     $("#bg-grid").addEventListener("click", async e => {
       const b = e.target.closest("[data-bg]"); if (!b || b.getAttribute("aria-checked") === "true") return;
       const r = await leagueRequest("", "PATCH", { settings: { background: b.dataset.bg } }); if (!r) return;
-      renderBrand(); this.looks(); toast(`Page background: ${BACKGROUNDS.find(x => x.id === b.dataset.bg).name}`);
+      renderBrand(); this.looks(); toast(`Light page background: ${BACKGROUNDS.find(x => x.id === b.dataset.bg).name}`);
+    });
+    $("#dbg-grid").addEventListener("click", async e => {
+      const b = e.target.closest("[data-dbg]"); if (!b || b.getAttribute("aria-checked") === "true") return;
+      const r = await leagueRequest("", "PATCH", { settings: { darkBackground: b.dataset.dbg } }); if (!r) return;
+      renderBrand(); this.looks(); toast(`Dark page background: ${DARK_BACKGROUNDS.find(x => x.id === b.dataset.dbg).name}`);
+    });
+    $("#mode-pick").addEventListener("change", async e => {
+      const r = await leagueRequest("", "PATCH", { settings: { mode: e.target.value } }); if (!r) return this.looks();
+      renderBrand(); this.looks(); toast(LOOK_MODES.find(([k]) => k === e.target.value)[1]);
     });
     $("#font-grid").addEventListener("click", async e => {
       const b = e.target.closest("[data-font]"); if (!b || b.getAttribute("aria-checked") === "true") return;
@@ -6833,8 +7081,16 @@ VIEWS["league-setup"] = {
     // Page backgrounds, each shown with the chosen scheme.
     const scheme = THEMES.find(t => t.id === now) || THEMES[0];
     $("#bg-grid").innerHTML = BACKGROUNDS.map(x => { const k = themeTokens(scheme, "light", x.id);
-      return `<button type="button" class="bg-opt" role="radio" aria-checked="${x.id === bnow}" data-bg="${x.id}" style="--bo-paper:${k.paper};--bo-line:${k.line};--bo-ink:${k.ink}">
+      return `<button type="button" class="bg-opt" role="radio" aria-checked="${x.id === bnow}" data-bg="${x.id}" style="--bo-paper:${k.paper};--bo-line:${k.line};--bo-card:${k.surface}">
         <span class="bg-sw"><span class="bg-card"></span></span><span class="bg-name">${x.id === bnow ? "✓ " : ""}${esc(x.name)}</span></button>`; }).join("");
+    const dnow = DARK_BACKGROUNDS.some(x => x.id === S.league.settings?.darkBackground) ? S.league.settings.darkBackground : "scheme";
+    $("#dbg-grid").innerHTML = DARK_BACKGROUNDS.map(x => { const k = themeTokens(scheme, "dark", null, x.id);
+      return `<button type="button" class="bg-opt" role="radio" aria-checked="${x.id === dnow}" data-dbg="${x.id}" style="--bo-paper:${k.paper};--bo-line:${k.line};--bo-card:${k.surface}">
+        <span class="bg-sw"><span class="bg-card"></span></span><span class="bg-name">${x.id === dnow ? "✓ " : ""}${esc(x.name)}</span></button>`; }).join("");
+    const mnow = LOOK_MODES.some(([k]) => k === S.league.settings?.mode) ? S.league.settings.mode : "auto";
+    for (const r of $$("#mode-pick input")) r.checked = r.value === mnow;
+    // A note on the background that isn't used while the site is always light or always dark.
+    for (const g of [$("#bg-grid"), $("#dbg-grid")]) { const h = g.previousElementSibling.previousElementSibling; h.dataset.off = mnow; h.classList.toggle("look-off", (g.id === "bg-grid" && mnow === "dark") || (g.id === "dbg-grid" && mnow === "light")); }
     // Font styles, each shown in its own fonts.
     const fnow = FONTS.some(f => f.id === S.league.settings?.font) ? S.league.settings.font : "classic";
     FONTS.forEach(f => loadFontCss(f.q));
