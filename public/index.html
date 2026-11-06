@@ -562,6 +562,29 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .lp-signup #lp-signup-form { background: var(--surface); color: var(--ink); border-radius: 12px; padding: 4px 6px; }
 .lp-contact { max-width: 720px; }
 .lp-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.gd { display: grid; gap: 22px; }
+.gd-bar, .gd-cta { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.gd-url { font-weight: 600; color: var(--ink); word-break: break-all; }
+.gd-jump { display: flex; flex-wrap: wrap; gap: 6px 16px; border-bottom: 1px solid var(--line); padding-bottom: 8px; }
+.gd-jump a { font-weight: 600; text-decoration: none; }
+.gd-sec { display: grid; gap: 12px; scroll-margin-top: 80px; }
+.gd-sec > h2 { font-size: 1.6rem; }
+.gd-lede { margin: 0; color: var(--muted); max-width: 65ch; }
+.gd-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px 28px; }
+.gd-cols > * { min-width: 0; }
+.gd-group h3 { font-size: 1.08rem; border-bottom: 1px solid var(--line); padding-bottom: 4px; margin-bottom: 6px; }
+.gd-group ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.gd-group li::marker { color: var(--brass); }
+.gd-roles { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.gd-role { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.gd-role h3 { font-size: 1.05rem; margin-bottom: 4px; }
+.gd-role p { margin: 0; }
+.gd-note { background: var(--sunk); border-radius: 10px; padding: 10px 14px; margin: 0; }
+.gd-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); }
+.gd-table th, .gd-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.gd-table th { font-size: .76rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--sunk); }
+.gd-table td:first-child { font-weight: 600; min-width: 9em; }
+.gd-table .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .lp-foot { text-align: center; color: var(--muted); font-size: .88rem; padding: 26px 0 10px; border-top: 1px solid var(--line); }
 @media (max-width: 820px) { .lp-hero, .lp-split, .lp-signup { grid-template-columns: minmax(0, 1fr); } .lp-phone { width: 30%; right: 4px; } .lp-signup { padding: 20px 16px; } }
 .xfer-boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
@@ -1593,8 +1616,8 @@ function renderNav() {
   if (S.mode === "account") {
     const count = (x, n) => n ? link(x).replace("</a>", ` <span class="badge">${n}</span></a>`) : link(x);
     $("#tabs").innerHTML = `<div class="tab-row">${S.user
-      ? ACCOUNT_VIEWS.map(x => x[0] === "help" ? count(x, S.support.mine) : link(x)).join("") + (S.user.isSuper ? link(["super", "Super Admin"]) + count(["inbox", "Messages"], S.support.inbox) : "")
-      : link(["welcome", "About"]) + link(["signup", "Sign up"]) + link(["login", "Log in"])}</div>`;
+      ? ACCOUNT_VIEWS.map(x => x[0] === "help" ? count(x, S.support.mine) : link(x)).join("") + (S.user.isSuper ? link(["super", "Super Admin"]) + count(["inbox", "Messages"], S.support.inbox) + link(["super-guide", "Site guide"]) : "")
+      : link(["welcome", "About"]) + link(["guide", "What it does"]) + link(["signup", "Sign up"]) + link(["login", "Log in"])}</div>`;
     $("#acct").innerHTML = S.user ? logout : `<a href="#login">Log in</a>`;
     return menuExtras();
   }
@@ -1674,8 +1697,9 @@ function currentView() {
   const h = location.hash.slice(1);
   if (S.mode === "account") {
     if (h === "welcome") return "welcome";
+    if (h === "guide") return "guide";
     if (!S.user) return h === "signup" ? "signup" : h === "login" ? "login" : "welcome";
-    if (ACCOUNT_VIEWS.some(([id]) => id === h) || (["super", "inbox"].includes(h) && S.user.isSuper)) return h;
+    if (ACCOUNT_VIEWS.some(([id]) => id === h) || (["super", "inbox", "super-guide"].includes(h) && S.user.isSuper)) return h;
     return "leagues";
   }
   if (!S.league) return "league-status";
@@ -1881,7 +1905,7 @@ VIEWS.welcome = {
           <div class="lp-hp" aria-hidden="true"><label for="ct-site">Leave this empty</label><input type="text" id="ct-site" tabindex="-1" autocomplete="off"></div>
           <p class="sc-msg" id="ct-out" role="status"></p>
           <div class="actions"><button class="btn" type="submit" id="ct-go">Send message</button></div></form></section>
-      <footer class="lp-foot">Skittlers · League websites for skittles · <a href="#login">Secretary login</a></footer></div>`;
+      <footer class="lp-foot">Skittlers · League websites for skittles · <a href="#guide">What it does</a> · <a href="#login">Log in</a></footer></div>`;
     // The sign-up form, the same one as on the Sign up page.
     authForm($("#lp-signup-form"), { title: "Create your account", intro: "", button: "Start free trial", endpoint: "/api/auth/signup",
       fields: `<div class="field"><label for="a-name">Your name</label><input type="text" id="a-name" name="name" autocomplete="name" required></div>
@@ -2013,6 +2037,74 @@ function checkSlug(input, note, leagueId) {
 }
 
 /* ---------- account area: account details ---------- */
+/* ---------- site guide ---------- */
+// What Skittlers does, by who can do it. "What it does" (#guide) is for anyone thinking of signing up; the Super Admin's
+// Site guide (#super-guide) adds what the Super Admin can do and a link to the public one. Prices on both come from the
+// price breaks and extras set in Super Admin, so they stay up to date. Update the lists here as features change.
+const GUIDE_EXTRAS = {
+  photos: "Photograph the board and Claude fills in the scorecard for you to check.",
+  batch: "Many photos at once: a match night's boards, or old results-book pages. Claude finds the game for each one. Needs Photo reading.",
+  history: "Import earlier seasons from a CSV file, as a new season or into one already set up.",
+  reports: "Claude drafts a newspaper-style report once a night's results are published, for you to check.",
+  domain: "Your league on its own web address, such as stokeskittles.co.uk.",
+};
+const guideList = (title, items) => `<div class="gd-group"><h3>${title}</h3><ul>${items.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
+function guideHtml(admin) {
+  const sections = [
+    admin && ["super", "Runs the whole service", "Super Admin", "Sees every account and league, sets the prices and extras, and answers the messages.", `<div class="gd-cols">
+      ${guideList("Accounts and billing", ["See every account and league, and open any league with full secretary powers.", "Set each account's yearly subscription and renewal date. Payments are taken by hand for now.", "Set the price breaks by number of teams: add or remove breaks, set prices, or Ask us.", "See leagues that went over their plan's teams, with the extra to bill up to renewal, and mark each one billed."])}
+      ${guideList("Extras and messages", ["Set each extra as included in the subscription or sold separately, with its price.", "Give an extra to an account until a date, with a monthly limit where it has one.", "Connect a league's own domain in Netlify, then mark it connected.", "Answer Help &amp; requests from secretaries, and contact-form messages from visitors.", "No limits on your own photo readings or reports."])}</div>`],
+    ["secretary", "One per league", "League secretary", "The account holder for a league. Can do everything for their league, and decides who helps and what they can see.", `<div class="gd-cols">
+      ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
+      ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, the draw, byes and results."])}
+      ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
+      ${guideList("News and files", ["News posts with photos, pinned posts and drafts.", "Match night reports drafted by Claude (an extra), checked before publishing.", "A photo gallery, with photos linked to cups.", "Downloads: PDFs, Word, Excel, CSV and pictures.", "Help &amp; requests: ask us anything from inside the site."])}</div>`],
+    ["roles", "Added by the secretary", "Other roles", "Helpers sign up or log in with the email the secretary gives, and see only the pages for their role. Every change they make is checked, not just hidden.", `<div class="gd-roles">
+      ${[["Results secretary", "Scores, scorecards, photo reading, publishing, captains' results and cup results. Can't add, move or delete games."],
+        ["Fixtures &amp; cups secretary", "Everything a results secretary does, plus fixtures, dates and postponements, venues, divisions, setting up cups and making draws."],
+        ["News &amp; media", "News posts and photos, match night report drafts, and Downloads."],
+        ["Captain (off until the secretary turns it on)", "A My team page to add or remove their own players, and Send a result for their own team without the captains' code."]].map(([t, d]) => `<div class="gd-role"><h3>${t}</h3><p>${d}</p></div>`).join("")}</div>
+      <p class="gd-note">None of these roles can change League setup, seasons, teams, admins or billing. Captains' addresses and phone numbers stay hidden from every role unless the secretary allows it.</p>`],
+    ["visitors", "Anyone with your league's address", "What visitors see", "", `<div class="gd-cols">
+      ${guideList("This season", ["Home: division tables side by side, the next match night, news, photos and the committee.", "League tables with form and your tie-breaks.", "Fixtures and results, with scorecards and head-to-head form.", "Add to calendar: Google, Apple, or a feed for one team.", "Cups: draws, brackets, finals and results.", "Stats: averages, high scores, spares and records, and each player's own page."])}
+      ${guideList("Teams, history and more", ["Teams in A to Z order. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, and cup winners and runners-up.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
+    ["prices", "Prices", "Subscriptions and extras", "A yearly subscription by the number of teams in your league, with extras to add.", `<div id="gd-prices"><p class="muted">Loading prices…</p></div>`],
+  ].filter(Boolean);
+  return `<div class="gd">
+    <div class="view-head"><div><div class="eyebrow">${admin ? "Super Admin" : "Skittlers"}</div><h2>${admin ? "Site guide" : "What Skittlers does"}</h2>
+      <p>${admin ? "Everything the league websites can do, including your own Super Admin tools. The public version leaves out the Super Admin section." : "League websites for skittles: tables, fixtures, results, cups and stats, run by your secretary and the helpers they choose."}</p></div></div>
+    ${admin ? `<div class="panel gd-bar"><div><strong>Public version</strong><div class="muted">Share this page with leagues thinking of signing up: <span class="gd-url" id="gd-url"></span></div></div>
+      <div class="actions"><button type="button" class="btn sm" data-gd="copy">Copy link</button><a class="btn ghost sm" href="#guide">Open it</a><a class="btn ghost sm" href="#super">Edit prices and extras</a></div></div>` : ""}
+    <nav class="gd-jump" aria-label="Sections">${sections.map(([id, , t]) => `<a href="#${admin ? "super-guide" : "guide"}" data-gd-jump="gs-${id}">${t}</a>`).join("")}</nav>
+    ${sections.map(([id, eyebrow, title, lede, body]) => `<section class="gd-sec" id="gs-${id}"><div class="eyebrow">${eyebrow}</div><h2>${title}</h2>${lede ? `<p class="gd-lede">${lede}</p>` : ""}${body}</section>`).join("")}
+    ${admin ? "" : `<div class="panel gd-cta"><div><strong>Ready to try it?</strong><div class="muted">Sign up and set up your first season. It's free to start.</div></div><div class="actions"><a class="btn" href="#signup">Sign up</a><a class="btn ghost" href="#welcome">Back to the front page</a></div></div>`}
+  </div>`;
+}
+async function guidePrices(admin) {
+  let site; try { site = await api("/api/site"); } catch { const b = $("#gd-prices"); if (b) b.innerHTML = `<p class="muted">Prices couldn't be loaded just now.</p>`; return; }
+  const box = $("#gd-prices"); if (!box) return;
+  const yr = p => p ? `${money(p)} a year` : "Ask us";
+  const plans = site.plans.map((p, i) => `<tr><td>${i ? site.plans[i - 1].maxTeams + 1 : 1} to ${p.maxTeams} teams</td><td class="num">${yr(p.price)}</td></tr>`).join("")
+    + `<tr><td>More than ${site.plans.at(-1).maxTeams} teams</td><td class="num">On application</td></tr>`;
+  const extras = Object.entries(site.addons).map(([k, a]) => `<tr><td>${esc(a.name)}</td><td>${GUIDE_EXTRAS[k] || ""}</td><td class="num">${a.mode === "included" ? "Included" : yr(a.price)}</td></tr>`).join("");
+  box.innerHTML = `<div class="gd-cols">
+    <div class="gd-group"><h3>Subscription</h3><p class="muted" style="margin:0 0 6px">Free for ${site.trialDays} days, then yearly. Every feature on this page is included unless it's listed as an extra.</p>
+      <div class="table-scroll"><table class="gd-table"><thead><tr><th>League size</th><th class="num">Price</th></tr></thead><tbody>${plans}</tbody></table></div></div>
+    <div class="gd-group"><h3>Extras</h3><div class="table-scroll"><table class="gd-table"><thead><tr><th>Extra</th><th>What it does</th><th class="num">Price</th></tr></thead><tbody>${extras}</tbody></table></div></div></div>
+    ${admin ? `<p class="gd-note">These prices come from Super Admin. Change them there with <a href="#super">Edit prices and extras</a>, and both guides and the front page update.</p>` : ""}`;
+}
+function guideMount(el, admin) {
+  el.innerHTML = guideHtml(admin);
+  const url = `${liveOrigin()}/#guide`; if ($("#gd-url")) $("#gd-url").textContent = url;
+  el.addEventListener("click", e => {
+    const j = e.target.closest("[data-gd-jump]"); if (j) { e.preventDefault(); document.getElementById(j.dataset.gdJump)?.scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (e.target.closest("[data-gd=copy]")) navigator.clipboard?.writeText(url).then(() => toast("Link copied"), () => toast(`Copy this link: ${url}`)) ?? toast(`Copy this link: ${url}`);
+  });
+  guidePrices(admin);
+}
+VIEWS.guide = { mount(el) { guideMount(el, false); }, refresh() {} };
+VIEWS["super-guide"] = { mount(el) { guideMount(el, true); }, refresh() {} };
+
 /* ---------- help & requests ---------- */
 // Each account has one conversation with the Super Admin. Counts of unread messages are checked every minute;
 // an open conversation every 20 seconds.
@@ -2178,7 +2270,7 @@ VIEWS.super = {
           <div class="field"><label for="pm-${i}">Up to … teams</label><input type="number" id="pm-${i}" min="2" max="1000" step="1" value="${p.maxTeams}"></div>
           <div class="field"><label for="pp-${i}">Price a year</label><div class="money"><span aria-hidden="true">£</span><input type="number" id="pp-${i}" min="0" max="10000" step="0.01" inputmode="decimal" value="${((p.price || 0) / 100).toFixed(2)}"></div></div>
           <button type="button" class="btn ghost sm" data-act="su-plan-del" data-id="${i}"${(this.plans || []).length < 2 ? " disabled" : ""}>Remove</button></div>`).join("")}</div>
-        <div class="actions"><button type="button" class="btn ghost sm" data-act="su-plan-add">Add a price break</button><button class="btn sm" data-act="su-plans-save">Save prices</button><a class="btn ghost sm" href="#welcome">See the front page</a></div></section>
+        <div class="actions"><button type="button" class="btn ghost sm" data-act="su-plan-add">Add a price break</button><button class="btn sm" data-act="su-plans-save">Save prices</button><a class="btn ghost sm" href="#welcome">See the front page</a><a class="btn ghost sm" href="#super-guide">Site guide</a></div></section>
       ${this.planMoves()}`;
     list.innerHTML = `<div class="cards">${users.map(u => `<article class="card" data-id="${esc(u.id)}" data-search="${esc(searchText([u.name, u.email, ...u.leagues.map(l => l.name)].join(" ")))}">
       <div class="card-head"><div><h3>${esc(u.name)}${u.isSuper ? ` <span class="chip">Super Admin</span>` : ""}</h3><div class="sub">${esc(u.email)} · joined ${dayMonthYear(u.created)}</div></div>
