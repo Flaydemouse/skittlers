@@ -787,6 +787,9 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cup-settings { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
 .cup-settings .field { flex: 1 1 200px; }
 .cup-settings .field:not(:first-child) { flex: 0 1 170px; }
+.cup-settings .cup-where { flex: 1 1 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 20px; align-items: start; }
+.cup-settings .cup-where .field { flex: none; margin: 0; }
+.cup-settings > .actions { flex: 1 1 100%; }
 .cup-step { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; font-size: 1.15rem; font-family: var(--font-display); border-top: 1px solid var(--line); padding-top: 14px; }
 .cup-step > span { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--baize); color: var(--on-baize); font-family: var(--font-body); font-size: .85rem; }
 .cup-step small { font-family: var(--font-body); font-size: .85rem; color: var(--muted); font-weight: 500; }
@@ -817,6 +820,35 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .final-table tr.winner td { font-weight: 800; }
 .cup-section { margin-bottom: 36px; }
 .cup-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.cup-title .cup-view { margin-left: auto; }
+/* the demo league's bar, above the header */
+.demo-bar { background: #FFF4C2; color: #3A2E00; border-bottom: 1px solid #E3CF6F; font-size: .88rem; position: relative; z-index: 30; }
+.demo-bar > .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding-top: 7px; padding-bottom: 7px; }
+.demo-tag { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: .78rem; background: #3A2E00; color: #FFF4C2; padding: 2px 8px; border-radius: 4px; }
+.demo-text { flex: 1 1 260px; }
+.demo-acts { display: flex; align-items: center; gap: 8px; }
+.demo-btn { font: inherit; font-weight: 600; color: #3A2E00; background: #fff; border: 1px solid #C9B24F; border-radius: 6px; padding: 3px 10px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+.demo-btn:hover { background: #FFFBEA; }
+.demo-x { font-size: 1.5rem; line-height: 1; color: #3A2E00; text-decoration: none; padding: 0 6px; border-radius: 6px; }
+.demo-x:hover { background: #F3E39A; }
+.demo-look { border-top: 1px solid #E3CF6F; }
+.demo-look > .wrap { display: flex; flex-wrap: wrap; align-items: end; gap: 8px 14px; padding-top: 10px; padding-bottom: 10px; }
+.demo-look label { display: grid; gap: 2px; font-weight: 600; font-size: .8rem; }
+.demo-look select { font: inherit; font-weight: 400; font-size: .88rem; padding: 4px 6px; border: 1px solid #C9B24F; border-radius: 6px; background: #fff; color: #222; }
+.demo-note { flex: 1 1 100%; margin: 0; font-size: .8rem; color: #5C4D10; }
+@media (max-width: 600px) { .demo-text { flex-basis: 100%; order: 3; font-size: .82rem; } .demo-acts { margin-left: auto; } }
+.pairs-form { display: grid; gap: 8px; margin: 6px 0 4px; }
+.pair-row { display: flex; flex-wrap: wrap; align-items: end; gap: 6px 10px; }
+.pair-row label { display: grid; gap: 2px; font-size: .82rem; flex: 1 1 180px; }
+.pair-row select { width: 100%; }
+.pair-row.bye label { flex: 0 1 280px; }
+.pair-row .dash { padding-bottom: 8px; font-weight: 700; }
+.pr-lbl { color: var(--muted); }
+.fv-pick { margin-top: 6px; }
+.cup-list { display: grid; gap: 14px; margin-top: 10px; }
+.cl-round h4 { margin: 0 0 6px; font-size: 1rem; }
+.cl-round h4 span { font-weight: 400; font-size: .85rem; color: var(--muted); margin-left: 6px; }
+.cl-byes { margin: 6px 0 0; font-size: .9rem; }
 .cup-title h3 { font-size: 1.4rem; }
 .cup-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
 .cup-jump button { padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-weight: 600; font-size: .95rem; cursor: pointer; }
@@ -934,6 +966,26 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 </style>
 </head>
 <body>
+
+<div class="demo-bar" id="demo-bar" hidden>
+  <div class="wrap">
+    <span class="demo-tag">Demo site</span>
+    <span class="demo-text">A made-up league showing what your league's site could look like. Nothing here is real.</span>
+    <span class="demo-acts"><button type="button" class="demo-btn" data-demo="look" aria-expanded="false" aria-controls="demo-look">Try colours &amp; fonts</button><a class="demo-btn" href="/#signup" data-path="/" data-hash="signup">Start your free trial</a>
+    <a class="demo-x" href="/" data-path="/" data-hash="welcome" aria-label="Close the demo and go back to the Skittlers home page" title="Close the demo">&times;</a></span>
+  </div>
+  <div class="demo-look" id="demo-look" hidden>
+    <div class="wrap">
+      <label>Colour scheme <select data-look="theme"></select></label>
+      <label>Light background <select data-look="background"></select></label>
+      <label>Dark background <select data-look="darkBackground"></select></label>
+      <label>Light or dark <select data-look="mode"></select></label>
+      <label>Font style <select data-look="font"></select></label>
+      <button type="button" class="demo-btn" data-demo="reset">Back to how it was</button>
+      <p class="demo-note">Only you see these changes, and they're not saved. A league secretary sets their own under League setup.</p>
+    </div>
+  </div>
+</div>
 
 <header class="band">
   <div class="wrap">
@@ -1150,7 +1202,7 @@ const S = {
   admin: false, status: "connecting", version: 0, loadedAt: 0,
   teams: {}, venues: {}, fixtures: {}, divisions: {}, cups: {}, transfers: {}, committee: {}, contacts: {}, news: [], adminNews: [], media: [], docs: [], addons: null,
   loaded: { teams: false, venues: false, fixtures: false },
-  ui: { fxTeam: "", fxShow: "upcoming", adminComp: "all", adminShow: "open" },
+  ui: { fxTeam: "", fxShow: "upcoming", adminComp: "all", adminShow: "open", cupView: (() => { try { return localStorage.getItem("skittlers-cup-view") || "chart"; } catch { return "chart"; } })() },
   support: { mine: 0, inbox: 0 },
   busy: false,
 };
@@ -1256,7 +1308,7 @@ const accessText = a => !a ? "" : a.owner ? "League secretary" : [...Object.keys
 const firstTab = a => !a ? "home" : a.owner ? "seasons" : a.roles.includes("fixtures") || a.roles.includes("results") ? "manage-fixtures" : a.roles.includes("media") ? "manage-news" : a.captain ? "my-team" : "home";
 function setAccess() {
   const mine = S.league && S.myLeagues.find(l => l.id === S.league.id);
-  S.access = !S.user || !S.league ? null : S.user.isSuper ? { owner: true, roles: Object.keys(ADMIN_ROLES), contacts: true, captain: null } : mine?.access || null;
+  S.access = !S.user || !S.league || S.league.demo ? null : S.user.isSuper ? { owner: true, roles: Object.keys(ADMIN_ROLES), contacts: true, captain: null } : mine?.access || null;
   S.admin = !!S.access && (S.access.owner || S.access.roles.length > 0);
   S.captainTeam = S.league?.captainLogins && S.access?.captain || null;
   for (const k of ["owner", "fixtures", "results", "media"]) document.body.classList.toggle(`can-${k}`, can(k));
@@ -1673,6 +1725,7 @@ function renderNav() {
     + `<div class="tab-row">${PUBLIC_VIEWS.filter(([id]) => (id !== "submit" || S.league.takesResults) && (id !== "downloads" || S.docs.length) && (id !== "past" || pastSeasons().length)).map(link).join("")}</div>`;
   $("#acct").innerHTML = S.admin || S.captainTeam
     ? `<span class="who">${esc(S.user.name)}</span>${accountLink("leagues", "My leagues")}${accountLink("help", `Help${S.support.mine ? ` <span class="badge">${S.support.mine}</span>` : ""}`)}${S.user.isSuper ? accountLink("inbox", `Messages${S.support.inbox ? ` <span class="badge">${S.support.inbox}</span>` : ""}`) : ""}${logout}`
+    : S.league?.demo ? `<a href="/#signup" data-path="/" data-hash="signup">Start your free trial</a>`
     : OWN_HOST ? `<a href="${MAIN_ORIGIN}/#login">Log in</a>` : `<a href="/#login" data-act="secretary-login">Log in</a>`;
   menuExtras(waiting);
 }
@@ -1715,10 +1768,36 @@ function applyTheme(id = themeNow, look = lookNow) {
 darkQuery.addEventListener?.("change", () => applyTheme());
 // The host page can switch light and dark itself with data-theme on the root element.
 new MutationObserver(() => applyTheme()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+// The demo league: the bar above the header, and colours and fonts a visitor can try out (this visit only, never saved).
+const DEMO_LOOK = "skittlers-demo-look";
+const demoLook = () => { try { return JSON.parse(sessionStorage.getItem(DEMO_LOOK)) || {}; } catch { return {}; } };
+function renderDemo() {
+  const on = S.mode === "league" && !!S.league?.demo, bar = $("#demo-bar");
+  bar.hidden = !on; document.body.classList.toggle("is-demo", on);
+  if (!on) return;
+  const look = { ...S.league.settings, ...demoLook() }, opts = (list, v) => list.map(([id, name]) => `<option value="${esc(id)}"${id === v ? " selected" : ""}>${esc(name)}</option>`).join("");
+  $('[data-look="theme"]').innerHTML = opts(THEMES.map(t => [t.id, t.name]), look.theme || "baize");
+  $('[data-look="background"]').innerHTML = opts(BACKGROUNDS.map(t => [t.id, t.name]), look.background || "scheme");
+  $('[data-look="darkBackground"]').innerHTML = opts(DARK_BACKGROUNDS.map(t => [t.id, t.name]), look.darkBackground || "scheme");
+  $('[data-look="mode"]').innerHTML = opts(LOOK_MODES.map(([id, name]) => [id, id === "auto" ? "Follow this device" : name]), look.mode || "auto");
+  $('[data-look="font"]').innerHTML = opts(FONTS.map(f => [f.id, f.name]), look.font || "classic");
+}
+document.addEventListener("change", e => {
+  const k = e.target.closest?.("#demo-look [data-look]")?.dataset.look; if (!k) return;
+  const look = { ...demoLook(), [k]: e.target.value };
+  try { sessionStorage.setItem(DEMO_LOOK, JSON.stringify(look)); } catch {}
+  renderBrand();
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest?.("[data-demo]"); if (!b) return;
+  if (b.dataset.demo === "look") { const box = $("#demo-look"); box.hidden = !box.hidden; b.setAttribute("aria-expanded", String(!box.hidden)); }
+  if (b.dataset.demo === "reset") { try { sessionStorage.removeItem(DEMO_LOOK); } catch {} renderBrand(); renderDemo(); }
+});
 function renderBrand() {
-  const ls = S.mode === "league" ? S.league?.settings || {} : {};
+  const ls = S.mode === "league" ? { ...S.league?.settings, ...(S.league?.demo ? demoLook() : {}) } : {};
   applyTheme(S.mode === "league" ? ls.theme : "", { background: ls.background, darkBackground: ls.darkBackground, mode: ls.mode });
-  applyFont(S.mode === "league" ? S.league?.settings?.font : "");
+  applyFont(S.mode === "league" ? ls.font : "");
+  renderDemo();
   const name = $("#league-name"), sub = $("#league-season");
   if (S.mode === "account") {
     document.title = "Skittlers";
@@ -1912,7 +1991,7 @@ VIEWS.welcome = {
           <div class="eyebrow">Skittles league websites</div>
           <h2>Your league's tables, fixtures, cups and stats, online in an evening.</h2>
           <p>Skittlers gives your league its own website. Generate the fixtures, enter results or read them from a photo of the board, check them, and publish. Tables, stats and cup draws look after themselves.</p>
-          <div class="lp-cta"><a class="btn lp-big" href="#signup">Start your free trial</a><button type="button" class="btn ghost lp-big" data-lp-go="lp-features">See what it does</button></div>
+          <div class="lp-cta"><a class="btn lp-big" href="#signup">Start your free trial</a><a class="btn ghost lp-big" href="/demo" data-path="/demo" data-hash="home">See the demo site</a><button type="button" class="btn ghost lp-big" data-lp-go="lp-features">See what it does</button></div>
           <p class="lp-small" id="lp-trial">Free for 30 days. No card needed.</p>
         </div>
         <div class="lp-hero-pic"><div class="lp-frame">${shot("home", "A league's home page with its table and next match night")}</div><div class="lp-phone">${shot("phone", "The home page on a phone")}</div></div>
@@ -1968,6 +2047,7 @@ VIEWS.welcome = {
   },
   async prices() {
     let site; try { site = await api("/api/site"); } catch { return $("#lp-prices").innerHTML = `<p class="muted">Prices couldn't be loaded. <button type="button" class="linkish" data-lp-go="lp-contact">Ask us</button>.</p>`; }
+    if (!$("#lp-trial")) return; // left the front page while the prices were loading
     $("#lp-trial").textContent = `Free for ${site.trialDays} days. No card needed.`;
     const price = p => p ? `<span class="lp-amount">${money(p)}</span><span class="lp-per">a year</span>` : `<span class="lp-amount lp-ask">Ask us</span>`;
     const col = (head, body, list, cls = "") => `<div class="lp-plan${cls}"><h3>${head}</h3><div class="lp-price">${body}</div><ul>${list.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
@@ -2126,7 +2206,7 @@ function guideHtml(admin) {
       ${guideList("Extras and messages", ["Set each extra as included in the subscription or sold separately, with its price.", "Give an extra to an account until a date, with a monthly limit where it has one.", "Connect a league's own domain in Netlify, then mark it connected.", "Answer Help &amp; requests from secretaries, and contact-form messages from visitors.", "No limits on your own photo readings or reports."])}</div>`],
     ["secretary", "One per league", "League secretary", "The account holder for a league. Can do everything for their league, and decides who helps and what they can see.", `<div class="gd-cols">
       ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on. A new season can bring across last season's venues, teams, players, divisions and cups.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, team logos, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
-      ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, the draw, byes and results."])}
+      ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, byes and results. The draw made at random or set by hand round by round, semi-finals at the home alley or a neutral venue, and finals at a set alley."])}
       ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
       ${guideList("News and files", ["News posts with photos, pinned posts and drafts.", "Match night reports drafted by Claude (an extra), checked before publishing.", "A photo gallery, with photos linked to cups.", "Downloads: PDFs, Word, Excel, CSV and pictures.", "Help &amp; requests: ask us anything from inside the site."])}</div>`],
     ["roles", "Added by the secretary", "Other roles", "Helpers sign up or log in with the email the secretary gives, and see only the pages for their role. Every change they make is checked, not just hidden.", `<div class="gd-roles">
@@ -2136,7 +2216,7 @@ function guideHtml(admin) {
         ["Captain (off until the secretary turns it on)", "A My team page to add or remove their own players, and Send a result for their own team without the captains' code."]].map(([t, d]) => `<div class="gd-role"><h3>${t}</h3><p>${d}</p></div>`).join("")}</div>
       <p class="gd-note">None of these roles can change League setup, seasons, teams, admins or billing. Captains' addresses and phone numbers stay hidden from every role unless the secretary allows it.</p>`],
     ["visitors", "Anyone with your league's address", "What visitors see", "", `<div class="gd-cols">
-      ${guideList("This season", ["Home: division tables side by side, the next match night, news, photos and the committee.", "League tables with form and your tie-breaks.", "Fixtures and results, with scorecards and head-to-head form.", "Add to calendar: Google, Apple, or a feed for one team.", "Cups: draws, brackets, finals and results.", "Stats: averages, high scores, spares and records, and each player's own page."])}
+      ${guideList("This season", ["Home: division tables side by side, the next match night, news, photos and the committee.", "League tables with form and your tie-breaks.", "Fixtures and results, with scorecards and head-to-head form.", "Add to calendar: Google, Apple, or a feed for one team.", "Cups: draws, brackets, finals and results, as a chart or a list.", "Stats: averages, high scores, spares and records, and each player's own page."])}
       ${guideList("Teams, history and more", ["Teams in A to Z order, with their logos. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, and cup winners and runners-up.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
     ["prices", "Prices", "Subscriptions and extras", "A yearly subscription by the number of teams in your league, with extras to add.", `<div id="gd-prices"><p class="muted">Loading prices…</p></div>`],
   ].filter(Boolean);
@@ -2627,12 +2707,15 @@ VIEWS.fixtures = {
     $("#fx-team").addEventListener("change", e => { S.ui.fxTeam = e.target.value; this.refresh(); });
     $("#fx-jump").addEventListener("change", e => this.jump(e.target.value));
     $("#fx-cal").addEventListener("click", () => openCalendar(S.ui.fxTeam));
-    $$(".seg button", el).forEach(b => b.addEventListener("click", () => { S.ui.fxShow = b.dataset.show; this.refresh(); }));
+    $$(".seg button", el).forEach(b => b.addEventListener("click", () => { S.ui.fxShow = b.dataset.show; S.ui.fxShowPicked = true; this.refresh(); }));
   },
   refresh() {
     const sel = $("#fx-team");
     sel.innerHTML = `<option value="">All teams</option>` + sortedTeams().map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join("");
     sel.value = S.teams[S.ui.fxTeam] ? S.ui.fxTeam : "";
+    // Once a season's games are all played, it opens on the results rather than an empty Upcoming list.
+    const leagueGames = Object.values(S.fixtures).filter(f => f.comp === "league");
+    if (S.ui.fxShow === "upcoming" && !S.ui.fxShowPicked && leagueGames.length && leagueGames.every(decided)) S.ui.fxShow = "results";
     $$(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.show === S.ui.fxShow));
     const body = $("#fx-body");
     const st = statusBlock(); if (st) return body.innerHTML = st;
@@ -3852,18 +3935,77 @@ function cupCandidates(cup) {
 // a result is ignored if an earlier result changed who's playing in that match.
 // Places beyond the entries drawn are byes. A match with nobody in it is "empty", and whoever
 // would have met its winner gets a bye through the next round.
+// The cup form's choices (p = "c" when creating, "cs" in a cup's settings): how the draw is made, and where the
+// semi-finals and the final are played.
+function cupWhereHtml(p, cup = {}, locked = false) {
+  const fin = cup.finalAt || {}, mode = fin.mode || "home", venues = sortedVenues(), v = S.venues[fin.venue];
+  const radio = (name, val, on, text) => `<label class="check"><input type="radio" name="${p}-${name}" value="${val}"${on ? " checked" : ""}${locked && name === "drawmode" ? " disabled" : ""}> ${text}</label>`;
+  return `<fieldset class="field"><legend class="lbl">The draw</legend><div class="radios">
+      ${radio("drawmode", "auto", cup.drawMode !== "manual", "Made automatically: entries go into the bracket at random, and winners follow it round by round")}
+      ${radio("drawmode", "manual", cup.drawMode === "manual", "Set by hand: you choose who meets whom in each round")}</div>
+      ${locked ? `<span class="hint">This can't change once the draw is made. Redo the draw to change it.</span>` : ""}</fieldset>
+    <fieldset class="field"><legend class="lbl">Semi-finals played at</legend><div class="radios">
+      ${radio("semi", "home", cup.semiVenue !== "neutral", "The home side's alley")}
+      ${radio("semi", "neutral", cup.semiVenue === "neutral", "A neutral venue, chosen later")}</div></fieldset>
+    <fieldset class="field"><legend class="lbl">Final played at</legend><div class="radios">
+      ${radio("final", "home", mode === "home", "The home side's alley")}
+      ${radio("final", "neutral", mode === "neutral", "A neutral venue, chosen later")}
+      ${radio("final", "set", mode === "set", "A set alley")}</div>
+      <div class="row2 fv-pick" data-fv="${p}"${mode === "set" ? "" : " hidden"}>
+        <div class="field"><label for="${p}-fvenue">Venue</label><select id="${p}-fvenue" data-fvenue>${venues.length ? venues.map(x => `<option value="${esc(x.id)}"${fin.venue === x.id ? " selected" : ""}>${esc(x.name)}</option>`).join("") : `<option value="">Add venues first</option>`}</select></div>
+        <div class="field"${(v || venues[0])?.alleys > 1 ? "" : " hidden"} data-falley-wrap><label for="${p}-falley">Alley</label><select id="${p}-falley">${alleyOptions((v || venues[0])?.alleys || 1, fin.alley || 1)}</select></div>
+      </div></fieldset>`;
+}
+function readCupWhere(p) {
+  const f = document.querySelector(`[name=${p}-final]:checked`)?.value || "home", venue = $(`#${p}-fvenue`)?.value || "";
+  return { drawMode: document.querySelector(`[name=${p}-drawmode]:checked`)?.value || "auto", semiVenue: document.querySelector(`[name=${p}-semi]:checked`)?.value || "home",
+    finalAt: f === "set" ? (venue ? { mode: "set", venue, alley: S.venues[venue]?.alleys > 1 ? +$(`#${p}-falley`).value || 1 : null } : { mode: "neutral" }) : { mode: f } };
+}
+document.addEventListener("change", e => {
+  const t = e.target;
+  if (t.matches?.("input[type=radio][name$='-final']")) { const box = document.querySelector(`[data-fv="${t.name.replace(/-final$/, "")}"]`); if (box) box.hidden = t.value !== "set"; }
+  if (t.matches?.("select[data-fvenue]")) { const v = S.venues[t.value], wrap = t.closest(".fv-pick").querySelector("[data-falley-wrap]"); wrap.hidden = !(v?.alleys > 1); wrap.querySelector("select").innerHTML = alleyOptions(v?.alleys || 1, 1); }
+});
+// Who goes into a round of a cup drawn by hand: the winners of the round before, once all its results are in (else null).
+function cupEntering(prev) { return prev.every(m => m.empty || m.winner) ? prev.filter(m => !m.empty).map(m => m.winner) : null; }
+// The matches set by hand for a round, if they still fit who's going into it: every one of them used once, the rest of
+// the places empty. A round of one match between the last two needs no draw.
+function cupRoundPairs(cup, r, entering, slots) {
+  if (!entering) return null;
+  const p = cup.pairings?.[r];
+  if (Array.isArray(p) && p.length === slots) {
+    const used = p.flat().filter(Boolean), want = new Set(entering);
+    if (used.length === want.size && new Set(used).size === used.length && used.every(x => want.has(x))) return p.map(x => [x?.[0] || null, x?.[1] || null]);
+  }
+  return slots === 1 && entering.length === 2 ? [[entering[0], entering[1]]] : entering.length < 2 ? [[entering[0] || null, null]] : null;
+}
+// Where a match is played: a venue chosen for it, else the semi-final and final rules set on the cup (neutral, chosen
+// later; or the final at a set alley), else the home side's alley.
+function cupVenue(cup, m, R, venues, home) {
+  const sched = cup.schedule?.[m.id] || {}, fin = cup.finalAt || {};
+  if (sched.venue && venues[sched.venue]) return { venue: sched.venue, alley: venues[sched.venue].alleys > 1 ? (sched.alley || 1) : null, chosen: true };
+  if (m.round === R && fin.mode === "set" && venues[fin.venue]) return { venue: fin.venue, alley: venues[fin.venue].alleys > 1 ? (fin.alley || 1) : null, set: true };
+  if ((m.round === R && (fin.mode === "neutral" || fin.mode === "set")) || (R > 1 && m.round === R - 1 && cup.semiVenue === "neutral")) return { venue: null, alley: null, neutral: true };
+  return { venue: home?.venue || null, alley: home?.alley || null };
+}
 function cupBracket(cup) {
-  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [], n = draw.length;
+  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [], n = draw.length, manual = cup.drawMode === "manual";
   const rounds = []; let prev = null;
   for (let r = 1; r <= R; r++) {
-    const matches = [], when = cup.roundDates?.[r] || {};
-    for (let k = 0; k < size / 2 ** r; k++) {
+    const matches = [], when = cup.roundDates?.[r] || {}, slots = size / 2 ** r;
+    const entering = r > 1 && manual ? cupEntering(prev) : null, pairs = r > 1 && manual ? cupRoundPairs(cup, r, entering, slots) : null;
+    for (let k = 0; k < slots; k++) {
       const id = `${r}-${k}`, m = { id, round: r, slot: k, a: null, b: null, aPins: null, bPins: null, winner: null, bye: false, empty: false, tie: false };
       if (r === 1) {
         const sa = order[2 * k], sb = order[2 * k + 1];
         m.a = draw[sa - 1] || null; m.b = draw[sb - 1] || null;
         if (sa > n && sb > n) m.empty = true;
         else if (sa > n || sb > n) { m.bye = true; m.winner = m.a || m.b; }
+      } else if (manual) {
+        // Drawn by hand: the matches set for this round, or waiting for its draw.
+        if (!pairs) m.toDraw = !!entering;
+        else { [m.a, m.b] = pairs[k] || [null, null];
+          if (!m.a && !m.b) m.empty = true; else if (!m.a || !m.b) { m.a = m.a || m.b; m.b = null; m.bye = true; m.winner = m.a; } }
       } else {
         const pa = prev[2 * k], pb = prev[2 * k + 1];
         if (pa.empty && pb.empty) m.empty = true;
@@ -3876,17 +4018,16 @@ function cupBracket(cup) {
         m.tie = res.aPins === res.bPins;
         m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
       }
-      const sched = cup.schedule?.[id] || {}, home = entrantHome(cup, m.a);
       m.date = when.date || ""; m.time = when.time || "";
-      if (sched.venue && S.venues[sched.venue]) { m.venue = sched.venue; m.alley = S.venues[sched.venue].alleys > 1 ? (sched.alley || 1) : null; m.venueChosen = true; }
-      else { m.venue = home?.venue || null; m.alley = home?.alley || null; m.venueChosen = false; }
+      const at = cupVenue(cup, m, R, S.venues, entrantHome(cup, m.a));
+      Object.assign(m, { venue: at.venue, alley: at.alley, venueChosen: !!at.chosen, venueSet: !!at.set, neutral: !!at.neutral });
       matches.push(m);
     }
     // Matches in a round are played on the same night, so flag any that share a venue and alley.
     const byKey = {};
     for (const m of matches) if (!m.bye && !m.empty && m.a && m.b && m.venue) (byKey[homeKey(m)] ||= []).push(m);
     for (const list of Object.values(byKey)) if (list.length > 1) list.forEach(m => m.clash = true);
-    rounds.push({ r, name: roundName(r, R), date: when.date || "", time: when.time || "", matches });
+    rounds.push({ r, name: roundName(r, R), date: when.date || "", time: when.time || "", matches, toDraw: matches.some(m => m.toDraw), entering });
     prev = matches;
   }
   return { rounds, champion: rounds.at(-1).matches[0].winner };
@@ -3935,7 +4076,8 @@ function cupStatus(cup) {
   if (!cup.draw?.length) return n < cup.entries ? { text: `Choosing entries: ${n} of ${cup.entries}`, state: "todo" } : { text: "Entries chosen. The draw hasn't been made yet.", state: "todo" };
   const b = cupBracket(cup);
   if (b.champion) return { text: `Won by ${entrantLabel(cup, b.champion)}`, state: "done" };
-  return { text: `${b.rounds.find(r => r.matches.some(m => !m.winner)).name} to play`, state: "live" };
+  const next = b.rounds.find(r => r.matches.some(m => !m.winner && !m.empty));
+  return next?.toDraw ? { text: `${next.name} draw to make`, state: "todo" } : { text: `${next?.name || "Next round"} to play`, state: "live" };
 }
 const cupSummary = cup => `${CUP_TYPES[cup.type] || "Cup"} · ${GAMES[gameOf(cup)]} · ${CUP_FORMATS[cup.format]} · ${CUP_STRUCTURES[cup.structure]} · ${entriesText(cup.entries)}`;
 const whenText = (date, time) => date ? `${fmtDate(date)}${time ? ` · ${time}` : ""}` : "Date to be set";
@@ -3949,9 +4091,26 @@ function bracketHtml(cup, admin = false) {
     <div class="b-round"><h4>${esc(r.name)}<span>${esc(whenText(r.date, r.time))}</span></h4>
       <div class="b-matches">${r.matches.map(m => m.empty ? `<div class="b-match empty" aria-hidden="true"><div class="b-side">&nbsp;</div><div class="b-side">&nbsp;</div></div>` : `<div class="b-match${m.bye ? " bye" : ""}">
         ${side(m, m.a, m.aPins)}${side(m, m.b, m.bPins)}
-        ${!m.bye && m.a && m.b && m.venue ? `<div class="b-meta">${esc(venueText(m.venue, m.alley))}</div>` : ""}
+        ${!m.bye && m.venue && (m.a && m.b || m.venueSet) ? `<div class="b-meta">${esc(venueText(m.venue, m.alley))}</div>` : !m.bye && m.neutral ? `<div class="b-meta">Neutral venue to be confirmed</div>` : ""}
+        ${m.toDraw ? `<div class="b-meta">Draw to be made</div>` : ""}
         ${m.tie && m.winner ? `<div class="b-meta">Tied; ${esc(entrantLabel(cup, m.winner))} went through</div>` : ""}</div>`).join("")}</div>
     </div>`).join("")}</div></div>`;
+}
+// The same draw as a list: each round with its date, then its games in the same boxes as the league fixtures
+// (first-named side at home), and the round's byes.
+function cupListHtml(cup) {
+  const b = cupBracket(cup);
+  const who = id => id ? entrantHtml(cup, id) : `<span class="muted">To be decided</span>`;
+  return `<div class="cup-list">${b.rounds.map(r => {
+    const games = r.matches.filter(m => !m.empty), byes = games.filter(m => m.bye), play = games.filter(m => !m.bye);
+    return `<section class="cl-round"><h4>${esc(r.name)} <span>${esc(whenText(r.date, r.time))}</span></h4>
+      ${play.length ? `<div class="fx-list">${play.map(m => { const done = Number.isFinite(m.aPins) && Number.isFinite(m.bPins), aw = m.winner && m.winner === m.a, bw = m.winner && m.winner === m.b;
+        const meta = [m.venue && (m.a && m.b || m.venueSet) ? esc(venueText(m.venue, m.alley)) : m.neutral ? "Neutral venue to be confirmed" : "", m.toDraw ? "Draw to be made" : "", m.tie && m.winner ? `Tied; ${esc(entrantLabel(cup, m.winner))} went through` : ""].filter(Boolean).join(" · ");
+        return `<div class="fx"><div class="home ${aw ? "won" : ""}">${who(m.a)}</div>
+          <div class="score">${done ? `<span class="${aw ? "won" : ""}">${m.aPins}</span> <span class="v">–</span> <span class="${bw ? "won" : ""}">${m.bPins}</span>` : `<span class="v">v</span>`}</div>
+          <div class="away ${bw ? "won" : ""}">${who(m.b)}</div>${meta ? `<div class="meta">${meta}</div>` : ""}</div>`; }).join("")}</div>` : ""}
+      ${byes.length ? `<p class="cl-byes"><strong>Byes:</strong> ${byes.map(m => entrantHtml(cup, m.a || m.b)).join(", ")}</p>` : ""}</section>`;
+  }).join("")}</div>`;
 }
 function finalTableHtml(cup, admin = false) {
   const f = cupFinal(cup), when = cup.final || {};
@@ -4217,10 +4376,11 @@ VIEWS.cup = {
       const st = cupStatus(c);
       const inner = c.structure === "final"
         ? ((c.entrants || []).length ? finalTableHtml(c) : `<p class="muted">Entries haven't been chosen yet.</p>`)
-        : c.draw?.length ? bracketHtml(c) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
+        : c.draw?.length ? (S.ui.cupView === "list" ? cupListHtml(c) : bracketHtml(c)) : `<p class="muted">The draw hasn't been made yet.${(c.entrants || []).length ? ` Entries: ${esc(c.entrants.map(e => entrantLabel(c, e.id)).join(", "))}.` : ""}</p>`;
       const pics = S.media.filter(m => m.cupId === c.id), notes = cupNotes(c), matches = c.structure === "full" ? cupBracket(c).rounds.flatMap(r => r.matches.map(m => ({ ...m, roundName: r.name }))) : [];
       const noteList = Object.entries(notes).map(([k, n]) => { const m = matches.find(x => x.id === k); return `<li><strong>${k === "final" ? "Final" : m ? `${esc(m.roundName)}: ${esc(entrantLabel(c, m.a))} v ${esc(entrantLabel(c, m.b))}` : "Note"}</strong> ${esc(n)}</li>`; }).join("");
-      shown = `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span></div>
+      const list = S.ui.cupView === "list", seg = c.structure !== "final" && c.draw?.length ? `<div class="seg tv-seg cup-view" role="group" aria-label="Show the draw as"><button type="button" data-cup-view="chart" aria-pressed="${!list}">Chart</button><button type="button" data-cup-view="list" aria-pressed="${list}">List</button></div>` : "";
+      shown = `<section class="cup-section" id="cup-${esc(c.id)}"><div class="cup-title"><h3>${esc(c.name)}</h3><span class="chip ${st.state === "done" ? "ok" : ""}">${esc(st.text)}</span>${seg}</div>
         <p class="lookup-note">${esc(GAMES[gameOf(c)])} · ${esc(CUP_FORMATS[c.format])} · ${esc(CUP_STRUCTURES[c.structure])} · ${entriesText(c.entries)}</p>${inner}
         ${noteList ? `<h4 class="cup-pics">Notes</h4><ul class="cup-notes">${noteList}</ul>` : ""}
         ${pics.length ? `<h4 class="cup-pics">Photos</h4>${photoGrid(pics, "cup-" + c.id)}` : ""}</section>`;
@@ -4373,13 +4533,16 @@ VIEWS.cups = {
           <label class="check" id="c-pairs-wrap"><input type="checkbox" id="c-pairs"> Pairs cup: show each team's Pairs Cup players</label>
           <label class="check" id="c-captains-wrap"><input type="checkbox" id="c-captains"> Captains cup: only captains and vice captains can enter</label>
           <div class="field"><label for="c-entries">Number of entries</label><input type="number" id="c-entries" min="2" max="128" value="16"></div>
+          <div id="c-where"></div>
           <p class="plan" id="c-plan" aria-live="polite"></p>
           <div class="actions"><button class="btn" type="submit" id="c-go">Create cup</button></div>
         </form></div>
       </div>
       <div id="cup-detail"></div>`;
     const f = $("#cup-form");
-    const plan = () => $("#c-plan").textContent = cupPlanText(f.querySelector("[name=c-structure]:checked").value, +$("#c-entries").value);
+    const plan = () => { $("#c-plan").textContent = cupPlanText(f.querySelector("[name=c-structure]:checked").value, +$("#c-entries").value);
+      $("#c-where").hidden = f.querySelector("[name=c-structure]:checked").value !== "full"; };
+    $("#c-where").innerHTML = cupWhereHtml("c");
     f.addEventListener("input", plan); f.addEventListener("change", plan); plan();
     // Tick "Pairs cup" for a team cup named like one, and "Captains cup" for an individual one, until the box is changed by hand.
     const kindBoxes = () => {
@@ -4445,9 +4608,10 @@ VIEWS.cups = {
       pairs: f.querySelector("[name=c-format]:checked").value === "team" && $("#c-pairs").checked,
       captains: f.querySelector("[name=c-format]:checked").value === "individual" && $("#c-captains").checked,
       entries, entrants: [], draw: [], results: {}, schedule: {}, roundDates: {}, final: { scores: {} }, created: new Date().toISOString() };
+    if (cup.structure === "full") Object.assign(cup, readCupWhere("c"));
     if (await commit(d => { (d.cups ||= {})[id] = cup; })) {
       toast(`${name} created. Now choose its entries.`);
-      f.reset(); $("#c-game").value = cfg().game; delete $("#c-pairs").dataset.touched; delete $("#c-captains").dataset.touched; f.dispatchEvent(new Event("change"));
+      f.reset(); $("#c-where").innerHTML = cupWhereHtml("c"); $("#c-game").value = cfg().game; delete $("#c-pairs").dataset.touched; delete $("#c-captains").dataset.touched; f.dispatchEvent(new Event("change"));
       this.open(id);
     }
   },
@@ -4484,7 +4648,8 @@ VIEWS.cups = {
         <div class="field"><label for="cs-entries">Number of entries</label><input type="number" id="cs-entries" min="2" max="128" value="${cup.entries}"${drawn ? " disabled" : ""}></div>
         ${cup.format === "team" ? `<label class="check"><input type="checkbox" id="cs-pairs"${isPairsCup(cup) ? " checked" : ""}> Pairs cup: show each team's Pairs Cup players</label>`
           : `<label class="check"><input type="checkbox" id="cs-captains"${isCaptainsCup(cup) ? " checked" : ""}> Captains cup: only captains and vice captains can enter</label>`}
-        <div class="actions"><button class="btn ghost" type="submit">Save</button></div>
+        ${cup.structure === "full" ? `<div class="cup-where">${cupWhereHtml("cs", cup, drawn)}</div>` : ""}
+        <div class="actions"><button class="btn ghost" type="submit">Save</button>${Object.keys(S.cups).length > 1 ? `<button class="btn ghost" type="button" data-act="cup-final-all" title="Every cup's final, this cup's included, at the alley chosen under Final played at">Use this final venue for every cup</button>` : ""}</div>
       </form>
       <p class="plan">${esc(cupPlanText(cup.structure, cup.entries))}${drawn ? " The number of entries can't change once the draw is made." : ""}</p>`;
 
@@ -4518,8 +4683,22 @@ VIEWS.cups = {
         html += step(3, "Dates and results");
         const b = cupBracket(cup);
         html += b.rounds.map(r => { const keys = r.matches.filter(m => !m.bye && !m.empty).map(m => m.id), pending = keys.filter(k => cupItemState(cup, k) === "pending").length;
+          // A round drawn by hand: its matches are chosen once the round before is finished (and can be changed until a result is in).
+          if (cup.drawMode === "manual" && r.r > 1) {
+            const hasResult = r.matches.some(m => m.aPins != null), editing = this.editing === `${cup.id}|${r.r}` && !hasResult;
+            if (!r.entering) return `<div class="cup-round" data-round="${r.r}"><div class="cup-round-head"><h5>${esc(r.name)}</h5></div><p class="muted">The draw is made once every ${esc(b.rounds[r.r - 2].name.toLowerCase())} result is in.</p></div>`;
+            if (r.toDraw || editing) {
+              // With fewer still in than the round has places for, some go straight through on a bye.
+              const slots = r.matches.length, e = r.entering, games = Math.max(0, e.length - slots), byes = e.length - 2 * games;
+              const now = r.matches.filter(m => !m.empty), rows = [...Array.from({ length: games }, (_, i) => ({ bye: false, a: now.filter(m => !m.bye)[i]?.a || "", b: now.filter(m => !m.bye)[i]?.b || "" })),
+                ...Array.from({ length: byes }, (_, i) => ({ bye: true, a: now.filter(m => m.bye)[i]?.a || "" }))];
+              return `<div class="cup-round" data-round="${r.r}"><div class="cup-round-head"><h5>${esc(r.name)}</h5></div>
+                <p class="muted">Draw: choose who meets whom from the ${e.length} still in. The first-named side is at home.</p>${this.pairsForm(cup, String(r.r), rows, e)}</div>`;
+            }
+          }
           return `<div class="cup-round" data-round="${r.r}">
           <div class="cup-round-head"><h5>${esc(r.name)}</h5>
+            ${cup.drawMode === "manual" && r.r > 1 && r.entering && !r.matches.some(m => m.aPins != null) ? `<button type="button" class="btn ghost sm" data-act="cup-pairs-edit" data-round="${r.r}">Change the draw</button>` : ""}
             <label>Date <input type="date" data-round-date value="${esc(r.date)}"></label><label>Start ${timePicker("data-round-time", r.time)}</label>
             <button type="button" class="btn sm" data-act="cup-publish-round" data-round="${r.r}"${pending ? "" : " disabled"}>Publish now${pending ? ` (${pending})` : ""}</button></div>
           ${r.matches.filter(m => !m.bye && !m.empty).map(m => this.matchRow(cup, m)).join("") || `<p class="muted">Every match in this round is a bye.</p>`}
@@ -4545,7 +4724,8 @@ VIEWS.cups = {
         <span class="a">${entrantHtml(cup, m.b, true)}</span>
       </div>
       <div class="cm-meta">
-        ${venues.length ? `<label>Venue <select data-venue><option value="">${(() => { const h = entrantHome(cup, m.a); return h ? `Home venue: ${esc(venueText(h.venue, h.alley))}` : m.a ? "Home team has no venue" : "Home team's venue"; })()}</option>${venues.map(v => `<option value="${esc(v.id)}"${m.venueChosen && m.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>
+        ${venues.length ? `<label>Venue <select data-venue><option value="">${(() => { if (m.venueSet) return `Finals venue: ${esc(venueText(m.venue, m.alley))}`; if (m.neutral) return "Neutral venue: choose it here";
+          const h = entrantHome(cup, m.a); return h ? `Home venue: ${esc(venueText(h.venue, h.alley))}` : m.a ? "Home team has no venue" : "Home team's venue"; })()}</option>${venues.map(v => `<option value="${esc(v.id)}"${m.venueChosen && m.venue === v.id ? " selected" : ""}>${esc(v.name)}</option>`).join("")}</select></label>
           <label data-alley-wrap${m.venueChosen && S.venues[m.venue]?.alleys > 1 ? "" : " hidden"}>Alley <select data-alley>${alleyOptions(S.venues[m.venueChosen ? m.venue : ""]?.alleys || 1, m.alley || 1)}</select></label>` : ""}
         ${m.clash ? `<span class="chip warn" title="Another match this round is on the same venue and alley">Alley clash</span>` : ""}
         <label class="tie-pick"${m.tie ? "" : " hidden"}>Tied. Who goes through? <select data-tie><option value="">Choose</option>${[m.a, m.b].filter(Boolean).map(x => `<option value="${esc(x)}"${m.winner === x ? " selected" : ""}>${esc(entrantLabel(cup, x))}</option>`).join("")}</select></label>
@@ -4610,10 +4790,62 @@ VIEWS.cups = {
   renderDrawBox() {
     const cup = this.cup(), box = $("#draw-box"); if (!cup || !box) return;
     const n = this.picked.size, empty = cup.entries - n;
+    if (cup.drawMode === "manual" && n >= 2) {
+      // The first round's places: matches, and byes where the bracket has a spare place.
+      const size = 2 ** cupRoundCount(cup.entries), order = seedOrder(size), ids = [...this.picked];
+      const slots = Array.from({ length: size / 2 }, (_, k) => [order[2 * k], order[2 * k + 1]]).filter(([a, b]) => a <= n || b <= n);
+      box.innerHTML = `<p class="muted">Choose who meets whom in the first round. The first-named side is at home.${slots.some(([a, b]) => a > n || b > n) ? " Entries put on a bye go straight through to the next round." : ""}</p>
+        ${this.pairsForm(cup, "1", slots.map(([a, b]) => ({ bye: a > n || b > n, a: "", b: "" })), ids, id => $(`input[data-entrant][value="${CSS.escape(id)}"]`)?.dataset.label || entrantLabel(cup, id))}`;
+      return;
+    }
     box.innerHTML = n >= 2
       ? `<p class="muted">The draw puts the entries into the bracket at random.${empty > 0 ? ` You've chosen ${n} of ${cup.entries}, so the ${empty} empty ${empty === 1 ? "place becomes a bye" : "places become byes"}.` : ""}${2 ** cupRoundCount(cup.entries) > n ? " Byes are spread through the draw." : ""}</p>
          <div class="actions"><button class="btn" data-act="cup-draw">Make the draw${empty > 0 ? ` with ${empty} ${empty === 1 ? "bye" : "byes"} added` : ""}</button></div>`
       : `<p class="muted">Choose at least 2 entries, then make the draw. Any places you don't fill become byes.</p>`;
+  },
+  // Rows of Home / Away pickers for a round drawn by hand. rows: [{ a, b, bye }]; ids: who can be picked.
+  pairsForm(cup, round, rows, ids, label = id => entrantLabel(cup, id)) {
+    const opt = (sel, none) => `<option value="">${none}</option>` + ids.map(id => `<option value="${esc(id)}"${id === sel ? " selected" : ""}>${esc(label(id))}</option>`).join("");
+    return `<div class="pairs-form" data-pairs="${esc(round)}">${rows.map((r, i) => r.bye
+      ? `<div class="pair-row bye"><label>Bye <select data-pa="${i}" aria-label="Bye ${i + 1}">${opt(r.a, "Choose")}</select></label><span class="muted">goes straight through</span></div>`
+      : `<div class="pair-row"><label><span class="pr-lbl">Home</span><select data-pa="${i}" aria-label="Match ${i + 1}, home">${opt(r.a, "Choose")}</select></label><span class="dash">v</span><label><span class="pr-lbl">Away</span><select data-pb="${i}" aria-label="Match ${i + 1}, away">${opt(r.b, "Choose")}</select></label></div>`).join("")}
+      <p class="lookup-note" data-pairs-note></p>
+      <div class="actions"><button type="button" class="btn ghost" data-act="cup-pairs-random">Fill in at random</button><button type="button" class="btn" data-act="cup-pairs-save">Save the draw</button></div></div>`;
+  },
+  // Reads a round's pickers: each entry used once and every place filled.
+  readPairs(box) {
+    const rows = $$(".pair-row", box).map(row => [$("[data-pa]", row)?.value || null, $("[data-pb]", row)?.value || null, row.classList.contains("bye")]);
+    const used = rows.flatMap(([a, b]) => [a, b]).filter(Boolean), dup = used.find((x, i) => used.indexOf(x) !== i);
+    if (rows.some(([a, b, bye]) => !a || (!bye && !b))) return { error: "Fill in every place first." };
+    if (dup) return { error: `${[...$("select", box).options].find(o => o.value === dup)?.textContent || "An entry"} is in the draw twice.` };
+    return { rows };
+  },
+  randomPairs(box) {
+    const ids = [...$("select", box).options].map(o => o.value).filter(Boolean);
+    for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+    let i = 0; for (const sel of $$("select", box)) sel.value = ids[i++] || "";
+  },
+  async savePairs(box) {
+    const cup = this.cup(), round = box.dataset.pairs, got = this.readPairs(box);
+    if (got.error) return toast(got.error);
+    if (round === "1") {
+      // The first round goes into the bracket's places, so byes and later rounds work as before.
+      const ticked = $("#ce-list") ? $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label })) : cup.entrants;
+      const size = 2 ** cupRoundCount(cup.entries), order = seedOrder(size), n = ticked.length, draw = Array(n).fill(null);
+      const slots = Array.from({ length: size / 2 }, (_, k) => [order[2 * k], order[2 * k + 1]]).filter(([a, b]) => a <= n || b <= n);
+      if (got.rows.flatMap(([a, b]) => [a, b]).filter(Boolean).length !== n) return toast("Every entry needs a place in the draw.");
+      slots.forEach(([sa, sb], i) => { const [a, b] = got.rows[i];
+        if (sa > n) draw[sb - 1] = a; else if (sb > n) draw[sa - 1] = a; else { draw[sa - 1] = a; draw[sb - 1] = b; } });
+      if (draw.some(x => !x)) return toast("The draw couldn't be fitted to the bracket. Try again.");
+      if (await commit(d => { Object.assign(d.cups[cup.id], { entrants: ticked, byeIds: [], draw, results: {}, schedule: {}, pairings: {} }); })) toast("The draw has been saved.");
+      return;
+    }
+    this.editing = null;
+    const slots = 2 ** cupRoundCount(cup.entries) / 2 ** +round, pairs = got.rows.map(([a, b]) => [a, b]);
+    while (pairs.length < slots) pairs.push([null, null]);
+    if (await commit(d => { const c = d.cups[cup.id]; (c.pairings ||= {})[round] = pairs; for (const k of Object.keys(c.results || {})) if (k.startsWith(`${round}-`)) delete c.results[k]; }))
+      toast(`${roundName(+round, cupRoundCount(cup.entries))} draw saved.`);
+    this.renderDetail();
   },
   // Ticks every entry currently shown (the search narrows it), up to the cup's number of entries.
   selectAll() {
@@ -4637,7 +4869,19 @@ VIEWS.cups = {
     if (!(entries >= 2 && entries <= 128)) return toast("A cup needs between 2 and 128 entries.");
     if (entries < (cup.entrants || []).length) return toast(`You've already chosen ${entriesText(cup.entrants.length)}. Untick some first.`);
     const pairs = !!$("#cs-pairs")?.checked, captains = !!$("#cs-captains")?.checked, game = $("#cs-game").value;
-    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries, pairs, captains, game }); })) toast("Cup saved");
+    const where = cup.structure === "full" ? readCupWhere("cs") : {};
+    if (cup.draw?.length) where.drawMode = cup.drawMode || "auto";
+    if (await commit(d => { Object.assign(d.cups[cup.id], { name, entries: cup.draw?.length ? cup.entries : entries, pairs, captains, game }, where); })) toast("Cup saved");
+  },
+  // Every cup's final at the same place: a full tournament's last round, and a straight final's game.
+  async finalForAll() {
+    const cup = this.cup(), at = cup.structure === "full" ? readCupWhere("cs").finalAt : null;
+    if (!at) return;
+    const n = Object.keys(S.cups).length;
+    if (await commit(d => { for (const c of Object.values(d.cups)) {
+      if (c.structure === "full") c.finalAt = { ...at };
+      else if (at.mode === "set") Object.assign(c.final ||= { scores: {} }, { venue: at.venue, alley: at.alley });
+    } })) toast(at.mode === "set" ? `All ${n} cup finals are now at ${venueText(at.venue, at.alley)}.` : at.mode === "neutral" ? `All ${n} cup finals are now at a neutral venue, to be chosen later.` : `All ${n} cup finals are now at the home side's alley.`);
   },
   async saveEntries() {
     const cup = this.cup(), picked = $$("input[data-entrant]:checked").map(i => ({ id: i.value, label: i.dataset.label }));
@@ -4660,7 +4904,7 @@ VIEWS.cups = {
   },
   async redraw() {
     const cup = this.cup();
-    if (await commit(d => { Object.assign(d.cups[cup.id], { draw: [], results: {}, schedule: {} }); })) toast("Draw cleared, along with its results. You can change the entries and draw again.");
+    if (await commit(d => { Object.assign(d.cups[cup.id], { draw: [], results: {}, schedule: {}, pairings: {} }); })) toast("Draw cleared, along with its results. You can change the entries and draw again.");
   },
   async saveRoundDate(r) {
     const cup = this.cup(), row = $(`[data-round="${r}"]`);
@@ -7656,6 +7900,8 @@ document.addEventListener("click", async e => {
   if (link && !e.ctrlKey && !e.metaKey && !e.shiftKey) { e.preventDefault(); return NAV.go(link.dataset.path, link.dataset.hash); }
   const jump = e.target.closest("[data-cup-jump]");
   if (jump) { S.ui.pubCup = S.ui.pubCup === jump.dataset.cupJump ? null : jump.dataset.cupJump; return VIEWS.cup.refresh(); }
+  const cv = e.target.closest("[data-cup-view]");
+  if (cv) { S.ui.cupView = cv.dataset.cupView; try { localStorage.setItem("skittlers-cup-view", S.ui.cupView); } catch {} return VIEWS.cup.refresh(); }
   const b = e.target.closest("[data-act]"); if (!b) return;
   const id = b.dataset.id, act = b.dataset.act;
   if (act === "logout") { signedOut("Logged out"); }
@@ -7692,6 +7938,10 @@ document.addEventListener("click", async e => {
   if (act === "cup-redraw") { if (!arm(b, "Click again: clears the draw and its results")) return; VIEWS.cups.redraw(); }
   if (act === "cup-save-match") VIEWS.cups.saveMatch(id);
   if (act === "cup-save-final") VIEWS.cups.saveFinal();
+  if (act === "cup-final-all") { if (!arm(b, "Confirm: every cup")) return; VIEWS.cups.finalForAll(); }
+  if (act === "cup-pairs-random") VIEWS.cups.randomPairs(b.closest("[data-pairs]"));
+  if (act === "cup-pairs-save") VIEWS.cups.savePairs(b.closest("[data-pairs]"));
+  if (act === "cup-pairs-edit") { VIEWS.cups.editing = `${VIEWS.cups.cup()?.id}|${b.dataset.round}`; VIEWS.cups.renderDetail(); }
   if (act === "cup-publish-round") {
     if (!arm(b, "Confirm: publish")) return;
     const cup = VIEWS.cups.cup(), r = cupBracket(cup).rounds.find(x => String(x.r) === b.dataset.round);

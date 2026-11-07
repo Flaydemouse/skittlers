@@ -1,7 +1,7 @@
 // Checks the API in lib/core.mjs: accounts, leagues, seasons, permissions, subscriptions and the overall admin.
 import { webcrypto } from "node:crypto";
 import assert from "node:assert/strict";
-import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt, newsSharePage, sheetMatch, sheetPrompt, parseSheet } from "../lib/core.mjs";
+import { createApi, createBoardRunner, parseBoard, boardMatch, boardPrompt, newsSharePage, sheetMatch, sheetPrompt, parseSheet, cupMatches } from "../lib/core.mjs";
 const data = new Map();
 const store = { get: async k => data.has(k) ? JSON.parse(data.get(k)) : null, set: async (k, v) => data.set(k, JSON.stringify(v)), del: async k => data.delete(k), list: async p => [...data.keys()].filter(k => k.startsWith(p)) };
 let day = "2026-10-29", clock = Date.parse("2026-10-29T19:00:00Z");
@@ -168,6 +168,21 @@ r = await call("PATCH", `leagues/${L.id}`, { name: "New name" }, sec2); assert.e
 r = await call("POST", "leagues", { name: "Another", slug: "another" }, sec2); assert.equal(r.status, 402);
 // overall admin
 r = await call("POST", "auth/signup", { name: "Neil", email: "owner@test.com", password: "superpass1" }); const boss = r.body.token; assert.equal(r.body.user.isSuper, true);
+// The demo league: public, read-only, nobody's to manage, not even the Super Admin's
+{ r = await call("GET", "public/demo"); assert.equal(r.status, 200); const D = r.body.league;
+  assert.equal(D.demo, true); assert.equal(D.seasons.length, 2); assert.equal(D.name, "Westcombe & District Skittles League");
+  r = await call("GET", `public/demo/seasons/${D.currentSeasonId}`); const ds = r.body;
+  assert.equal(Object.keys(ds.teams).length, 30); assert.ok(Object.values(ds.teams).every(t => t.players.length === 8));
+  assert.equal(Object.keys(ds.divisions).length, 3); assert.equal(Object.keys(ds.cups).length, 7);
+  assert.ok(Object.values(ds.fixtures).every(f => f.cards?.home?.rows.length === 6 && Number.isFinite(f.homePins)), "every league game has its scorecards");
+  r = await call("GET", "public/demo/news"); assert.equal(r.body.items.length, 4);
+  const logo = await api(new Request(`http://x/api/public/demo/logos/${Object.values(D.logos)[0]}`)); assert.equal(logo.headers.get("content-type"), "image/svg+xml");
+  r = await call("GET", `leagues/${D.id}`, null, boss); assert.equal(r.status, 404, "no admin view of the demo");
+  r = await call("PATCH", `leagues/${D.id}`, { name: "Mine now" }, boss); assert.equal(r.status, 404);
+  r = await call("GET", "public/demo"); assert.equal(r.body.league.name, "Westcombe & District Skittles League");
+  r = await call("GET", "super/leagues", null, boss); assert.ok(!(r.body.leagues || []).some(l => l.id === D.id), "not in the Super Admin's list");
+  const ics = await (await api(new Request("http://x/api/public/demo/calendar.ics"))).text(); assert.ok(ics.includes("Knockout Cup"), "cup finals in the calendar");
+}
 // help & requests: a secretary writes, the overall admin sees it in the inbox and replies
 {
   mails.length = 0;
@@ -575,3 +590,29 @@ assert.equal([...data.keys()].filter(k => ["seasons/", "contacts/", "history", "
   assert.equal(parseSheet({ fixtureId: "nope", sides: [] }, m).fixtureId, "", "only games from the list");
 }
 console.log("all API checks passed");
+
+// Cups drawn by hand, neutral semi-finals and a set final alley (the calendar works these out like the page does)
+{
+  const teams = Object.fromEntries("abcdef".split("").map(x => [x, { id: x, name: x.toUpperCase(), venue: "v1" }]));
+  const venues = { v1: { id: "v1", name: "Home", alleys: 1 }, v2: { id: "v2", name: "Finals", alleys: 3 } };
+  const cup = { entries: 6, format: "team", drawMode: "manual", semiVenue: "neutral", finalAt: { mode: "set", venue: "v2", alley: 2 }, draw: ["a", "b", "c", "d", "e", "f"], results: {}, pairings: {} };
+  let ms = cupMatches(cup, teams, venues), by = id => ms.find(m => m.id === id);
+  const r1 = ms.filter(m => m.r === 1 && !m.bye && !m.empty);
+  assert.equal(r1.length, 2); assert.equal(by("2-0").a, null, "nothing in the semis until round 1 is finished and drawn");
+  for (const m of r1) cup.results[m.id] = { a: m.a, b: m.b, aPins: 300, bPins: 200 };
+  const into = ms.filter(m => m.r === 1 && !m.empty).map(m => m.bye ? m.a : m.a);
+  ms = cupMatches(cup, teams, venues); assert.equal(ms.find(m => m.id === "2-0").a, null, "still waiting for the semi-final draw");
+  cup.pairings[2] = [[into[3], into[0]], [into[1], into[2]]];
+  ms = cupMatches(cup, teams, venues); by = id => ms.find(m => m.id === id);
+  assert.equal(by("2-0").a, into[3]); assert.equal(by("2-0").b, into[0]); assert.equal(by("2-0").venue, null, "neutral semi");
+  cup.pairings[2] = [[into[3], into[3]], [into[1], into[2]]];
+  assert.equal(cupMatches(cup, teams, venues).find(m => m.id === "2-0").a, null, "a draw that doesn't fit is ignored");
+  cup.pairings[2] = [[into[3], into[0]], [into[1], into[2]]];
+  cup.results["2-0"] = { a: into[3], b: into[0], aPins: 1, bPins: 2 }; cup.results["2-1"] = { a: into[1], b: into[2], aPins: 2, bPins: 1 };
+  ms = cupMatches(cup, teams, venues); by = id => ms.find(m => m.id === id);
+  assert.equal(by("3-0").a, into[0]); assert.equal(by("3-0").b, into[1], "the last two pair themselves");
+  assert.equal(by("3-0").venue, "v2"); assert.equal(by("3-0").alley, 2, "the final at the set alley");
+  const auto = cupMatches({ ...cup, drawMode: "auto", semiVenue: "home", finalAt: { mode: "home" } }, teams, venues);
+  assert.equal(auto.find(m => m.id === "2-0").venue, "v1", "otherwise the home side's alley");
+  console.log("cups drawn by hand checked");
+}

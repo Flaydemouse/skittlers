@@ -32,7 +32,9 @@ html = html.replace('<header class="band">', banner + '<header class="band">');
 
 // The preview runs the real API (lib/core.mjs) in the page, storing data in the browser,
 // and swaps page addresses for an in-memory one because an artifact can't change its address.
-const core = (await readFile(new URL("../lib/core.mjs", import.meta.url), "utf8")).replace(/^export /gm, "");
+// The demo league (lib/demo.mjs) goes in first, in its own scope, since core reads it.
+const demo = (await readFile(new URL("../lib/demo.mjs", import.meta.url), "utf8")).replace(/^export /gm, "");
+const core = "const { buildDemo, DEMO_SLUG, DEMO_ID } = (() => {\n" + demo + "\nreturn { buildDemo, DEMO_SLUG, DEMO_ID };\n})();\n" + (await readFile(new URL("../lib/core.mjs", import.meta.url), "utf8")).replace(/^import .*demo\.mjs";$/m, "").replace(/^export /gm, "");
 const previewApi = `<script>
 (() => {
 ${core}
