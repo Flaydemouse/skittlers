@@ -626,3 +626,57 @@ console.log("all API checks passed");
   assert.equal(auto.find(m => m.id === "2-0").venue, "v1", "otherwise the home side's alley");
   console.log("cups drawn by hand checked");
 }
+
+// Teams over the years: each season's team keeps the name it had and is linked to its club, which takes the newest name
+{
+  const tok = (await call("POST", "auth/signup", { name: "Clubs", email: "clubs@x.com", password: "longenough" })).body.token;
+  let r = await call("POST", "leagues", { name: "Clubs League", slug: "clubs-league" }, tok); const CL = r.body.league;
+  r = await call("POST", `leagues/${CL.id}/seasons`, { name: "2024–25", start: "2024-09-01", end: "2025-04-30" }, tok); const s1 = r.body.season;
+  const teams = { a: { id: "a", name: "Aces", players: [{ first: "Al", last: "One" }] }, b: { id: "b", name: "Bees", players: [] } };
+  r = await call("PUT", `leagues/${CL.id}/seasons/${s1.id}`, { version: 0, data: { teams, venues: {}, fixtures: {} }, contacts: {} }, tok); assert.equal(r.status, 200, JSON.stringify(r.body));
+  const clubA = r.body.teams.a.club; assert.ok(clubA, "linked to a club"); assert.ok(r.body.teams.a.players[0].id, "players get ids");
+  const pid = r.body.teams.a.players[0].id;
+  r = await call("POST", `leagues/${CL.id}/seasons`, { name: "2025–26", start: "2025-09-01", end: "2026-04-30", copyFrom: s1.id, copy: { teams: true, players: true }, makeCurrent: true }, tok); const s2 = r.body.season;
+  r = await call("GET", `leagues/${CL.id}/seasons/${s2.id}`, null, tok); assert.equal(r.body.teams.a.club, clubA, "brought across, same club"); assert.equal(r.body.teams.a.players[0].id, pid, "same player id");
+  // A player sent without their id (as the team form does) keeps it
+  { const cur = (await call("GET", `leagues/${CL.id}/seasons/${s2.id}`, null, tok)).body;
+    const r2 = await call("PATCH", `leagues/${CL.id}/seasons/${s2.id}/data`, { base: cur.version, changes: [{ in: "teams", id: "a", value: { ...cur.teams.a, players: [{ first: "Al", last: "One", nick: "Big" }, { first: "Cy", last: "New" }] } }] }, tok);
+    assert.equal(r2.body.teams.a.players[0].id, pid); assert.ok(r2.body.teams.a.players[1].id && r2.body.teams.a.players[1].id !== pid); }
+  // Renamed this season: the club takes the new name, last season keeps the old one
+  r = await call("PATCH", `leagues/${CL.id}/seasons/${s2.id}/data`, { base: r.body.version, changes: [{ in: "teams", id: "a", value: { ...r.body.teams.a, name: "Aces High" } }] }, tok);
+  assert.equal(r.body.teams.a.club, clubA); assert.equal(r.body.clubs[clubA].name, "Aces High"); assert.deepEqual(r.body.clubs[clubA].was, ["Aces"]);
+  r = await call("GET", `public/clubs-league/seasons/${s1.id}`); assert.equal(r.body.teams.a.name, "Aces", "the old season keeps the old name");
+  r = await call("GET", "public/clubs-league"); assert.deepEqual(r.body.league.teamNames, [{ name: "Aces High", was: ["Aces"] }]);
+  // An old name from the records is linked to today's team; a team that had it is joined to it
+  r = await call("POST", `leagues/${CL.id}/clubs`, { action: "link", name: "The Aces", to: "Aces High" }, tok); assert.ok(r.body.clubs[clubA].was.includes("The Aces"));
+  const clubB = Object.values(r.body.clubs).find(c => c.name === "Bees").id;
+  r = await call("POST", `leagues/${CL.id}/clubs`, { action: "link", name: "Bees", to: "Aces High" }, tok); assert.equal(r.body.clubs[clubB], undefined, "Bees joined to Aces High");
+  r = await call("GET", `leagues/${CL.id}/seasons/${s1.id}`, null, tok); assert.equal(r.body.teams.b.club, clubA); assert.equal(r.body.teams.b.name, "Bees");
+  // …and separated again
+  r = await call("POST", `leagues/${CL.id}/clubs`, { action: "unlink", club: clubA, name: "Bees" }, tok); const back = Object.values(r.body.clubs).find(c => c.name === "Bees"); assert.ok(back);
+  r = await call("GET", `leagues/${CL.id}/seasons/${s1.id}`, null, tok); assert.equal(r.body.teams.b.club, back.id);
+  r = await call("POST", `leagues/${CL.id}/clubs`, { action: "unlink", club: clubA, name: "Aces High" }, tok); assert.equal(r.status, 400, "not its name now");
+  // A new team using an old name, while the team that had it is still playing, is a team of its own
+  r = await call("GET", `leagues/${CL.id}/seasons/${s2.id}`, null, tok);
+  r = await call("PATCH", `leagues/${CL.id}/seasons/${s2.id}/data`, { base: r.body.version, changes: [{ in: "teams", id: "c", value: { id: "c", name: "Aces", players: [] } }] }, tok);
+  assert.notEqual(r.body.teams.c.club, clubA);
+  // Logos go with the club
+  const png = { mediaType: "image/png", data: Buffer.from("fake png bytes ".repeat(20)).toString("base64") };
+  r = await call("PUT", `leagues/${CL.id}/logos`, { team: "Aces", club: clubA, image: png }, tok); assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await call("GET", "public/clubs-league"); assert.ok(r.body.league.clubs[clubA].logo); assert.equal(r.body.league.logos["aces"], r.body.league.clubs[clubA].logo, "old names find the logo too");
+}
+// A league set up before clubs gets them the first time it's opened: previous names, teams brought across, logos
+{
+  const lid = "oldleague1", sa = "olds1", sb = "olds2";
+  await store.set("slugs/old-league", { leagueId: lid });
+  await store.set(`leagues/${lid}`, { id: lid, slug: "old-league", name: "Old", ownerId: "nobody", settings: {}, seasons: [{ id: sa, name: "2023–24", start: "2023-09-01", end: "2024-04-30" }, { id: sb, name: "2024–25", start: "2024-09-01", end: "2025-04-30" }],
+    currentSeasonId: sb, teamNames: [{ name: "Kings", was: ["Princes"] }], logos: { princes: "logo1" } });
+  await store.set(`seasons/${lid}/${sa}`, { version: 1, teams: { p: { id: "p", name: "Princes" }, q: { id: "q", name: "Queens" } }, venues: {}, fixtures: {} });
+  await store.set(`seasons/${lid}/${sb}`, { version: 1, teams: { k: { id: "k", name: "Kings" }, q: { id: "q", name: "Queens Two" } }, venues: {}, fixtures: {} });
+  const r = await call("GET", "public/old-league"), clubs = Object.values(r.body.league.clubs);
+  assert.equal(clubs.length, 2);
+  const kings = clubs.find(c => c.name === "Kings"), queens = clubs.find(c => c.name === "Queens Two");
+  assert.deepEqual(kings.was, ["Princes"]); assert.equal(kings.logo, "logo1"); assert.deepEqual(queens.was, ["Queens"], "brought across under a new name");
+  const old = await call("GET", `public/old-league/seasons/${sa}`); assert.equal(old.body.teams.p.club, kings.id); assert.equal(old.body.teams.p.name, "Princes");
+  console.log("teams over the years checked");
+}

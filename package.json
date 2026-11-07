@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "netlify dev",
     "preview": "node --import ./dev/register.mjs dev/server.mjs",
-    "test": "node dev/core.test.mjs && node dev/themes.test.mjs"
+    "test": "node dev/core.test.mjs && node dev/themes.test.mjs",
+    "e2e": "node dev/e2e/run.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.3.0",

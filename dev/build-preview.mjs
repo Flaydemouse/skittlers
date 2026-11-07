@@ -34,7 +34,11 @@ html = html.replace('<header class="band">', banner + '<header class="band">');
 // and swaps page addresses for an in-memory one because an artifact can't change its address.
 // The demo league (lib/demo.mjs) goes in first, in its own scope, since core reads it.
 const demo = (await readFile(new URL("../lib/demo.mjs", import.meta.url), "utf8")).replace(/^export /gm, "");
-const core = "const { buildDemo, DEMO_SLUG, DEMO_ID } = (() => {\n" + demo + "\nreturn { buildDemo, DEMO_SLUG, DEMO_ID };\n})();\n" + (await readFile(new URL("../lib/core.mjs", import.meta.url), "utf8")).replace(/^import .*demo\.mjs";$/m, "").replace(/^export /gm, "");
+const core = "const { buildDemo, DEMO_SLUG, DEMO_ID } = (() => {\n" + demo + "\nreturn { buildDemo, DEMO_SLUG, DEMO_ID };\n})();\n" + (await readFile(new URL("../lib/core.mjs", import.meta.url), "utf8")).replace(/^import .*demo\.mjs";$/m, "").replace(/^import "\.\.\/public\/shared\.js";.*$/m, "").replace(/^export /gm, "");
+// The code the page and the API share goes inside the page in place of its <script src>, so it's there for both.
+const shared = await readFile(new URL("../public/shared.js", import.meta.url), "utf8");
+if (!html.includes('<script src="/shared.js"></script>')) throw new Error("The page doesn't load /shared.js");
+html = html.replace('<script src="/shared.js"></script>', () => `<script>\n${shared}\n</script>`);
 const previewApi = `<script>
 (() => {
 ${core}

@@ -841,6 +841,9 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .roh-cup-h { margin: 14px 0 8px; }
 .roh-h { margin: 14px 0 4px; }
 .roh-admin { display: grid; gap: 6px; }
+.cl-list { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: .92rem; }
+.cl-was { white-space: nowrap; margin-right: 8px; }
+.cl-was .linkish { font-size: .8rem; }
 .roh-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .9rem; }
 .roh-form { border: 1px solid var(--brass); border-radius: 8px; padding: 10px; display: grid; gap: 8px; background: var(--surface); }
 .roh-form label { display: grid; gap: 2px; }
@@ -1050,6 +1053,7 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 <button type="button" class="to-top" id="to-top" aria-label="Back to top" title="Back to top" hidden><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5l-7 7m7-7l7 7M12 5v14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Top</span></button>
 
 <script src="/vendor/leaflet/leaflet.js"></script>
+<script src="/shared.js"></script>
 <script>
 /* THEMES-START */
 // Colour schemes a league can choose on League setup. Each is a header colour and a highlight colour; the rest
@@ -1347,7 +1351,7 @@ function setAccess() {
   for (const k of ["owner", "fixtures", "results", "media"]) document.body.classList.toggle(`can-${k}`, can(k));
 }
 // The team a logged-in captain looks after, this season.
-const myTeam = () => S.captainTeam ? Object.values(S.teams).find(t => teamKey(t.name) === teamKey(S.captainTeam)) || null : null;
+const myTeam = () => S.captainTeam ? Object.values(S.teams).find(t => teamKeyOf(t) === teamKey(S.captainTeam)) || null : null;
 function setToken(token) { S.token = token; store.set(TOKEN_KEY, token); }
 async function loadMe() {
   if (!S.token) return;
@@ -1624,6 +1628,9 @@ async function commit(mutate, { live = false } = {}) {
     // Nights that this save finished off: a result entered for a game that didn't have one. Bulk changes
     // (loading an example season, importing or generating fixtures) never start a report.
     // Match night reports start when a night's results are published (see publishNight and publishCup).
+    // Teams come back linked to their clubs, with ids for new players.
+    if (r.teams) for (const [id, t] of Object.entries(r.teams)) if (draft.teams?.[id]) draft.teams[id] = t;
+    if (r.clubs && S.league) S.league = { ...S.league, clubs: r.clubs };
     apply({ ...draft, version: r.version });
     if (r.stale) loadSeason().then(() => setTimeout(() => toast("Someone else also saved changes just now. They're shown here too."), 1500));
     return true;
@@ -1870,7 +1877,7 @@ function currentView() {
 // The team now playing under a name, or an older name of it (null for teams no longer in the league).
 function teamByName(name) {
   const k = teamKey((name || "").trim()); if (!k) return null;
-  return Object.values(S.teams).find(t => teamKey(t.name) === k) || null;
+  return Object.values(S.teams).find(t => teamKeyOf(t) === k) || null;
 }
 // Team names (".tn") on the public pages become links to the team's page. Marked after each render.
 function linkTeamNames(root) {
@@ -1879,7 +1886,9 @@ function linkTeamNames(root) {
     if (el.closest("button, a, select, label, [data-no-team-link]")) { el.classList.add("tn-off"); continue; }
     const t = teamByName(el.textContent); if (!t) { el.classList.add("tn-off"); continue; }
     el.dataset.team = t.id; el.classList.add("tn-link"); el.setAttribute("role", "link"); el.tabIndex = 0;
-    el.title = `See ${t.name}'s team page`;
+    // An old name keeps showing as it was, and says what the team is called now.
+    const shown = el.textContent.trim();
+    el.title = lowName(shown) === lowName(t.name) ? `See ${t.name}'s team page` : `${shown} is now ${t.name}. See the team page`;
     const logo = logoFor(el.textContent.trim()); if (logo && !el.previousElementSibling?.matches?.("img.team-logo")) el.insertAdjacentHTML("beforebegin", `<img class="team-logo" data-logo="${esc(logo)}" alt="">`);
   }
 }
@@ -2240,7 +2249,7 @@ function guideHtml(admin) {
       ${guideList("Accounts and billing", ["See every account and league, and open any league with full secretary powers.", "Set each account's yearly subscription and renewal date. Payments are taken by hand for now.", "Set the price breaks by number of teams: add or remove breaks, set prices, or Ask us.", "See leagues that went over their plan's teams, with the extra to bill up to renewal, and mark each one billed."])}
       ${guideList("Extras and messages", ["Set each extra as included in the subscription or sold separately, with its price.", "Give an extra to an account until a date, with a monthly limit where it has one.", "Connect a league's own domain in Netlify, then mark it connected.", "Answer Help &amp; requests from secretaries, and contact-form messages from visitors.", "No limits on your own photo readings or reports."])}</div>`],
     ["secretary", "One per league", "League secretary", "The account holder for a league. Can do everything for their league, and decides who helps and what they can see.", `<div class="gd-cols">
-      ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on. A new season can bring across last season's venues, teams, players, divisions and cups.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, team logos, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
+      ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on. A new season can bring across last season's venues, teams, players, divisions and cups.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, team logos, and teams that changed their name: every season keeps the name it had, linked to the team it became.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
       ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, byes and results. The draw made at random or set by hand round by round, semi-finals at the home alley or a neutral venue, and finals at a set alley."])}
       ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Roll of honour: bring in each cup's past winners and runners-up from a file, as far back as your records go, matching old team names to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
       ${guideList("News and files", ["News posts with photos, pinned posts and drafts.", "Match night reports drafted by Claude (an extra), checked before publishing.", "A photo gallery, with photos linked to cups.", "Downloads: PDFs, Word, Excel, CSV and pictures.", "Help &amp; requests: ask us anything from inside the site."])}</div>`],
@@ -2885,6 +2894,7 @@ VIEWS.submit = {
 // A team's logo, found by its name now or any name it had before; shown small beside its name on the public pages
 // (`linkTeamNames` adds it) and larger on the Teams page. Loaded like photos, from memory in the preview.
 function logoFor(name) {
+  const club = clubOfName(name); if (club) return club.logo || null;
   const logos = S.league?.logos || {}, k = teamKey(name || "");
   if (logos[String(name || "").toLowerCase()]) return logos[String(name).toLowerCase()];
   for (const [n, id] of Object.entries(logos)) if (teamKey(n) === k) return id;
@@ -2912,8 +2922,8 @@ async function logoData(file) {
 async function setTeamLogo(team, file) {
   try {
     const image = file ? await logoData(file) : null;
-    const r = await send(`/api/leagues/${S.league.id}/logos`, "PUT", { team, image });
-    S.league = { ...S.league, logos: r.league.logos }; toast(file ? `Logo added for ${team}` : `Logo removed from ${team}`); refresh();
+    const r = await send(`/api/leagues/${S.league.id}/logos`, "PUT", { team, club: clubOfName(team)?.id, image });
+    S.league = { ...S.league, logos: r.league.logos, clubs: r.league.clubs }; toast(file ? `Logo added for ${team}` : `Logo removed from ${team}`); refresh();
   } catch (e) { e.message ? toast(e.message) : saveError(e); }
 }
 
@@ -3356,12 +3366,22 @@ function nfRow(f, oneTime, full = false) {
 // fetched once and kept. Teams are matched by id, or by name for seasons where they were set up again.
 const ARCHIVE = {};
 // A team's name as it is now, following any earlier names it had (League → team names), lower case for matching.
-function teamKey(name) {
-  const n = String(name || "").replace(/\s+/g, " ").trim().toLowerCase();
-  const g = (S.league?.teamNames || []).find(x => x.name.toLowerCase() === n || x.was.some(w => w.toLowerCase() === n));
-  return g ? g.name.toLowerCase() : n;
+// Teams over the years: each season's team keeps the name it had then and points to its club (S.league.clubs), the
+// team as it is now, with its name now and the names it had before. Matching goes by the club: a team's own link,
+// or for a name on its own (as in the roll of honour), the club with that name now or before.
+const lowName = v => String(v || "").replace(/\s+/g, " ").trim().toLowerCase();
+function clubOfName(name) {
+  const n = lowName(name), cs = Object.values(S.league?.clubs || {}); if (!n) return null;
+  return cs.find(c => lowName(c.name) === n) || cs.find(c => c.was.some(w => lowName(w) === n)) || null;
 }
-const previousNames = name => (S.league?.teamNames || []).find(x => x.name.toLowerCase() === String(name || "").trim().toLowerCase())?.was || [];
+const clubOf = t => (t?.club && S.league?.clubs?.[t.club]) || clubOfName(t?.name);
+function teamKey(name) {
+  const c = clubOfName(name); if (c) return `club:${c.id}`;
+  const n = lowName(name), g = (S.league?.teamNames || []).find(x => lowName(x.name) === n || x.was.some(w => lowName(w) === n));
+  return g ? lowName(g.name) : n;
+}
+const teamKeyOf = t => { const c = t?.club && S.league?.clubs?.[t.club]; return c ? `club:${c.id}` : teamKey(t?.name); };
+const previousNames = name => clubOfName(name)?.was || [];
 // Runs fn with another season's teams, fixtures and divisions in place (for its table), then puts this season back.
 function withSeason(data, fn) {
   const keep = [S.teams, S.fixtures, S.divisions, S.venues, S.cups, S.admin];
@@ -3373,7 +3393,7 @@ async function teamHistory(name) {
   const key = teamKey(name), out = [];
   for (const se of [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start))) {
     const data = await seasonFor(se.id);
-    const t = Object.values(data.teams || {}).find(x => teamKey(x.name) === key); if (!t) continue;
+    const t = Object.values(data.teams || {}).find(x => teamKeyOf(x) === key); if (!t) continue;
     const row = withSeason(data, () => { for (const g of standings().filter(x => !x.loose)) { const i = g.rows.findIndex(r => r.t.id === t.id); if (i >= 0) return { pos: i + 1, of: g.rows.length, div: g.division?.name || "", ...g.rows[i] }; } return null; });
     // A season is finished once its dates are over or every league game has a result.
     const league = Object.values(data.fixtures || {}).filter(f => f.comp === "league");
@@ -3390,7 +3410,7 @@ async function teamHonours(name) {
   return out.sort((a, b) => seasonYear(b.season) - seasonYear(a.season));
 }
 async function seasonFor(sid) {
-  if (sid === S.seasonId) return { teams: S.teams, fixtures: S.fixtures, cups: S.cups };
+  if (sid === S.seasonId) return { teams: S.teams, fixtures: S.fixtures, cups: S.cups, divisions: S.divisions, venues: S.venues };
   return ARCHIVE[sid] ||= api(`/api/public/${encodeURIComponent(S.league.slug)}/seasons/${sid}`).catch(() => ({ teams: {}, fixtures: {}, cups: {} }));
 }
 function formOf(teamId, before) {
@@ -3408,7 +3428,7 @@ function placeOf(teamId) {
 }
 function meetingsIn(data, season, a, b) {
   const nameOf = id => data.teams?.[id]?.name || "";
-  const is = (id, team) => id === team.id || (nameOf(id) && teamKey(nameOf(id)) === teamKey(team.name));
+  const is = (id, team) => id === team.id || (data.teams?.[id] && teamKeyOf(data.teams[id]) === teamKeyOf(team));
   const pair = (x, y) => (is(x, a) && is(y, b)) || (is(x, b) && is(y, a));
   const out = [];
   for (const f of Object.values(data.fixtures || {})) if (played(f) && pair(f.home, f.away))
@@ -3929,9 +3949,8 @@ const CUP_STRUCTURES = { full: "Full tournament", final: "Straight final" };
 const entriesText = n => `${n} ${n === 1 ? "entry" : "entries"}`;
 const sortedCups = () => Object.values(S.cups).sort((a, b) => (a.created || "").localeCompare(b.created || "") || a.name.localeCompare(b.name));
 // Bracket positions for seeds 1..size, e.g. 8 → [1,8,4,5,2,7,3,6], so byes (the highest seeds) are spread through the draw.
-function seedOrder(size) { let o = [1]; while (o.length < size) { const n = o.length * 2; o = o.flatMap(s => [s, n + 1 - s]); } return o; }
-const cupRoundCount = n => Math.max(1, Math.ceil(Math.log2(Math.max(2, n))));
-function roundName(r, total) { const left = total - r; return left === 0 ? "Final" : left === 1 ? "Semi-finals" : left === 2 ? "Quarter-finals" : `Round ${r}`; }
+// Shared with the API (public/shared.js), so the page and the calendar feed always agree.
+const { seedOrder, cupRoundCount, roundName } = SkittlersShared;
 function cupPlanText(structure, n) {
   if (!(n >= 2)) return "A cup needs at least 2 entries.";
   if (structure === "final") return `All ${entriesText(n)} play each other in one final game, so any number from 2 works, odd or even. The highest pins wins.`;
@@ -3980,11 +3999,7 @@ function entrantHtml(cup, id, admin = false, tag = "") {
   return parts ? `<span class="entrant-team">${esc(parts.team)}</span>${tag}<span class="entrant-players">${player ? playerHtml(player) : esc(parts.player)}</span>` : esc(entrantLabel(cup, id)) + tag;
 }
 // An entrant's home venue and alley: the team's, or for a player, their team's.
-function entrantHome(cup, id) {
-  if (!id) return null;
-  const team = cup.format === "team" ? S.teams[id] : S.teams[String(id).split(":")[1]], v = S.venues[team?.venue];
-  return v ? { venue: v.id, alley: v.alleys > 1 ? (team.alley || 1) : null } : null;
-}
+const entrantHome = (cup, id) => SkittlersShared.entrantHome(cup, id, S.teams, S.venues);
 const homeKey = h => h ? `${h.venue}|${h.alley || 1}` : null;
 const venueText = (venue, alley) => S.venues[venue] ? `${S.venues[venue].name}${alley ? ` · Alley ${alley}` : ""}` : "";
 // Who can be entered: the season's teams, or every player on a team.
@@ -4036,72 +4051,9 @@ document.addEventListener("change", e => {
   if (t.matches?.("input[type=radio][name$='-final']")) { const box = document.querySelector(`[data-fv="${t.name.replace(/-final$/, "")}"]`); if (box) box.hidden = t.value !== "set"; }
   if (t.matches?.("select[data-fvenue]")) { const v = S.venues[t.value], wrap = t.closest(".fv-pick").querySelector("[data-falley-wrap]"); wrap.hidden = !(v?.alleys > 1); wrap.querySelector("select").innerHTML = alleyOptions(v?.alleys || 1, 1); }
 });
-// Who goes into a round of a cup drawn by hand: the winners of the round before, once all its results are in (else null).
-function cupEntering(prev) { return prev.every(m => m.empty || m.winner) ? prev.filter(m => !m.empty).map(m => m.winner) : null; }
-// The matches set by hand for a round, if they still fit who's going into it: every one of them used once, the rest of
-// the places empty. A round of one match between the last two needs no draw.
-function cupRoundPairs(cup, r, entering, slots) {
-  if (!entering) return null;
-  const p = cup.pairings?.[r];
-  if (Array.isArray(p) && p.length === slots) {
-    const used = p.flat().filter(Boolean), want = new Set(entering);
-    if (used.length === want.size && new Set(used).size === used.length && used.every(x => want.has(x))) return p.map(x => [x?.[0] || null, x?.[1] || null]);
-  }
-  return slots === 1 && entering.length === 2 ? [[entering[0], entering[1]]] : entering.length < 2 ? [[entering[0] || null, null]] : null;
-}
-// Where a match is played: a venue chosen for it, else the semi-final and final rules set on the cup (neutral, chosen
-// later; or the final at a set alley), else the home side's alley.
-function cupVenue(cup, m, R, venues, home) {
-  const sched = cup.schedule?.[m.id] || {}, fin = cup.finalAt || {};
-  if (sched.venue && venues[sched.venue]) return { venue: sched.venue, alley: venues[sched.venue].alleys > 1 ? (sched.alley || 1) : null, chosen: true };
-  if (m.round === R && fin.mode === "set" && venues[fin.venue]) return { venue: fin.venue, alley: venues[fin.venue].alleys > 1 ? (fin.alley || 1) : null, set: true };
-  if ((m.round === R && (fin.mode === "neutral" || fin.mode === "set")) || (R > 1 && m.round === R - 1 && cup.semiVenue === "neutral")) return { venue: null, alley: null, neutral: true };
-  return { venue: home?.venue || null, alley: home?.alley || null };
-}
-function cupBracket(cup) {
-  const R = cupRoundCount(cup.entries), size = 2 ** R, order = seedOrder(size), draw = cup.draw || [], n = draw.length, manual = cup.drawMode === "manual";
-  const rounds = []; let prev = null;
-  for (let r = 1; r <= R; r++) {
-    const matches = [], when = cup.roundDates?.[r] || {}, slots = size / 2 ** r;
-    const entering = r > 1 && manual ? cupEntering(prev) : null, pairs = r > 1 && manual ? cupRoundPairs(cup, r, entering, slots) : null;
-    for (let k = 0; k < slots; k++) {
-      const id = `${r}-${k}`, m = { id, round: r, slot: k, a: null, b: null, aPins: null, bPins: null, winner: null, bye: false, empty: false, tie: false };
-      if (r === 1) {
-        const sa = order[2 * k], sb = order[2 * k + 1];
-        m.a = draw[sa - 1] || null; m.b = draw[sb - 1] || null;
-        if (sa > n && sb > n) m.empty = true;
-        else if (sa > n || sb > n) { m.bye = true; m.winner = m.a || m.b; }
-      } else if (manual) {
-        // Drawn by hand: the matches set for this round, or waiting for its draw.
-        if (!pairs) m.toDraw = !!entering;
-        else { [m.a, m.b] = pairs[k] || [null, null];
-          if (!m.a && !m.b) m.empty = true; else if (!m.a || !m.b) { m.a = m.a || m.b; m.b = null; m.bye = true; m.winner = m.a; } }
-      } else {
-        const pa = prev[2 * k], pb = prev[2 * k + 1];
-        if (pa.empty && pb.empty) m.empty = true;
-        else if (pa.empty || pb.empty) { m.bye = true; m.a = (pa.empty ? pb : pa).winner; m.winner = m.a; }
-        else { m.a = pa.winner; m.b = pb.winner; }
-      }
-      const res = cup.results?.[id];
-      if (!m.bye && !m.empty && res && m.a && m.b && res.a === m.a && res.b === m.b) {
-        m.aPins = res.aPins; m.bPins = res.bPins; m.cards = res.cards || null;
-        m.tie = res.aPins === res.bPins;
-        m.winner = m.tie ? ([m.a, m.b].includes(res.winner) ? res.winner : null) : (res.aPins > res.bPins ? m.a : m.b);
-      }
-      m.date = when.date || ""; m.time = when.time || "";
-      const at = cupVenue(cup, m, R, S.venues, entrantHome(cup, m.a));
-      Object.assign(m, { venue: at.venue, alley: at.alley, venueChosen: !!at.chosen, venueSet: !!at.set, neutral: !!at.neutral });
-      matches.push(m);
-    }
-    // Matches in a round are played on the same night, so flag any that share a venue and alley.
-    const byKey = {};
-    for (const m of matches) if (!m.bye && !m.empty && m.a && m.b && m.venue) (byKey[homeKey(m)] ||= []).push(m);
-    for (const list of Object.values(byKey)) if (list.length > 1) list.forEach(m => m.clash = true);
-    rounds.push({ r, name: roundName(r, R), date: when.date || "", time: when.time || "", matches, toDraw: matches.some(m => m.toDraw), entering });
-    prev = matches;
-  }
-  return { rounds, champion: rounds.at(-1).matches[0].winner };
-}
+// Every round of a cup from its draw and results: worked out by the shared code (public/shared.js), which the API's
+// calendar feed uses too.
+const cupBracket = cup => SkittlersShared.cupRounds(cup, S.teams, S.venues);
 // Random draw (entries chosen for a bye are guaranteed one) in which no two first-round home sides (the first-named) share a venue and alley,
 // because the first round is played on one night. Tries fresh shuffles, swapping home and away
 // within a match where that helps; if it can't be done, returns the draw with the fewest clashes.
@@ -6042,12 +5994,16 @@ VIEWS.teams = {
     });
     $("#tf-save").disabled = false;
     if (!ok) return;
-    // Previous names live with the league, across seasons. A renamed team keeps its old name in the list.
+    // Previous names belong to the team's club, across seasons. A renamed team keeps its old name (the server adds it).
     const oldName = editing ? this.editingName : "", typed = $("#t-was").value.split(",").map(x => x.replace(/\s+/g, " ").trim()).filter(Boolean);
-    const was = [...new Set([...(oldName && oldName.toLowerCase() !== name.toLowerCase() ? [oldName] : []), ...typed, ...previousNames(oldName)].filter(x => x.toLowerCase() !== name.toLowerCase()))];
-    const others = (S.league.teamNames || []).filter(g => ![name, oldName].filter(Boolean).some(n => g.name.toLowerCase() === n.toLowerCase()));
-    const before = JSON.stringify(S.league.teamNames || []), next = was.length ? [...others, { name, was }] : others;
-    if (JSON.stringify(next) !== before && !(await leagueRequest("", "PATCH", { teamNames: next }))) return;
+    const club = clubOf(S.teams[id]);
+    if (club) {
+      const was = [...new Set([...typed, ...(oldName && lowName(oldName) !== lowName(name) ? [oldName] : [])].filter(x => lowName(x) !== lowName(name)))];
+      if (JSON.stringify([...was].sort()) !== JSON.stringify([...club.was].sort())) {
+        const r = await leagueRequest("/clubs", "POST", { action: "was", club: club.id, was }); if (!r) return;
+        S.league = { ...S.league, clubs: r.clubs };
+      }
+    }
     toast(editing ? `Saved ${name}${oldName && oldName !== name ? `. ${oldName} is kept as a previous name` : ""}` : `Added ${name}`); this.reset();
   },
   // Every player as "Name (Team)" for the committee search.
@@ -6127,9 +6083,10 @@ VIEWS.teams = {
     const ok = await commit(d => {
       const raw = d.teams[from].players || [], i = raw.findIndex(x => searchText(fullName(typeof x === "string" ? splitName(x) : x)) === key);
       if (i < 0) return;
-      raw.splice(i, 1);
-      (d.teams[to].players ||= []).push({ first: p.first, last: p.last, nick: p.nick || "" });
-      (d.transfers ||= {})[id] = { id, date, first: p.first, last: p.last, nick: p.nick || "", key, from, to, created: new Date().toISOString() };
+      // The player keeps their id (so they're the same player on the new team), but not their old team's roles.
+      const [moved] = raw.splice(i, 1), pid = typeof moved === "object" && moved.id ? moved.id : undefined;
+      (d.teams[to].players ||= []).push({ first: p.first, last: p.last, nick: p.nick || "", ...(pid ? { id: pid } : {}) });
+      (d.transfers ||= {})[id] = { id, date, first: p.first, last: p.last, nick: p.nick || "", key, from, to, ...(pid ? { pid } : {}), created: new Date().toISOString() };
     });
     if (!ok) return;
     toast(`${playerLabel(p)} moved to ${teamName(to)}`);
@@ -7114,7 +7071,8 @@ VIEWS.seasons = {
           <div id="ri-summary" class="imp-summary" aria-live="polite"></div>
           <div class="actions"><button class="btn" type="button" id="ri-go" disabled>Import season</button></div>
         </div>
-        <div class="panel form" id="roh-panel"></div></div>
+        <div class="panel form" id="roh-panel"></div>
+        <div class="panel form" id="clubs-panel"></div></div>
       </div>`;
     $("#ri-file").addEventListener("change", async e => { const f = e.target.files[0]; this.importText = f ? await f.text() : ""; delete $("#ri-name").dataset.edited; this.importCheck(); });
     $("#ri-name").addEventListener("input", () => { $("#ri-name").dataset.edited = "1"; this.importCheck(); });
@@ -7131,7 +7089,7 @@ VIEWS.seasons = {
   // Checks the results file and shows what importing it will do.
   // The seasons a file can be added to, newest first; keeps the choice when the list is redrawn.
   importTargets() {
-    ROH.render();
+    ROH.render(); CLUBS.render();
     const sel = $("#ri-into"); if (!sel) return;
     // Importing past results is an add-on.
     const lock = st => { this.importLocked = !st?.available; const n = $("#ri-lock"); if (n) { n.hidden = !this.importLocked; n.textContent = st?.reason || ""; } if (this.importText) this.importCheck(); ROH.lock(this.importLocked, st?.reason); };
@@ -7215,7 +7173,7 @@ VIEWS.seasons = {
         if (had) return venueId[v] = had.id;
         const id = newId() + "v" + i; venueId[v] = id; changes.push({ in: "venues", id, value: { id, name: v, address1: "", address2: "", address3: "", postcode: "", phone: "", alleys: 1, lat: null, lng: null } }); });
       const teamId = {}; let added = 0;
-      [...plan.teams.values()].forEach((t, i) => { const had = teams.find(x => low(x.name) === low(t.name)) || teams.find(x => teamKey(x.name) === teamKey(t.name));
+      [...plan.teams.values()].forEach((t, i) => { const had = teams.find(x => low(x.name) === low(t.name)) || teams.find(x => teamKeyOf(x) === teamKey(t.name));
         if (had) return teamId[low(t.name)] = had.id;
         const id = newId() + "t" + i; teamId[low(t.name)] = id; added++;
         changes.push({ in: "teams", id, value: { id, name: t.name, venue: null, alley: null, captainFirst: "", captainLast: "", players: [], ...(t.division ? { division: divId[t.division] } : {}) } }); });
@@ -7335,6 +7293,43 @@ function nameLikeness(a, b) {
   const lev = 1 - d[a.length][b.length] / Math.max(a.length, b.length), contains = a.includes(b) || b.includes(a) ? 0.85 : 0;
   return Math.max(lev, contains);
 }
+// Teams over the years, for the secretary: every team with the names it has played under, joining two that turn
+// out to be the same team, and separating a name that was linked by mistake. Each season keeps the name it had.
+const CLUBS = {
+  render() {
+    const box = $("#clubs-panel"); if (!box) return;
+    const clubs = Object.values(S.league.clubs || {}).sort((a, b) => a.name.localeCompare(b.name));
+    const renamed = clubs.filter(c => c.was.length), opts = clubs.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+    box.innerHTML = `<h3>Teams over the years</h3>
+      <p class="muted" style="margin:0">Every season keeps the name each team had then. A team that changed its name is linked to the team it became, so its history, honours and logo join up, and its old name links to its page today.</p>
+      ${clubs.length > 1 ? `<h4 class="roh-h">Join two teams</h4>
+      <p class="muted" style="margin:0">When two names turn out to be the same team, join the older one to the team it became.</p>
+      <div class="row2"><div class="field"><label for="cl-from">This team</label><select id="cl-from">${opts}</select></div>
+        <div class="field"><label for="cl-into">became</label><select id="cl-into">${opts}</select></div></div>
+      <div class="actions"><button type="button" class="btn ghost" data-cl="merge">Join them</button></div>` : ""}
+      <h4 class="roh-h">Teams that changed their name</h4>
+      ${renamed.length ? `<ul class="cl-list">${renamed.map(c => `<li><strong>${esc(c.name)}</strong> <span class="muted">played as</span> ${c.was.map(w => `<span class="cl-was">${esc(w)} <button type="button" class="linkish" data-cl="unlink" data-club="${esc(c.id)}" data-name="${esc(w)}" title="Make ${esc(w)} a team of its own again">separate</button></span>`).join(" ")}</li>`).join("")}</ul>`
+        : `<p class="muted">None yet. Link a team's old names on the Teams page, with Check names after an import, or in the roll of honour.</p>`}`;
+  },
+  async act(b) {
+    let body;
+    if (b.dataset.cl === "merge") {
+      const from = $("#cl-from").value, into = $("#cl-into").value;
+      if (from === into) return toast("Choose two different teams.");
+      if (!arm(b, `Join ${S.league.clubs[from].name} to ${S.league.clubs[into].name}`)) return;
+      body = { action: "merge", from, into };
+    } else {
+      if (!arm(b, "Confirm separate")) return;
+      body = { action: "unlink", club: b.dataset.club, name: b.dataset.name };
+    }
+    const r = await leagueRequest("/clubs", "POST", body); if (!r) return;
+    S.league = { ...S.league, clubs: r.clubs }; for (const k of Object.keys(ARCHIVE)) delete ARCHIVE[k];
+    await loadSeason(); this.render(); ROH.render();
+    toast(body.action === "merge" ? "Teams joined" : `${b.dataset.name} is a team of its own again`);
+  },
+};
+document.addEventListener("click", e => { const b = e.target.closest?.("[data-cl]"); if (b) CLUBS.act(b); });
+
 // The secretary's roll of honour: bring in a cup's past winners from a file (matching team names to today's teams,
 // the closest match suggested for checking), add or change a season by hand, and rename a team throughout.
 const ROH = {
@@ -7354,7 +7349,8 @@ const ROH = {
     const box = $("#roh-panel"); if (!box) return;
     const cups = this.cups(); if (!cups.some(([k]) => k === this.cup)) this.cup = cups[0]?.[0] || null;
     const rows = (S.honours || []).filter(h => cupNorm(h.cup) === this.cup).sort((a, b) => seasonYear(b.season) - seasonYear(a.season));
-    const sideText = x => !x ? "–" : [x.team, x.player, x.pins != null ? `${x.pins}` : ""].filter(Boolean).join(" · ");
+    const now = n => { const c = clubOfName(n); return c && lowName(c.name) !== lowName(n) ? ` (now ${c.name})` : ""; };
+    const sideText = x => !x ? "–" : [x.team ? x.team + now(x.team) : "", x.player, x.pins != null ? `${x.pins}` : ""].filter(Boolean).join(" · ");
     const teamsUsed = [...new Set((S.honours || []).flatMap(h => ["winner", "runner", "joint"].map(k => h[k]?.team).filter(Boolean)))].sort((a, b) => a.localeCompare(b));
     box.innerHTML = `<h3>Roll of honour</h3>
       <p class="muted" style="margin:0">Each cup's winners and runners-up, season by season, going back as far as your records go. It shows on Past seasons, and on each team's page under Cup honours. Cups played on the site are added for you.</p>
@@ -7370,8 +7366,13 @@ const ROH = {
       <div class="roh-admin">${this.editing === "new" ? this.form({ cup: cups.find(([k]) => k === this.cup)?.[1] || "" }) : ""}${rows.map(h => this.editing === h.id ? this.form(h) : `<div class="roh-row"><span class="roh-season">${esc(h.season)}</span>
           <span>${h.winner ? `🏆 ${esc(sideText(h.winner))}` : ""}${h.runner ? `<br><span class="muted">Runner-up:</span> ${esc(sideText(h.runner))}` : ""}${h.joint ? `<br><span class="muted">Joint runner-up:</span> ${esc(sideText(h.joint))}` : ""}${h.note ? `<br><span class="muted">${esc(h.note)}</span>` : ""}</span>
           <span class="actions"><button type="button" class="btn ghost sm" data-roh="edit" data-id="${esc(h.id)}">Edit</button><button type="button" class="btn danger sm" data-roh="del" data-id="${esc(h.id)}">Delete</button></span></div>`).join("")}</div>
-      <h4 class="roh-h">Change a team's name in the roll of honour</h4>
-      <p class="muted" style="margin:0">When you find out an old team was renamed, or two names are the same team, change one to the other here. If the team is still in the league, you can instead add the old name under Previous names on the Teams page: its honours then show on the team's page and the roll keeps the name it won under.</p>
+      <h4 class="roh-h">Link an old name to a team</h4>
+      <p class="muted" style="margin:0">When you find out a team in the roll was renamed, link its old name to the team it became. The roll keeps the name it won under, and the win shows on that team's page.</p>
+      <div class="row2"><div class="field"><label for="roh-lname">Name in the roll</label><select id="roh-lname">${teamsUsed.map(n => { const c = clubOfName(n); return `<option value="${esc(n)}">${esc(n)}${c && lowName(c.name) !== lowName(n) ? ` (now ${esc(c.name)})` : ""}</option>`; }).join("")}</select></div>
+        <div class="field"><label for="roh-lto">It's the team now called</label><input type="text" id="roh-lto" maxlength="80" list="roh-known"></div></div>
+      <div class="actions"><button type="button" class="btn ghost" data-roh="link">Link it</button></div>
+      <h4 class="roh-h">Change a name in the roll of honour</h4>
+      <p class="muted" style="margin:0">To correct a name that was written wrongly, change it here, everywhere it appears in the roll.</p>
       <div class="row2"><div class="field"><label for="roh-from">Name in the roll</label><select id="roh-from">${teamsUsed.map(n => `<option>${esc(n)}</option>`).join("")}</select></div>
         <div class="field"><label for="roh-to">Change it to</label><input type="text" id="roh-to" maxlength="80" list="roh-known"></div></div>
       <div class="actions"><button type="button" class="btn ghost" data-roh="rename">Change it everywhere</button></div>`
@@ -7466,18 +7467,26 @@ const ROH = {
       <div class="roh-match">${[...p.match].sort((a, b) => order[a.how] - order[b.how] || a.name.localeCompare(b.name)).map(m => `<div class="roh-m ${m.how}"><span class="roh-m-name">${esc(m.name)}</span>
         <select data-roh-map="${esc(m.name)}" aria-label="${esc(m.name)} is">${opts(m.to, m.name)}</select>
         <span class="chip ${m.how === "same" ? "ok" : m.how === "close" || m.how === "twin" ? "warn" : ""}">${m.how === "same" ? "Matches" : m.how === "close" ? "Closest match: check" : m.how === "twin" ? "Spelt this way later in the file: check" : m.near ? `No match (nearest: ${esc(m.near)})` : "No match"}</span></div>`).join("")}</div>
+      <p class="muted" style="margin:0">Names are kept as your records have them. A name matched to a team is linked to it, so it shows on that team's page and links to it.</p>
       <div class="actions"><button type="button" class="btn" data-roh="import"${this.locked ? " disabled" : ""}>Bring in ${plural(p.items.length, "season")}</button><button type="button" class="btn ghost" data-roh="discard">Cancel</button></div>`;
   },
   async import(btn) {
     const p = this.plan; if (!p) return;
     const map = Object.fromEntries($$("[data-roh-map]").map(s => [s.dataset.rohMap, s.value]));
-    const side = x => x && ({ ...x, team: x.team && (map[x.team] || x.team), written: x.team && map[x.team] && map[x.team] !== x.team ? x.team : undefined });
-    const fresh = p.items.map(h => ({ ...h, winner: side(h.winner), runner: side(h.runner), joint: side(h.joint) }));
+    const links = Object.entries(map).filter(([n, to]) => to && lowName(to) !== lowName(n)).map(([name, to]) => ({ name, to }));
+    const fresh = p.items;
     const years = new Set(fresh.map(h => seasonYear(h.season))), k = cupNorm(p.cup);
     const items = (S.honours || []).filter(h => !(cupNorm(h.cup) === k && years.has(seasonYear(h.season)))).concat(fresh);
     btn.disabled = true;
+    if (links.length) { const r = await leagueRequest("/clubs", "POST", { action: "link", links }); if (!r) { btn.disabled = false; return; } S.league = { ...S.league, clubs: r.clubs }; }
     if (await this.save(items, true)) { this.plan = null; this.cup = k; const f = $("#roh-file"); if (f) f.value = ""; $("#roh-check").innerHTML = ""; toast(`${plural(fresh.length, "season")} of the ${p.cup} brought in`); }
     else btn.disabled = false;
+  },
+  async link(btn) {
+    const name = $("#roh-lname").value, to = $("#roh-lto").value.trim();
+    if (!name || !to) return toast("Choose the name and the team it became.");
+    const r = await leagueRequest("/clubs", "POST", { action: "link", name, to }); if (!r) return;
+    S.league = { ...S.league, clubs: r.clubs }; this.render(); toast(`${name} is linked to ${to}`);
   },
   async rename(btn) {
     const from = $("#roh-from").value, to = $("#roh-to").value.trim();
@@ -7500,6 +7509,7 @@ document.addEventListener("click", e => {
   if (act === "import") ROH.import(b);
   if (act === "discard") { ROH.plan = null; const f = $("#roh-file"); if (f) f.value = ""; $("#roh-check").innerHTML = ""; }
   if (act === "rename") ROH.rename(b);
+  if (act === "link") ROH.link(b);
 });
 document.addEventListener("change", e => {
   if (e.target.id === "roh-show") { ROH.cup = e.target.value; ROH.editing = null; ROH.render(); }
@@ -7525,7 +7535,7 @@ async function openNameCheck(sid) {
   const best = (name, pool) => pool.map(x => [x, nameLikeness(name, x)]).sort((a, b) => b[1] - a[1])[0] || [null, 0];
   const teams = Object.values(data.teams || {}).filter(t => !/^bye$/i.test(t.name.trim())).sort((a, b) => a.name.localeCompare(b.name)), venues = Object.values(data.venues || {}).sort((a, b) => a.name.localeCompare(b.name));
   const teamRow = t => {
-    const linked = refTeams.find(n => teamKey(n) === teamKey(t.name) && n.toLowerCase() !== t.name.toLowerCase());
+    const linked = refTeams.find(n => teamKey(n) === teamKeyOf(t) && n.toLowerCase() !== t.name.toLowerCase());
     const same = refTeams.find(n => n.toLowerCase() === t.name.toLowerCase()), [guess, score] = best(t.name, refTeams);
     const pick = same ? `same:${same}` : linked ? `old:${linked}` : score >= 0.8 ? `same:${guess}` : "new";
     const opt = (v, l) => `<option value="${esc(v)}"${v === pick ? " selected" : ""}>${esc(l)}</option>`;
@@ -7569,7 +7579,7 @@ async function saveNameCheck(sid, btn) {
         twin.players = [...(twin.players || []), ...(t.players || []).filter(p => !(twin.players || []).some(q => fullName(q) === fullName(p)))];
         if (!twin.division && t.division) twin.division = t.division;
         delete data.teams[t.id]; delete contacts[t.id];
-      } else t.name = name;
+      } else { links.push([name, t.name]); t.name = name; delete t.club; }
     }
     // Venues: take the matching venue's name, address and alleys; duplicates are joined.
     for (const row of $$("[data-nc-venue]", box)) {
@@ -7583,12 +7593,9 @@ async function saveNameCheck(sid, btn) {
       } else Object.assign(vn, { name: src.name, address1: src.address1 || "", address2: src.address2 || "", address3: src.address3 || "", postcode: src.postcode || "", phone: src.phone || "", alleys: src.alleys || 1, lat: src.lat ?? null, lng: src.lng ?? null });
     }
     await send(`/api/leagues/${S.league.id}/seasons/${sid}`, "PUT", { version, data, contacts });
-    // Old names join the league's list of previous names.
-    if (links.length) {
-      const groups = structuredClone(S.league.teamNames || []);
-      for (const [now, was] of links) { const g = groups.find(x => x.name.toLowerCase() === now.toLowerCase()); if (g) { if (!g.was.some(w => w.toLowerCase() === was.toLowerCase())) g.was.push(was); } else groups.push({ name: now, was: [was] }); }
-      await leagueRequest("", "PATCH", { teamNames: groups });
-    }
+    // Old names (and other spellings) link to the team: the season keeps the name it had, and the team's history,
+    // honours and logo join up.
+    if (links.length) { const r = await leagueRequest("/clubs", "POST", { action: "link", links: links.map(([to, name]) => ({ name, to })) }); if (r) S.league = { ...S.league, clubs: r.clubs }; }
     delete ARCHIVE[sid];
     if (sid === S.seasonId) await loadSeason();
     box.hidden = true; box.innerHTML = "";
