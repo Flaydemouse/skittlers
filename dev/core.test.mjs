@@ -168,6 +168,16 @@ r = await call("PATCH", `leagues/${L.id}`, { name: "New name" }, sec2); assert.e
 r = await call("POST", "leagues", { name: "Another", slug: "another" }, sec2); assert.equal(r.status, 402);
 // overall admin
 r = await call("POST", "auth/signup", { name: "Neil", email: "owner@test.com", password: "superpass1" }); const boss = r.body.token; assert.equal(r.body.user.isSuper, true);
+// The roll of honour: the secretary saves it, anyone reads it, a file import needs the Past results import add-on
+{ const lg = L, slug = L.slug, items = [{ cup: "Captains Cup", season: "2019–20", winner: { team: "Tintinhull Boys", player: "Steve Whitlock", pins: 55 }, runner: { team: "Balls In Hand", player: "Andy Elliot", pins: 42 }, joint: { team: "The Untouchables", player: "Lee Mapletoft" }, note: "" },
+    { cup: "Captains Cup", season: "2020–21", winner: null, runner: null, note: "No competition (Covid)" }];
+  r = await call("PUT", `leagues/${lg.id}/honours`, { items }, boss); assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.league.honoursCount, 2);
+  assert.equal(r.body.items[0].joint.pins, null); assert.ok(r.body.items[0].id);
+  r = await call("GET", `public/${slug}/honours`); assert.equal(r.body.items.length, 2); assert.equal(r.body.items[1].note, "No competition (Covid)");
+  r = await call("PUT", `leagues/${lg.id}/honours`, { items: [{ cup: "", season: "2019" }] }, boss); assert.equal(r.status, 400, "needs a cup");
+  r = await call("PUT", `leagues/${lg.id}/honours`, { items }, other); assert.equal(r.status, 404, "not another account");
+  r = await call("PUT", `leagues/${lg.id}/honours`, { items, import: true }, boss); assert.ok([200, 402].includes(r.status));
+}
 // The demo league: public, read-only, nobody's to manage, not even the Super Admin's
 { r = await call("GET", "public/demo"); assert.equal(r.status, 200); const D = r.body.league;
   assert.equal(D.demo, true); assert.equal(D.seasons.length, 2); assert.equal(D.name, "Westcombe & District Skittles League");

@@ -529,6 +529,11 @@ p.bad { color: var(--loss); font-weight: 600; margin: 0; }
 .lp-hero p { font-size: 1.08rem; color: var(--muted); max-width: 52ch; }
 .lp-cta { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; }
 .lp-big { padding: 12px 20px; font-size: 1rem; }
+/* See the demo site: the highlight colour, with a soft glow that pulses now and then */
+.btn.lp-demo { background: var(--brass); color: #231A04; border-color: var(--brass); box-shadow: 0 0 0 0 color-mix(in srgb, var(--brass) 55%, transparent); animation: lp-demo-glow 2.8s ease-out 1s infinite; }
+.btn.lp-demo:hover { filter: brightness(1.06); }
+@keyframes lp-demo-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brass) 55%, transparent); } 60%, 100% { box-shadow: 0 0 0 12px transparent; } }
+@media (prefers-reduced-motion: reduce) { .btn.lp-demo { animation: none; } }
 .lp-small { font-size: .88rem !important; }
 .lp-hero-pic { position: relative; padding-bottom: 24px; }
 .lp-frame { border-radius: 12px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 18px 40px -18px rgb(0 0 0 / .35); background: var(--surface); }
@@ -821,6 +826,34 @@ fieldset.field legend { padding: 0; margin-bottom: 4px; }
 .cup-section { margin-bottom: 36px; }
 .cup-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .cup-title .cup-view { margin-left: auto; }
+/* roll of honour */
+.roh-table th, .roh-table td { vertical-align: top; text-align: left; }
+.roh-table .roh-season { width: 1%; padding-right: 24px; }
+.roh-win .roh-side { vertical-align: top; }
+.roh-season { white-space: nowrap; font-weight: 600; }
+.roh-side { display: grid; gap: 1px; }
+.roh-win .roh-side { display: inline-grid; }
+.roh-player { font-size: .88rem; }
+.roh-pins { font-size: .8rem; color: var(--muted); }
+.roh-joint { margin-top: 6px; } .roh-joint small { color: var(--muted); display: block; }
+.roh-note { font-size: .82rem; margin-top: 4px; }
+.roh-intro { margin: -4px 0 10px; }
+.roh-cup-h { margin: 14px 0 8px; }
+.roh-h { margin: 14px 0 4px; }
+.roh-admin { display: grid; gap: 6px; }
+.roh-row { display: grid; grid-template-columns: 90px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: .9rem; }
+.roh-form { border: 1px solid var(--brass); border-radius: 8px; padding: 10px; display: grid; gap: 8px; background: var(--surface); }
+.roh-form label { display: grid; gap: 2px; }
+.roh-sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.roh-side-f { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 8px; display: grid; gap: 6px; margin: 0; }
+.roh-side-f legend { font-size: .8rem; font-weight: 700; padding: 0 4px; }
+.roh-match { display: grid; gap: 4px; max-height: 420px; overflow: auto; margin: 8px 0; }
+.roh-m { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 2px 8px; align-items: center; padding: 6px 8px; border-radius: 6px; }
+.roh-m select { width: 100%; }
+.roh-m .chip { grid-column: 1 / -1; justify-self: start; }
+.roh-m.close, .roh-m.twin { background: var(--warn-bg); }
+.roh-m-name { font-weight: 600; }
+@media (max-width: 600px) { .roh-row { grid-template-columns: 1fr; } }
 /* the demo league's bar, above the header */
 .demo-bar { background: #FFF4C2; color: #3A2E00; border-bottom: 1px solid #E3CF6F; font-size: .88rem; position: relative; z-index: 30; }
 .demo-bar > .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding-top: 7px; padding-bottom: 7px; }
@@ -1357,8 +1390,10 @@ async function openLeague() {
 async function loadExtras() {
   const slug = encodeURIComponent(S.league.slug);
   S.newsLoaded = false;
-  const [news, media, docs] = await Promise.all([api(`/api/public/${slug}/news`).catch(() => null), api(`/api/public/${slug}/media`).catch(() => null), api(`/api/public/${slug}/docs`).catch(() => null)]);
+  const [news, media, docs, honours] = await Promise.all([api(`/api/public/${slug}/news`).catch(() => null), api(`/api/public/${slug}/media`).catch(() => null), api(`/api/public/${slug}/docs`).catch(() => null),
+    S.league.honoursCount ? api(`/api/public/${slug}/honours`).catch(() => null) : null]);
   if (news) S.news = news.items; if (media) S.media = media.items; if (docs) { S.docs = docs.items; renderNav(); }
+  S.honours = honours?.items || [];
   S.newsLoaded = true;
   if (S.admin) await loadAdminNews();
   refresh();
@@ -1722,7 +1757,7 @@ function renderNav() {
   const adminLink = x => x[0] === "manage-fixtures" && waiting ? link(x).replace("</a>", ` <span class="badge" title="${plural(waiting, "result")} sent in by captains">${waiting}</span></a>`) : link(x);
   $("#tabs").innerHTML = (S.admin ? `<div class="tab-row admin-row"><span class="sep">Admin</span>${ADMIN_VIEWS.filter(([id]) => canTab(id)).map(adminLink).join("")}${S.captainTeam ? link(["my-team", "My team"]) : ""}</div>` : "")
     + (!S.admin && S.captainTeam ? `<div class="tab-row admin-row"><span class="sep">Captain</span>${link(["my-team", "My team"])}</div>` : "")
-    + `<div class="tab-row">${PUBLIC_VIEWS.filter(([id]) => (id !== "submit" || S.league.takesResults) && (id !== "downloads" || S.docs.length) && (id !== "past" || pastSeasons().length)).map(link).join("")}</div>`;
+    + `<div class="tab-row">${PUBLIC_VIEWS.filter(([id]) => (id !== "submit" || S.league.takesResults) && (id !== "downloads" || S.docs.length) && (id !== "past" || pastSeasons().length || S.league.honoursCount)).map(link).join("")}</div>`;
   $("#acct").innerHTML = S.admin || S.captainTeam
     ? `<span class="who">${esc(S.user.name)}</span>${accountLink("leagues", "My leagues")}${accountLink("help", `Help${S.support.mine ? ` <span class="badge">${S.support.mine}</span>` : ""}`)}${S.user.isSuper ? accountLink("inbox", `Messages${S.support.inbox ? ` <span class="badge">${S.support.inbox}</span>` : ""}`) : ""}${logout}`
     : S.league?.demo ? `<a href="/#signup" data-path="/" data-hash="signup">Start your free trial</a>`
@@ -1991,7 +2026,7 @@ VIEWS.welcome = {
           <div class="eyebrow">Skittles league websites</div>
           <h2>Your league's tables, fixtures, cups and stats, online in an evening.</h2>
           <p>Skittlers gives your league its own website. Generate the fixtures, enter results or read them from a photo of the board, check them, and publish. Tables, stats and cup draws look after themselves.</p>
-          <div class="lp-cta"><a class="btn lp-big" href="#signup">Start your free trial</a><a class="btn ghost lp-big" href="/demo" data-path="/demo" data-hash="home">See the demo site</a><button type="button" class="btn ghost lp-big" data-lp-go="lp-features">See what it does</button></div>
+          <div class="lp-cta"><a class="btn lp-big" href="#signup">Start your free trial</a><a class="btn lp-big lp-demo" href="/demo" data-path="/demo" data-hash="home"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 5C6.5 5 2.7 9.4 1.5 11.4a1.2 1.2 0 0 0 0 1.2C2.7 14.6 6.5 19 12 19s9.3-4.4 10.5-6.4a1.2 1.2 0 0 0 0-1.2C21.3 9.4 17.5 5 12 5Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-2.2a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6Z"/></svg>See the demo site</a><button type="button" class="btn ghost lp-big" data-lp-go="lp-features">See what it does</button></div>
           <p class="lp-small" id="lp-trial">Free for 30 days. No card needed.</p>
         </div>
         <div class="lp-hero-pic"><div class="lp-frame">${shot("home", "A league's home page with its table and next match night")}</div><div class="lp-phone">${shot("phone", "The home page on a phone")}</div></div>
@@ -2207,7 +2242,7 @@ function guideHtml(admin) {
     ["secretary", "One per league", "League secretary", "The account holder for a league. Can do everything for their league, and decides who helps and what they can see.", `<div class="gd-cols">
       ${guideList("Setting up", ["Seasons: add them, choose the one on your public site, and the one you're working on. A new season can bring across last season's venues, teams, players, divisions and cups.", "Divisions and venues, with addresses, alleys and maps.", "Teams and players, nicknames, captain, vice captain and sticker up, team logos, and previous team names.", "Move a player to another team mid-season; their stats follow them.", "Your committee: President, Chairman, Treasurer, Secretary and members.", "Points for a win, draw or loss, hand points, players a side, balls a hand, hands thrown, rough or nomination, tie-breaks and start time.", "The look: 12 colour schemes, 9 light and 7 dark backgrounds, light, dark or follow the device, and 6 font styles.", "Admins &amp; roles: add helpers by email, choose who sees captains' contacts, and turn on captain logins."])}
       ${guideList("Fixtures, results and cups", ["The fixture generator: home and away halves, with no clashes on shared alleys.", "Postpone a game to a new night, or to a date to be arranged.", "Results as scores or full scorecards, hand by hand with spares or as totals, and walkovers.", "Private notes or notes for the site, a checked tick, and Publish now for each night. Nothing goes public until you publish it.", "Approve or reject results sent in by captains.", "Read a board photo into a scorecard, or a whole batch of photos at once (extras).", "Cups: knockouts or straight finals, team or individual, pairs and captains' cups, byes and results. The draw made at random or set by hand round by round, semi-finals at the home alley or a neutral venue, and finals at a set alley."])}
-      ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
+      ${guideList("History", ["Import past seasons from a CSV file (an extra): a whole season, or league games and then each cup.", "Cup rounds, byes, singles and pairs finals, and walkovers all come in.", "Check names: match old spellings of teams and venues to today's.", "Roll of honour: bring in each cup's past winners and runners-up from a file, as far back as your records go, matching old team names to today's.", "Backups: automatic copies, restore, and download or upload a backup file."])}
       ${guideList("News and files", ["News posts with photos, pinned posts and drafts.", "Match night reports drafted by Claude (an extra), checked before publishing.", "A photo gallery, with photos linked to cups.", "Downloads: PDFs, Word, Excel, CSV and pictures.", "Help &amp; requests: ask us anything from inside the site."])}</div>`],
     ["roles", "Added by the secretary", "Other roles", "Helpers sign up or log in with the email the secretary gives, and see only the pages for their role. Every change they make is checked, not just hidden.", `<div class="gd-roles">
       ${[["Results secretary", "Scores, scorecards, photo reading, publishing, captains' results and cup results. Can't add, move or delete games."],
@@ -2217,7 +2252,7 @@ function guideHtml(admin) {
       <p class="gd-note">None of these roles can change League setup, seasons, teams, admins or billing. Captains' addresses and phone numbers stay hidden from every role unless the secretary allows it.</p>`],
     ["visitors", "Anyone with your league's address", "What visitors see", "", `<div class="gd-cols">
       ${guideList("This season", ["Home: division tables side by side, the next match night, news, photos and the committee.", "League tables with form and your tie-breaks.", "Fixtures and results, with scorecards and head-to-head form.", "Add to calendar: Google, Apple, or a feed for one team.", "Cups: draws, brackets, finals and results, as a chart or a list.", "Stats: averages, high scores, spares and records, and each player's own page."])}
-      ${guideList("Teams, history and more", ["Teams in A to Z order, with their logos. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, and cup winners and runners-up.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
+      ${guideList("Teams, history and more", ["Teams in A to Z order, with their logos. Click any team name anywhere for its page.", "Each team page: players, league honours (winners, runners-up, wooden spoon), cup honours and a season-by-season record.", "Venues with addresses and maps.", "Past seasons: final tables in division order with champions, cup winners and runners-up, and a roll of honour for each cup.", "Downloads, and Send a result for captains.", "News posts share with preview cards on Facebook, WhatsApp and X."])}</div>`],
     ["prices", "Prices", "Subscriptions and extras", "A yearly subscription by the number of teams in your league, with extras to add.", `<div id="gd-prices"><p class="muted">Loading prices…</p></div>`],
   ].filter(Boolean);
   return `<div class="gd">
@@ -3072,7 +3107,7 @@ function seasonCupResults() {
     if (c.structure === "final") { const f = cupFinal(c); win = f.winner; runner = f.complete ? f.rows.find(r => r.id !== f.winner)?.id : null; }
     else if (c.draw?.length) { const br = cupBracket(c), last = br.rounds.at(-1)?.matches[0]; win = br.champion; runner = win && last ? (last.a === win ? last.b : last.a) : null; }
     const label = id => id ? entrantLabel(c, id) : null;
-    results.push({ name: c.name, win: label(win), runner: label(runner),
+    results.push({ name: c.name, format: c.format, win: label(win), runner: label(runner),
       body: c.structure === "final" ? ((c.entrants || []).length ? finalTableHtml(c) : "") : c.draw?.length ? bracketHtml(c) : `<p class="muted">No draw was made.</p>` });
   }
   // Cup games recorded as plain results (as from an import): the final's winner and loser, and a column per round.
@@ -3110,6 +3145,33 @@ function plainCupRounds(fs) {
   }
   return rounds;
 }
+/* ---------- roll of honour ---------- */
+// Each cup's winners and runners-up season by season: what the secretary brought in (S.honours, which can go back
+// long before the site's seasons), plus the cups played on the site, for seasons the records don't already cover.
+// Cups are matched by name ("Captains Cups" is the Captains Cup), seasons by their first year.
+const cupNorm = n => String(n || "").toLowerCase().replace(/[^a-z0-9]/g, "").replace(/s$/, "");
+const seasonYear = sn => +(/\d{4}/.exec(sn || "")?.[0] || 0);
+// An individual cup's entry is "Player (Team)".
+const entrantSide = (label, format) => { const m = format === "individual" && /^(.*) \(([^()]*)\)$/.exec(label || ""); return m ? { team: m[2], player: m[1], pins: null } : { team: label, player: "", pins: null }; };
+async function rollOfHonour() {
+  const cups = new Map();
+  const add = (name, row) => { const k = cupNorm(name); let c = cups.get(k); if (!c) cups.set(k, c = { name, key: k, rows: [] });
+    const y = seasonYear(row.season); if (y && c.rows.some(r => seasonYear(r.season) === y)) return; c.rows.push(row); };
+  for (const h of S.honours || []) add(h.cup, h);
+  for (const se of S.league?.seasons || []) {
+    const data = await seasonFor(se.id);
+    for (const r of withSeason(data, seasonCupResults)) if (r.win) add(r.name, { season: se.name, site: true, winner: entrantSide(r.win, r.format), runner: r.runner ? entrantSide(r.runner, r.format) : null, joint: null, note: "" });
+  }
+  for (const c of cups.values()) c.rows.sort((a, b) => seasonYear(b.season) - seasonYear(a.season) || b.season.localeCompare(a.season));
+  return [...cups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+function rollTable(c) {
+  const side = x => !x ? `<span class="muted">–</span>` : `<div class="roh-side">${x.team ? `<span class="tn">${esc(x.team)}</span>` : ""}${x.player ? `<span class="roh-player">${esc(x.player)}</span>` : ""}${x.pins != null ? `<span class="roh-pins">${x.pins} pins</span>` : ""}</div>`;
+  return `<div class="table-scroll"><table class="league roh-table"><thead><tr><th class="pl">Season</th><th class="pl">Winner</th><th class="pl">Runner-up</th></tr></thead><tbody>${c.rows.map(r =>
+    !r.winner && !r.runner ? `<tr><td class="pl roh-season">${esc(r.season)}</td><td class="pl muted" colspan="2">${esc(r.note || "No competition")}</td></tr>`
+    : `<tr><td class="pl roh-season">${esc(r.season)}</td><td class="pl roh-win">${r.winner ? "🏆 " : ""}${side(r.winner)}</td><td class="pl">${side(r.runner)}${r.joint ? `<div class="roh-joint"><small>Joint runner-up</small>${side(r.joint)}</div>` : ""}${r.note ? `<div class="muted roh-note">${esc(r.note)}</div>` : ""}</td></tr>`).join("")}</tbody></table></div>`;
+}
+
 // Every season other than the one on the public site, newest first.
 const pastSeasons = () => !S.league ? [] : [...S.league.seasons].filter(x => x.id !== S.league.currentSeasonId).sort((a, b) => b.start.localeCompare(a.start));
 // Divisions in name order, so Division 1 comes before Division 2 whatever order they were set up in.
@@ -3121,6 +3183,7 @@ VIEWS.past = {
     $("#past-pick").addEventListener("click", e => { const b = e.target.closest("[data-past]"); if (b) { S.ui.past = b.dataset.past; this.at = null; this.refresh(); } });
     // Stepping through the season night by night, switching between tables and charts, picking out a team.
     $("#past-body").addEventListener("click", e => {
+      const rc = e.target.closest("[data-roh-cup]"); if (rc) { S.ui.rollCup = rc.dataset.rohCup; return this.refresh(); }
       const v = e.target.closest("[data-pv]"); if (v) { (S.ui.pastViews ||= {})[v.dataset.div] = v.dataset.pv; chartToAnimate = v.dataset.pv === "chart" ? v.dataset.div : null; return this.refresh(); }
       const b = e.target.closest("[data-pt]");
       if (b) { const n = this.nightList || [], i = this.at ? n.indexOf(this.at) : n.length - 1, to = b.dataset.pt === "back" ? i - 1 : b.dataset.pt === "fwd" ? i + 1 : n.length - 1;
@@ -3129,11 +3192,23 @@ VIEWS.past = {
     });
   },
   at: null,
+  // The roll of honour: one cup at a time, newest season first.
+  async roll(body) {
+    if (!body.querySelector(".roh-table")) body.innerHTML = `<p class="muted">Loading the roll of honour…</p>`;
+    const cups = await rollOfHonour(); if (S.ui.past !== "honours" || !$("#past-body")) return;
+    if (!cups.length) return body.innerHTML = `<div class="empty"><strong>No cup winners yet</strong>Each cup's winners and runners-up appear here.</div>`;
+    if (!cups.some(c => c.key === S.ui.rollCup)) S.ui.rollCup = cups[0].key;
+    const c = cups.find(x => x.key === S.ui.rollCup);
+    body.innerHTML = `<h3 class="past-h">Roll of honour</h3><p class="muted roh-intro">Every winner and runner-up, season by season.</p>
+      <nav class="cup-jump roh-cups" aria-label="Cups">${cups.map(x => `<button type="button" data-roh-cup="${esc(x.key)}" aria-pressed="${x.key === c.key}">${esc(x.name)}</button>`).join("")}</nav>
+      ${rollTable(c)}`;
+  },
   async refresh() {
     const list = pastSeasons(), pick = $("#past-pick"), body = $("#past-body"); if (!pick) return;
-    if (!list.length) { pick.innerHTML = ""; return body.innerHTML = `<div class="empty"><strong>No past seasons yet</strong>Earlier seasons appear here.</div>`; }
-    if (!list.some(x => x.id === S.ui.past)) S.ui.past = list[0].id;
-    pick.innerHTML = list.map(x => `<button type="button" data-past="${esc(x.id)}" aria-pressed="${x.id === S.ui.past}">${esc(x.name)}</button>`).join("");
+    if (!list.length && !S.league.honoursCount) { pick.innerHTML = ""; return body.innerHTML = `<div class="empty"><strong>No past seasons yet</strong>Earlier seasons appear here.</div>`; }
+    if (S.ui.past !== "honours" && !list.some(x => x.id === S.ui.past)) S.ui.past = list[0]?.id || "honours";
+    pick.innerHTML = `<button type="button" data-past="honours" aria-pressed="${S.ui.past === "honours"}">🏆 Roll of honour</button>` + list.map(x => `<button type="button" data-past="${esc(x.id)}" aria-pressed="${x.id === S.ui.past}">${esc(x.name)}</button>`).join("");
+    if (S.ui.past === "honours") return this.roll(body);
     const sid = S.ui.past, season = list.find(x => x.id === sid);
     if (!body.querySelector(`[data-season="${CSS.escape(sid)}"]`)) body.innerHTML = `<p class="muted">Loading season ${esc(season.name)}…</p>`;
     const data = await seasonFor(sid);
@@ -3310,14 +3385,9 @@ async function teamHistory(name) {
 // Cups a team (under any of its names) won or were runners-up in, newest season first.
 async function teamHonours(name) {
   const key = teamKey(name), out = [];
-  for (const se of [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start))) {
-    const data = await seasonFor(se.id);
-    for (const r of withSeason(data, seasonCupResults)) {
-      if (r.win && teamKey(r.win) === key) out.push({ season: se.name, cup: r.name, won: true, name: r.win });
-      else if (r.runner && teamKey(r.runner) === key) out.push({ season: se.name, cup: r.name, won: false, name: r.runner });
-    }
-  }
-  return out;
+  for (const c of await rollOfHonour()) for (const r of c.rows)
+    for (const [k, won] of [["winner", true], ["runner", false], ["joint", false]]) { const x = r[k]; if (x?.team && teamKey(x.team) === key) out.push({ season: r.season, cup: c.name, won, name: x.team, player: x.player || "" }); }
+  return out.sort((a, b) => seasonYear(b.season) - seasonYear(a.season));
 }
 async function seasonFor(sid) {
   if (sid === S.seasonId) return { teams: S.teams, fixtures: S.fixtures, cups: S.cups };
@@ -4428,7 +4498,7 @@ VIEWS["league-teams"] = {
     // Finished seasons only: top of the division, second, or bottom (the wooden spoon).
     const now = (S.teams[id]?.name || "").toLowerCase(), as = r => r.name.toLowerCase() !== now ? ` as ${esc(r.name)}` : "";
     const league = hist.filter(r => r.done && r.P && r.of > 1 && (r.pos <= 2 || r.pos === r.of)).map(r => `<li>${r.pos === 1 ? "🏆 Division winners" : r.pos === 2 ? "🥈 Division runners-up" : "🥄 Wooden spoon winners"}: <strong>${esc(r.div || "League")}</strong> <span class="muted">· ${esc(r.season)}${as(r)}</span></li>`);
-    const cups = rows.map(r => `<li>${r.won ? "🏆 Winners" : "🥈 Runners-up"}: <strong>${esc(r.cup)}</strong> <span class="muted">· ${esc(r.season)}${as(r)}</span></li>`);
+    const cups = rows.map(r => `<li>${r.won ? "🏆 Winners" : "🥈 Runners-up"}: <strong>${esc(r.cup)}</strong>${r.player ? ` (${esc(r.player)})` : ""} <span class="muted">· ${esc(r.season)}${as(r)}</span></li>`);
     // Only the sections with something in them; nothing at all when the team hasn't won anything yet.
     box.hidden = !league.length && !cups.length;
     box.innerHTML = (league.length ? `<h4>League honours</h4><ul>${league.join("")}</ul>` : "") + (cups.length ? `<h4${league.length ? ' class="pt-h-gap"' : ""}>Cup honours</h4><ul>${cups.join("")}</ul>` : "");
@@ -7043,7 +7113,8 @@ VIEWS.seasons = {
           <div class="field" id="ri-name-wrap"><label for="ri-name">Season name</label><input type="text" id="ri-name" maxlength="40" placeholder="e.g. 2023–24"><span class="hint">Filled in from the dates in the file. You can change it.</span></div>
           <div id="ri-summary" class="imp-summary" aria-live="polite"></div>
           <div class="actions"><button class="btn" type="button" id="ri-go" disabled>Import season</button></div>
-        </div></div>
+        </div>
+        <div class="panel form" id="roh-panel"></div></div>
       </div>`;
     $("#ri-file").addEventListener("change", async e => { const f = e.target.files[0]; this.importText = f ? await f.text() : ""; delete $("#ri-name").dataset.edited; this.importCheck(); });
     $("#ri-name").addEventListener("input", () => { $("#ri-name").dataset.edited = "1"; this.importCheck(); });
@@ -7060,9 +7131,10 @@ VIEWS.seasons = {
   // Checks the results file and shows what importing it will do.
   // The seasons a file can be added to, newest first; keeps the choice when the list is redrawn.
   importTargets() {
+    ROH.render();
     const sel = $("#ri-into"); if (!sel) return;
     // Importing past results is an add-on.
-    const lock = st => { this.importLocked = !st?.available; const n = $("#ri-lock"); if (n) { n.hidden = !this.importLocked; n.textContent = st?.reason || ""; } if (this.importText) this.importCheck(); };
+    const lock = st => { this.importLocked = !st?.available; const n = $("#ri-lock"); if (n) { n.hidden = !this.importLocked; n.textContent = st?.reason || ""; } if (this.importText) this.importCheck(); ROH.lock(this.importLocked, st?.reason); };
     if (S.addons?.history) lock(S.addons.history); else api(`/api/leagues/${S.league.id}/addons`).then(a => { S.addons = a; lock(a.history); }).catch(() => {});
     const keep = sel.value, list = [...S.league.seasons].sort((a, b) => b.start.localeCompare(a.start));
     sel.innerHTML = `<option value="">A new season</option>` + list.map(x => `<option value="${esc(x.id)}">Season ${esc(x.name)}${x.id === S.league.currentSeasonId ? " (on the public site)" : ""}</option>`).join("");
@@ -7263,6 +7335,183 @@ function nameLikeness(a, b) {
   const lev = 1 - d[a.length][b.length] / Math.max(a.length, b.length), contains = a.includes(b) || b.includes(a) ? 0.85 : 0;
   return Math.max(lev, contains);
 }
+// The secretary's roll of honour: bring in a cup's past winners from a file (matching team names to today's teams,
+// the closest match suggested for checking), add or change a season by hand, and rename a team throughout.
+const ROH = {
+  cup: null, editing: null, plan: null, locked: false, lockReason: "",
+  lock(locked, reason) { this.locked = locked; this.lockReason = reason || ""; const n = $("#roh-lock"); if (n) { n.hidden = !locked; n.textContent = this.lockReason; } },
+  cups() { return [...new Map((S.honours || []).map(h => [cupNorm(h.cup), h.cup])).entries()].sort((a, b) => a[1].localeCompare(b[1])); },
+  // Every team name the league knows: this season's, earlier seasons', previous names, and those already in the roll.
+  async knownNames() {
+    const names = new Map(), add = n => { n = String(n || "").trim(); if (n && !/^bye$/i.test(n) && !names.has(n.toLowerCase())) names.set(n.toLowerCase(), n); };
+    Object.values(S.teams).forEach(t => add(t.name));
+    for (const g of S.league.teamNames || []) { add(g.name); g.was.forEach(add); }
+    for (const se of S.league.seasons) { const d = await seasonFor(se.id); Object.values(d.teams || {}).forEach(t => add(t.name)); }
+    for (const h of S.honours || []) for (const k of ["winner", "runner", "joint"]) add(h[k]?.team);
+    return [...names.values()].sort((a, b) => a.localeCompare(b));
+  },
+  render() {
+    const box = $("#roh-panel"); if (!box) return;
+    const cups = this.cups(); if (!cups.some(([k]) => k === this.cup)) this.cup = cups[0]?.[0] || null;
+    const rows = (S.honours || []).filter(h => cupNorm(h.cup) === this.cup).sort((a, b) => seasonYear(b.season) - seasonYear(a.season));
+    const sideText = x => !x ? "–" : [x.team, x.player, x.pins != null ? `${x.pins}` : ""].filter(Boolean).join(" · ");
+    const teamsUsed = [...new Set((S.honours || []).flatMap(h => ["winner", "runner", "joint"].map(k => h[k]?.team).filter(Boolean)))].sort((a, b) => a.localeCompare(b));
+    box.innerHTML = `<h3>Roll of honour</h3>
+      <p class="muted" style="margin:0">Each cup's winners and runners-up, season by season, going back as far as your records go. It shows on Past seasons, and on each team's page under Cup honours. Cups played on the site are added for you.</p>
+      <h4 class="roh-h">Bring in a cup's winners from a file</h4>
+      <p class="muted" style="margin:0">A CSV with one row per season: Season, the winner's team, player and pins, the runner-up's team, player and pins, and any joint runner-up's team and player. A season with "No competition" or "Covid" is kept as a note. Seasons already in the roll for that cup are replaced.</p>
+      <p class="warn-text" id="roh-lock"${this.locked ? "" : " hidden"} style="margin:0">${esc(this.lockReason)}</p>
+      <div class="row2"><div class="field"><label for="roh-file">CSV file</label><input type="file" id="roh-file" accept=".csv,text/csv"></div>
+        <div class="field"><label for="roh-cup">Cup</label><input type="text" id="roh-cup" maxlength="60" list="roh-cupnames" placeholder="e.g. Captains Cup"><datalist id="roh-cupnames">${[...new Set([...cups.map(c => c[1]), ...Object.values(S.cups).map(c => c.name)])].map(n => `<option value="${esc(n)}">`).join("")}</datalist></div></div>
+      <div id="roh-check" aria-live="polite"></div>
+      <h4 class="roh-h">The roll of honour</h4>
+      ${cups.length ? `<div class="list-tools"><label>Cup <select id="roh-show">${cups.map(([k, n]) => `<option value="${esc(k)}"${k === this.cup ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>
+        <span class="actions"><button type="button" class="btn ghost sm" data-roh="add">Add a season</button></span></div>
+      <div class="roh-admin">${this.editing === "new" ? this.form({ cup: cups.find(([k]) => k === this.cup)?.[1] || "" }) : ""}${rows.map(h => this.editing === h.id ? this.form(h) : `<div class="roh-row"><span class="roh-season">${esc(h.season)}</span>
+          <span>${h.winner ? `🏆 ${esc(sideText(h.winner))}` : ""}${h.runner ? `<br><span class="muted">Runner-up:</span> ${esc(sideText(h.runner))}` : ""}${h.joint ? `<br><span class="muted">Joint runner-up:</span> ${esc(sideText(h.joint))}` : ""}${h.note ? `<br><span class="muted">${esc(h.note)}</span>` : ""}</span>
+          <span class="actions"><button type="button" class="btn ghost sm" data-roh="edit" data-id="${esc(h.id)}">Edit</button><button type="button" class="btn danger sm" data-roh="del" data-id="${esc(h.id)}">Delete</button></span></div>`).join("")}</div>
+      <h4 class="roh-h">Change a team's name in the roll of honour</h4>
+      <p class="muted" style="margin:0">When you find out an old team was renamed, or two names are the same team, change one to the other here. If the team is still in the league, you can instead add the old name under Previous names on the Teams page: its honours then show on the team's page and the roll keeps the name it won under.</p>
+      <div class="row2"><div class="field"><label for="roh-from">Name in the roll</label><select id="roh-from">${teamsUsed.map(n => `<option>${esc(n)}</option>`).join("")}</select></div>
+        <div class="field"><label for="roh-to">Change it to</label><input type="text" id="roh-to" maxlength="80" list="roh-known"></div></div>
+      <div class="actions"><button type="button" class="btn ghost" data-roh="rename">Change it everywhere</button></div>`
+      : `<p class="muted">Nothing in the roll of honour yet. Bring in a file above, or <button type="button" class="linkish" data-roh="add">add a season by hand</button>.</p>${this.editing === "new" ? this.form({}) : ""}`}
+      <datalist id="roh-known"></datalist>`;
+    this.knownNames().then(ns => { const d = $("#roh-known"); if (d) d.innerHTML = ns.map(n => `<option value="${esc(n)}">`).join(""); });
+    if (this.plan) this.showPlan();
+  },
+  form(h) {
+    const f = (k, label) => { const x = h[k] || {}; return `<fieldset class="roh-side-f"><legend>${label}</legend>
+      <input type="text" data-f="${k}.team" maxlength="80" list="roh-known" placeholder="Team" value="${esc(x.team || "")}" aria-label="${label}: team">
+      <input type="text" data-f="${k}.player" maxlength="80" placeholder="Player (if it's a players' cup)" value="${esc(x.player || "")}" aria-label="${label}: player">
+      <input type="number" data-f="${k}.pins" min="0" inputmode="numeric" placeholder="Pins" value="${x.pins ?? ""}" aria-label="${label}: pins"></fieldset>`; };
+    return `<div class="roh-form" data-id="${esc(h.id || "new")}"><div class="row2"><div class="field"><label>Cup<input type="text" data-f="cup" maxlength="60" value="${esc(h.cup || "")}"></label></div><div class="field"><label>Season<input type="text" data-f="season" maxlength="20" placeholder="e.g. 2019–20" value="${esc(h.season || "")}"></label></div></div>
+      <div class="roh-sides">${f("winner", "Winner")}${f("runner", "Runner-up")}${f("joint", "Joint runner-up")}</div>
+      <div class="field"><label>Note<input type="text" data-f="note" maxlength="80" placeholder="e.g. No competition" value="${esc(h.note || "")}"></label></div>
+      <div class="actions"><button type="button" class="btn" data-roh="save">Save</button><button type="button" class="btn ghost" data-roh="cancel">Cancel</button></div></div>`;
+  },
+  async save(items, imported) {
+    try {
+      const r = await send(`/api/leagues/${S.league.id}/honours`, "PUT", { items, ...(imported ? { import: true } : {}) });
+      S.honours = r.items; S.league = { ...S.league, honoursCount: r.league.honoursCount }; renderNav(); this.render(); return true;
+    } catch (e) { saveError(e); return false; }
+  },
+  async saveForm(box) {
+    const v = k => $(`[data-f="${k}"]`, box).value.trim(), side = k => { const team = v(`${k}.team`), player = v(`${k}.player`), pins = v(`${k}.pins`);
+      return team || player ? { team, player, pins: pins === "" ? null : Math.round(+pins) } : null; };
+    const item = { id: box.dataset.id === "new" ? undefined : box.dataset.id, cup: v("cup"), season: v("season"), winner: side("winner"), runner: side("runner"), joint: side("joint"), note: v("note") };
+    if (!item.cup || !item.season) return toast("Fill in the cup and the season.");
+    const items = (S.honours || []).filter(h => h.id !== item.id).concat(item);
+    this.editing = null; this.cup = cupNorm(item.cup);
+    if (await this.save(items)) toast(`${item.cup} ${item.season} saved`);
+  },
+  // Reads the file: the columns are found by their headings, whatever order they're in.
+  readFile(text, cup) {
+    const rows = parseCsv(text).filter(r => r.some(c => String(c).trim()));
+    if (rows.length < 2) return { error: "The file has no rows." };
+    const heads = rows[0].map(h => String(h).toLowerCase().replace(/[^a-z ]/g, " "));
+    const col = {}; let jointSeen = 0;
+    heads.forEach((h, i) => {
+      if (/season|year/.test(h) && col.season === undefined) return col.season = i;
+      const role = /j[oa]?u?i?n?t|joint|jount/.test(h) ? "joint" : /r[a-z]*nner|runner/.test(h) ? "runner" : /winner|won/.test(h) ? "winner" : null; if (!role) return;
+      const field = /pin|score/.test(h) ? "pins" : /player/.test(h) ? "player" : role === "joint" ? (jointSeen++ ? "player" : "team") : "team";
+      if (col[`${role}.${field}`] === undefined) col[`${role}.${field}`] = i;
+    });
+    if (col.season === undefined || col["winner.team"] === undefined && col["winner.player"] === undefined) return { error: "The file needs a Season column and a winner's column." };
+    const cell = (r, k) => col[k] === undefined ? "" : String(r[col[k]] ?? "").trim();
+    const NOTE = /^(no competition|not played|cancelled|covid.*|void)$/i;
+    const items = [];
+    for (const r of rows.slice(1)) {
+      const season = cell(r, "season").replace(/(\d{4})\s*-\s*(\d{2,4})/, "$1–$2"); if (!season) continue;
+      let note = "";
+      const side = k => { let team = cell(r, `${k}.team`), player = cell(r, `${k}.player`); const pins = /^\d+$/.test(cell(r, `${k}.pins`)) ? +cell(r, `${k}.pins`) : null;
+        if (NOTE.test(team)) { note ||= team; team = ""; } if (NOTE.test(player)) { note ||= player; player = ""; }
+        return team || player ? { team, player, pins } : null; };
+      const winner = side("winner"), runner = side("runner"), joint = side("joint");
+      items.push({ cup, season, winner, runner, joint, note: note && /covid/i.test(note) ? "No competition (Covid)" : note });
+    }
+    return { items };
+  },
+  async check() {
+    const file = $("#roh-file")?.files[0], cup = $("#roh-cup").value.trim(), box = $("#roh-check");
+    if (!file) { this.plan = null; box.innerHTML = ""; return; }
+    if (!cup) { box.innerHTML = `<p class="warn-text">Type the cup's name.</p>`; return; }
+    const got = this.readFile(await file.text(), cup);
+    if (got.error) { this.plan = null; box.innerHTML = `<p class="warn-text">${esc(got.error)}</p>`; return; }
+    box.innerHTML = `<p class="muted">Matching the team names…</p>`;
+    const known = await this.knownNames(), names = [...new Set(got.items.flatMap(h => ["winner", "runner", "joint"].map(k => h[k]?.team).filter(Boolean)))].sort((a, b) => a.localeCompare(b));
+    // A name that's already known (or an old name of a team) stays; otherwise the closest name is suggested, to be checked.
+    const match = names.map(n => {
+      const same = known.find(k => teamKey(k) === teamKey(n) || k.toLowerCase() === n.toLowerCase());
+      if (same) return { name: n, to: same, how: "same" };
+      const best = known.map(k => [k, nameLikeness(n, k)]).sort((a, b) => b[1] - a[1])[0];
+      if (best && best[1] >= 0.5) return { name: n, to: best[0], how: "close", score: best[1] };
+      // Spelt another way elsewhere in the file: suggest the later spelling (the file's newest seasons come last or first, so
+      // use whichever name is in the more recent season).
+      const twin = names.filter(x => x !== n).map(x => [x, nameLikeness(n, x)]).filter(([, v]) => v >= 0.85).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (twin) { const last = x => Math.max(...got.items.filter(h => ["winner", "runner", "joint"].some(k => h[k]?.team === x)).map(h => seasonYear(h.season)));
+        if (last(twin) > last(n)) return { name: n, to: twin, how: "twin" }; }
+      return { name: n, to: "", how: "none", near: best?.[0] };
+    });
+    this.plan = { cup, items: got.items, match, known: [...new Set([...known, ...names])].sort((a, b) => a.localeCompare(b)) };
+    this.showPlan();
+  },
+  showPlan() {
+    const box = $("#roh-check"), p = this.plan; if (!box || !p) return;
+    const opts = (sel, self) => `<option value="">Keep as written</option>` + p.known.filter(k => k !== self).map(k => `<option value="${esc(k)}"${k === sel ? " selected" : ""}>${esc(k)}</option>`).join("");
+    const counts = { same: p.match.filter(m => m.how === "same").length, close: p.match.filter(m => m.how === "close" || m.how === "twin").length, none: p.match.filter(m => m.how === "none").length };
+    const order = { close: 0, twin: 0, none: 1, same: 2 };
+    box.innerHTML = `<div class="imp-summary"><p><strong>${plural(p.items.length, "season")}</strong> of the ${esc(p.cup)}, ${esc(p.items.at(-1)?.season || "")} to ${esc(p.items[0]?.season || "")}${p.items.some(h => h.note) ? `, ${plural(p.items.filter(h => h.note).length, "season")} with a note` : ""}.</p>
+      <p>${plural(p.match.length, "team name")}: ${counts.same} already known, ${counts.close} with a close match to check, ${counts.none} not found (kept as written).</p></div>
+      <div class="roh-match">${[...p.match].sort((a, b) => order[a.how] - order[b.how] || a.name.localeCompare(b.name)).map(m => `<div class="roh-m ${m.how}"><span class="roh-m-name">${esc(m.name)}</span>
+        <select data-roh-map="${esc(m.name)}" aria-label="${esc(m.name)} is">${opts(m.to, m.name)}</select>
+        <span class="chip ${m.how === "same" ? "ok" : m.how === "close" || m.how === "twin" ? "warn" : ""}">${m.how === "same" ? "Matches" : m.how === "close" ? "Closest match: check" : m.how === "twin" ? "Spelt this way later in the file: check" : m.near ? `No match (nearest: ${esc(m.near)})` : "No match"}</span></div>`).join("")}</div>
+      <div class="actions"><button type="button" class="btn" data-roh="import"${this.locked ? " disabled" : ""}>Bring in ${plural(p.items.length, "season")}</button><button type="button" class="btn ghost" data-roh="discard">Cancel</button></div>`;
+  },
+  async import(btn) {
+    const p = this.plan; if (!p) return;
+    const map = Object.fromEntries($$("[data-roh-map]").map(s => [s.dataset.rohMap, s.value]));
+    const side = x => x && ({ ...x, team: x.team && (map[x.team] || x.team), written: x.team && map[x.team] && map[x.team] !== x.team ? x.team : undefined });
+    const fresh = p.items.map(h => ({ ...h, winner: side(h.winner), runner: side(h.runner), joint: side(h.joint) }));
+    const years = new Set(fresh.map(h => seasonYear(h.season))), k = cupNorm(p.cup);
+    const items = (S.honours || []).filter(h => !(cupNorm(h.cup) === k && years.has(seasonYear(h.season)))).concat(fresh);
+    btn.disabled = true;
+    if (await this.save(items, true)) { this.plan = null; this.cup = k; const f = $("#roh-file"); if (f) f.value = ""; $("#roh-check").innerHTML = ""; toast(`${plural(fresh.length, "season")} of the ${p.cup} brought in`); }
+    else btn.disabled = false;
+  },
+  async rename(btn) {
+    const from = $("#roh-from").value, to = $("#roh-to").value.trim();
+    if (!from || !to) return toast("Choose the name and what to change it to.");
+    if (from === to) return;
+    if (!arm(btn, `Change ${from} to ${to}`)) return;
+    let n = 0;
+    const items = S.honours.map(h => { const c = { ...h }; for (const k of ["winner", "runner", "joint"]) if (c[k]?.team === from) { c[k] = { ...c[k], team: to, written: c[k].written || from }; n++; } return c; });
+    if (await this.save(items)) toast(`${from} changed to ${to} in ${plural(n, "place")}`);
+  },
+};
+document.addEventListener("click", e => {
+  const b = e.target.closest?.("[data-roh]"); if (!b) return;
+  const act = b.dataset.roh;
+  if (act === "add") { ROH.editing = "new"; ROH.render(); }
+  if (act === "edit") { ROH.editing = b.dataset.id; ROH.render(); }
+  if (act === "cancel") { ROH.editing = null; ROH.render(); }
+  if (act === "save") ROH.saveForm(b.closest(".roh-form"));
+  if (act === "del") { if (!arm(b, "Confirm delete")) return; ROH.save(S.honours.filter(h => h.id !== b.dataset.id)).then(ok => ok && toast("Season deleted from the roll of honour")); }
+  if (act === "import") ROH.import(b);
+  if (act === "discard") { ROH.plan = null; const f = $("#roh-file"); if (f) f.value = ""; $("#roh-check").innerHTML = ""; }
+  if (act === "rename") ROH.rename(b);
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "roh-show") { ROH.cup = e.target.value; ROH.editing = null; ROH.render(); }
+  if (e.target.id === "roh-file") {
+    // The cup's name, from the file's name when it isn't typed yet ("…Hall of Fame - Captains Cups.csv" is the Captains Cup).
+    const f = e.target.files[0], c = $("#roh-cup");
+    if (f && !c.value.trim()) c.value = f.name.replace(/\.csv$/i, "").split(/\s+-\s+|_-_/).pop().replace(/_/g, " ").replace(/\bcups\b/i, "Cup").trim();
+    ROH.check();
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "roh-cup" && $("#roh-file")?.files[0]) { clearTimeout(ROH.t); ROH.t = setTimeout(() => ROH.check(), 400); } });
+
 async function seasonAdminData(sid) { return sid === S.seasonId ? { version: S.version, teams: S.teams, venues: S.venues, fixtures: S.fixtures, divisions: S.divisions, cups: S.cups, transfers: S.transfers, committee: S.committee, contacts: S.contacts }
   : api(`/api/leagues/${S.league.id}/seasons/${sid}`); }
 async function openNameCheck(sid) {
