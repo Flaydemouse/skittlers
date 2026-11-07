@@ -146,6 +146,18 @@ r = await call("POST", `leagues/${L.id}/seasons`, { name: "2028–29", start: "2
 const S3 = r.body.season; assert.equal(r.body.league.currentSeasonId, S3.id);
 r = await call("GET", `leagues/${L.id}/seasons/${S3.id}`, null, sec); assert.equal(r.body.teams.t1.venue, "v1"); assert.equal(r.body.teams.t1.division, "d1"); assert.equal(r.body.teams.t1.players.length, 0);
 r = await call("DELETE", `leagues/${L.id}/seasons/${S3.id}`, null, sec); assert.equal(r.body.league.currentSeasonId, S2.id);
+// cups come across set up but with no entries, draw or results
+{ const cur = (await call("GET", `leagues/${L.id}/seasons/${S2.id}`, null, sec)).body;
+  r = await call("PUT", `leagues/${L.id}/seasons/${S2.id}`, { version: cur.version, data: { ...cur, contacts: undefined, cups: { k1: { id: "k1", name: "Stan Sparks Cup", type: "knockout", format: "team", structure: "full", game: "nomination", entries: 8,
+    entrants: [{ id: "t1", label: "A" }], draw: ["t1"], results: { m1: { aPins: 300 } }, roundDates: { 1: { date: "2028-01-01" } }, final: { scores: { a: 1 } }, pub: { results: {} }, check: { final: { ready: true } } } } }, contacts: cur.contacts }, sec);
+  assert.equal(r.status, 200, JSON.stringify(r.body));
+  r = await call("POST", `leagues/${L.id}/seasons`, { name: "2029–30", start: "2029-09-01", end: "2030-05-01", copyFrom: S2.id, copy: { teams: true, cups: true } }, sec);
+  const S4 = r.body.season; r = await call("GET", `leagues/${L.id}/seasons/${S4.id}`, null, sec); const k = r.body.cups.k1;
+  assert.equal(k.name, "Stan Sparks Cup"); assert.equal(k.game, "nomination"); assert.equal(k.entries, 8); assert.equal(k.structure, "full");
+  assert.deepEqual(k.entrants, []); assert.deepEqual(k.draw, []); assert.deepEqual(k.results, {}); assert.deepEqual(k.roundDates, {}); assert.deepEqual(k.final, { scores: {} }); assert.equal(k.pub, undefined); assert.equal(k.check, undefined);
+  r = await call("POST", `leagues/${L.id}/seasons`, { name: "2030–31", start: "2030-09-01", end: "2031-05-01", copyFrom: S2.id, copy: { teams: true } }, sec);
+  r = await call("GET", `leagues/${L.id}/seasons/${r.body.season.id}`, null, sec); assert.deepEqual(r.body.cups, {}, "only when ticked");
+}
 // password change logs out old token
 r = await call("POST", "auth/password", { current: "longenough", next: "newpassword1" }, sec); const sec2 = r.body.token;
 r = await call("GET", "auth/me", null, sec); assert.equal(r.status, 401); r = await call("GET", "auth/me", null, sec2); assert.equal(r.status, 200);
